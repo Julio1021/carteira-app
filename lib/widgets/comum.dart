@@ -94,15 +94,18 @@ class IconeCategoria extends StatelessWidget {
   }
 }
 
-/// Uma linha de lançamento (gasto ou entrada).
+/// Uma linha de lançamento (gasto, entrada ou investido).
 class LinhaLanc extends StatelessWidget {
   final Lanc l;
   final VoidCallback? onTap;
   const LinhaLanc(this.l, {super.key, this.onTap});
   @override
   Widget build(BuildContext context) {
-    final cat = l.ehEntrada ? catEntrada(l.e!.cat) : catGasto(l.g!.cat);
-    final sub = l.ehEntrada ? cat.nome : '${cat.nome} · ${l.g!.pag}';
+    final inv = l.i;
+    final cat = inv != null ? (inv.resgate ? catResgate : catInvestido) : (l.ehEntrada ? catEntrada(l.e!.cat) : catGasto(l.g!.cat));
+    final sub = inv != null
+        ? (inv.resgate ? 'Resgate · voltou para a conta' : 'Investido · não conta como gasto')
+        : (l.ehEntrada ? cat.nome : '${cat.nome} · ${l.g!.pag}');
     final entreContas = l.ehEntrada && l.e!.entreContas;
     return InkWell(
       onTap: onTap,
@@ -120,11 +123,11 @@ class LinhaLanc extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           Text(
-            l.ehEntrada ? brl(l.valor, sinal: true) : brl(-l.valor),
+            inv != null ? '${inv.resgate ? '←' : '→'} ${brl(l.valor)}' : (l.ehEntrada ? brl(l.valor, sinal: true) : brl(-l.valor)),
             style: TextStyle(
               fontWeight: FontWeight.w800,
               fontSize: 15,
-              color: entreContas ? G.apagado : (l.ehEntrada ? G.pos : G.texto),
+              color: inv != null ? G.lavanda : (entreContas ? G.apagado : (l.ehEntrada ? G.pos : G.texto)),
               fontFeatures: const [FontFeature.tabularFigures()],
             ),
           ),

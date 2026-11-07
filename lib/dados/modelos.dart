@@ -38,6 +38,24 @@ class Entrada {
   bool get entreContas => cat == 'proprias';
 }
 
+/// Dinheiro que foi para investimentos (kind 'invest'). Não é gasto nem entrada.
+/// valor é sempre positivo; mov = 'aplic' (aplicação) ou 'resgate'.
+class Investido {
+  final Doc d;
+  Investido(this.d);
+  String get id => str(d['id']);
+  String get desc => str(d['desc'], resgate ? 'Resgate' : 'Aplicação');
+  double get valor => numD(d['valor']).abs();
+  bool get resgate => d['mov'] == 'resgate';
+  /// Positivo quando aplicou, negativo quando resgatou.
+  double get liquido => resgate ? -valor : valor;
+  String get data => str(d['data'], '1970-01-01');
+  int get criado => numI(d['criado']) ?? 0;
+  bool get doExtrato => d['ext'] != null && d['ext'] != false && d['ext'] != '';
+  String? get conta => d['conta'] is String ? d['conta'] as String : null;
+  String? get ativo => d['ativo'] is String ? d['ativo'] as String : null;
+}
+
 class ContaBancaria {
   final Doc d;
   ContaBancaria(this.d);

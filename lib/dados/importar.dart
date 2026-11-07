@@ -247,6 +247,10 @@ class ItemImport {
 
 class PlanoImport {
   final List<ItemImport> gastos = [], entradas = [];
+  /// Aplicações e resgates (cat = 'aplic' ou 'resgate').
+  final List<ItemImport> invest = [];
+  /// Quantos Pix saíram para as suas próprias contas.
+  int propSaidas = 0;
   final Map<String, ({int n, double v})> ignorados = {};
   final List<Doc> pagFatura = [];
   final List<String> apagarEntradas = [];
@@ -260,11 +264,19 @@ class PlanoImport {
 
 /// Monta o que entra e o que fica de fora. [over] guarda as categorias que você trocou
 /// na prévia (por estabelecimento; entradas com prefixo "E|").
-PlanoImport planoImport(Repo repo, Ofx o, {required String dono, String desde = '', Map<String, String> over = const {}, bool proprias = true}) {
+PlanoImport planoImport(Repo repo, Ofx o, {required String dono, String desde = '', Map<String, String> over = const {}, bool proprias = true, bool propInvest = false}) {
   final p = PlanoImport();
   final chaves = chavesUnicas(o.tx);
   final existentes = {for (final g in repo.gastos) if (g.d['ext'] is String) g.d['ext'] as String};
   final existE = {for (final e in repo.entradas) if (e.d['ext'] is String) e.d['ext'] as String: e};
+  final existI = {for (final x in repo.investidos) if (x.d['ext'] is String) x.d['ext'] as String};
+  void addInvest(TxOfx t, String ext, bool resgate, String desc) {
+    if (existI.contains(ext)) {
+      p.jaImportados++;
+      return;
+    }
+    p.invest.add(ItemImport(t: t, ext: ext, ch: '__inv', cat: resgate ? 'resgate' : 'aplic', desc: desc, valor: (t.valor.abs() * 100).round() / 100));
+  }
   final regras = {for (final r in repo.doTipo('regra')) str(r['id']): r};
   final manuais = <String, int>{};
   for (final g in repo.gastos.where((g) => !g.doExtrato)) {
@@ -285,7 +297,12 @@ PlanoImport planoImport(Repo repo, Ofx o, {required String dono, String desde = 
     if (t.valor > 0) {
       final ke = classificaEntrada(t, dono);
       if (ke.acao == 'ignorar') {
-        p.ignorar(ke.motivo, t.valor);
+        if (ke.motivo.startsWith('Resgate')) {
+          final d = tituloOfx(limpaNome(t));
+          addInvest(t, ext, true, d.isEmpty || d == 'Sem descrição' ? 'Resgate de investimento' : d);
+        } else {
+          p.ignorar(ke.motivo, t.valor);
+        }
         continue;
       }
       final jm = manuaisE.indexWhere((x) => (x.valor - t.valor).abs() < .01 && (diasEntre(x.data, t.data) - 1).abs() <= 5);
@@ -368,6 +385,16 @@ PlanoImport planoImport(Repo repo, Ofx o, {required String dono, String desde = 
       continue;
     }
     final k = classificaGasto(t, dono);
+    if (k.acao == 'ignorar' && k.motivo.startsWith('Aplicação')) {
+      final d = tituloOfx(limpaNome(t));
+      addInvest(t, ext, false, d.isEmpty || d == 'Sem descrição' ? 'Aplicação em investimento' : d);
+      continue;
+    }
+    if (k.acao == 'ignorar' && k.motivo.contains('suas contas')) p.propSaidas++;
+    if (k.acao == 'ignorar' && k.motivo.contains('suas contas') && propInvest) {
+      addInvest(t, ext, false, 'Pix para suas contas (investir)');
+      continue;
+    }
     if (k.acao == 'ignorar' && k.motivo.contains('suas contas')) {
       final ym = ymDe(t.data);
       final x = propMes[ym] ?? (entrou: 0.0, saiu: 0.0, ult: t.data);
@@ -470,6 +497,21 @@ List<Doc> docsImportacao(Repo repo, Ofx o, PlanoImport p, {required String dono,
       if (x.rd != null) 'rd': x.rd,
     });
   }
+  for (final x in p.invest) {
+    docs.add({
+      'kind': 'invest',
+      'id': '${novoId('i')}${i++}',
+      'desc': x.desc,
+      'valor': x.valor,
+      'data': x.t.data,
+      'mov': x.cat == 'resgate' ? 'resgate' : 'aplic',
+      'ext': x.ext,
+      'imp': impId,
+      'criado': agora + i,
+      'conta': cid,
+      'orig': cnome,
+    });
+  }
   for (final c in p.pagFatura) {
     docs.add({...c, 'imp': impId});
   }
@@ -498,7 +540,7 @@ List<Doc> docsImportacao(Repo repo, Ofx o, PlanoImport p, {required String dono,
 /// Importações já feitas (para desfazer).
 List<({String id, int quando, int n, String ini, String fim})> importacoesFeitas(Repo repo) {
   final m = <String, ({String id, int quando, int n, String ini, String fim})>{};
-  for (final d in [...repo.doTipo('gasto'), ...repo.doTipo('entrada')]) {
+  for (final d in [...repo.doTipo('gasto'), ...repo.doTipo('entrada'), ...repo.doTipo('invest')]) {
     final imp = d['imp'];
     if (imp is! String || d['cartao'] != null) continue;
     final data = str(d['data']);
@@ -507,3 +549,8 @@ List<({String id, int quando, int n, String ini, String fim})> importacoesFeitas
   }
   return m.values.toList()..sort((a, b) => b.quando.compareTo(a.quando));
 }
+
+
+/// Preferência lembrada: Pix para as suas próprias contas contam como investimento?
+bool propriasSaoInvestimento(Repo repo) => repo.porId('cfg_import')?['propInvest'] == true;
+Doc docPropriasInvest(Repo repo, bool v) => {...?repo.porId('cfg_import'), 'kind': 'cfg', 'id': 'cfg_import', 'propInvest': v};

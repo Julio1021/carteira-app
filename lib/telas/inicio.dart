@@ -30,7 +30,7 @@ class TelaInicio extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(14, 6, 14, 130),
       children: [
         if (repo.vazio) ...[_BoasVindas(), const SizedBox(height: 14)],
-        HeroMes(r: r, onMes: onMes, onEntrou: () => irExtratoFiltro('entradas'), onSaiu: () => irExtratoFiltro('saidas'), onLimite: irLimites),
+        HeroMes(r: r, onMes: onMes, onEntrou: () => irExtratoFiltro('entradas'), onSaiu: () => irExtratoFiltro('saidas'), onInvestiu: () => r.investimentos.isEmpty ? abrirFormLanc(context, investido: true) : irExtratoFiltro('investido'), onLimite: irLimites),
         const SizedBox(height: 16),
         _Atalhos(irExtrato: irExtrato, irLimites: irLimites),
         const SizedBox(height: 16),
@@ -42,7 +42,7 @@ class TelaInicio extends StatelessWidget {
             if (ult.isEmpty)
               Padding(padding: EdgeInsets.symmetric(vertical: 10), child: Text('Nada lançado neste mês. Toque no + para começar.', style: TextStyle(color: G.apagado)))
             else
-              CaixaLista([for (final l in ult) LinhaLanc(l, onTap: () => abrirFormLanc(context, doc: (l.g?.d ?? l.e!.d)))]),
+              CaixaLista([for (final l in ult) LinhaLanc(l, onTap: () => abrirFormLanc(context, doc: l.doc))]),
           ]),
         ),
       ],
@@ -55,7 +55,8 @@ class HeroMes extends StatelessWidget {
   final ResumoMes r;
   final ValueChanged<String> onMes;
   final VoidCallback onEntrou, onSaiu, onLimite;
-  const HeroMes({super.key, required this.r, required this.onMes, required this.onEntrou, required this.onSaiu, required this.onLimite});
+  final VoidCallback? onInvestiu;
+  const HeroMes({super.key, required this.r, required this.onMes, required this.onEntrou, required this.onSaiu, this.onInvestiu, required this.onLimite});
 
   @override
   Widget build(BuildContext context) {
@@ -89,6 +90,8 @@ class HeroMes extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(child: _Bloco(rotulo: 'Saiu', valor: r.saiu, claro: false, icone: Icons.north_east_rounded, corIcone: GE.negEscuro, onTap: onSaiu)),
         ]),
+        const SizedBox(height: 10),
+        _Investiu(r: r, onTap: onInvestiu),
         if (r.limiteTotal > 0) ...[
           const SizedBox(height: 16),
           InkWell(
@@ -330,6 +333,54 @@ class _ContasInicio extends StatelessWidget {
                 ),
             ]),
         ]),
+      ),
+    );
+  }
+}
+
+
+/// Faixa "Investiu" no cartão principal: quanto foi para investimentos no mês.
+class _Investiu extends StatelessWidget {
+  final ResumoMes r;
+  final VoidCallback? onTap;
+  const _Investiu({required this.r, this.onTap});
+  @override
+  Widget build(BuildContext context) {
+    final vazio = r.investimentos.isEmpty;
+    final pct = r.pctInvestido;
+    final resgatou = r.investiu < 0;
+    return Material(
+      color: const Color(0x14FFFFFF),
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(10, 9, 12, 9),
+          child: Row(children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(color: const Color(0x33B9BFF6), borderRadius: BorderRadius.circular(11)),
+              child: const Icon(Icons.savings_rounded, size: 18, color: GE.lavanda),
+            ),
+            const SizedBox(width: 10),
+            Text(resgatou ? 'Resgatou' : 'Investiu', style: const TextStyle(color: GE.texto2, fontWeight: FontWeight.w700, fontSize: 13)),
+            const SizedBox(width: 8),
+            Text(brl(r.investiu.abs()), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15.5)),
+            const Spacer(),
+            Flexible(
+              flex: 0,
+              child: Text(
+                vazio ? 'toque para registrar' : (pct != null && !resgatou ? '${(pct * 100).round()}% do que entrou' : ''),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: GE.texto2, fontSize: 12, fontWeight: FontWeight.w600),
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded, size: 18, color: GE.apagado),
+          ]),
+        ),
       ),
     );
   }

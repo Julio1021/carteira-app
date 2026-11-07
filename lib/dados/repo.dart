@@ -73,6 +73,7 @@ class Repo extends ChangeNotifier {
 
   List<Gasto> get gastos => doTipo('gasto').map(Gasto.new).toList();
   List<Entrada> get entradas => doTipo('entrada').map(Entrada.new).toList();
+  List<Investido> get investidos => doTipo('invest').map(Investido.new).toList();
   List<ContaBancaria> get contas => doTipo('conta').map(ContaBancaria.new).toList();
   List<Limite> get limites => doTipo('orc').map(Limite.new).where((l) => l.cat.isNotEmpty && l.limite > 0).toList();
   List<Renda> get rendas => doTipo('renda').map(Renda.new).toList();

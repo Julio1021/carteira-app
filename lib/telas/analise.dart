@@ -11,6 +11,7 @@ import '../widgets/graficos.dart';
 
 Color get corEntrada => G.pos;
 Color get corSaida => G.saida;
+Color get corInvest => G.lavanda;
 const corAnterior = Color(0xFF8C90A6);
 
 /// Aba "Análise" do Extrato: gráficos que contam a história do mês.
@@ -81,6 +82,22 @@ class _Destaque extends StatelessWidget {
               TextSpan(text: brl(r.sobra.abs()), style: const TextStyle(fontWeight: FontWeight.w800)),
               if (txaSobra != null && r.sobra >= 0) TextSpan(text: ', ${(txaSobra * 100).round()}% do que entrou.'),
               if (r.sobra < 0) const TextSpan(text: '.'),
+              if (r.investiu > 0) ...[
+                const TextSpan(text: ' Você investiu '),
+                TextSpan(text: brl(r.investiu), style: TextStyle(fontWeight: FontWeight.w800, color: corInvest)),
+                TextSpan(text: ' (${((r.pctInvestido ?? 0) * 100).round()}% do que entrou)'),
+                if (r.sobra >= 0) ...[
+                  TextSpan(text: r.sobraEmConta >= 0 ? ' e ficaram ' : ' e usou '),
+                  TextSpan(text: brl(r.sobraEmConta.abs()), style: const TextStyle(fontWeight: FontWeight.w800)),
+                  TextSpan(text: r.sobraEmConta >= 0 ? ' em conta.' : ' do que já tinha em conta.'),
+                ] else
+                  const TextSpan(text: '.'),
+              ],
+            ],
+            if (r.entrou <= 0 && r.investiu > 0) ...[
+              const TextSpan(text: 'Você investiu '),
+              TextSpan(text: brl(r.investiu), style: TextStyle(fontWeight: FontWeight.w800, color: corInvest)),
+              const TextSpan(text: '.'),
             ],
           ]),
         ),
@@ -111,11 +128,14 @@ class _EntrouSaiu extends StatelessWidget {
     final comDados = hist.where((m) => m.entrou > 0 || m.saiu > 0).toList();
     final mediaSobra = comDados.isEmpty ? 0.0 : comDados.fold<double>(0, (a, m) => a + m.sobra) / comDados.length;
     final melhor = comDados.isEmpty ? null : comDados.reduce((a, b) => b.sobra > a.sobra ? b : a);
+    final temInv = hist.any((m) => m.investiu > 0);
+    final comEntrada = hist.where((m) => m.entrou > 0 && m.investiu != 0).toList();
+    final pctMedio = comEntrada.isEmpty ? null : comEntrada.fold<double>(0, (a, m) => a + m.investiu / m.entrou) / comEntrada.length;
     String abr(String m) => mesesAbr[int.parse(m.substring(5)) - 1];
     return Cartao(
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Row(children: [
-          const Expanded(child: Text('Entrou × Saiu', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800))),
+          Expanded(child: Text(temInv ? 'Entrou × Saiu × Investiu' : 'Entrou × Saiu', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800))),
           SegmentedButton<int>(
             segments: const [ButtonSegment(value: 6, label: Text('6m')), ButtonSegment(value: 12, label: Text('12m'))],
             selected: {nMeses},
@@ -136,9 +156,9 @@ class _EntrouSaiu extends StatelessWidget {
         const SizedBox(height: 14),
         GraficoBarras(
           rotulos: [for (final m in hist) abr(m.ym)],
-          valores: [for (final m in hist) [m.entrou, m.saiu]],
-          cores: [corEntrada, corSaida],
-          nomes: const ['Entrou', 'Saiu'],
+          valores: [for (final m in hist) [m.entrou, m.saiu, if (temInv) (m.investiu > 0 ? m.investiu : 0.0)]],
+          cores: [corEntrada, corSaida, if (temInv) corInvest],
+          nomes: ['Entrou', 'Saiu', if (temInv) 'Investiu'],
           formatoY: curto,
           selecionado: hist.indexWhere((m) => m.ym == ym),
           onToque: (i) => onMes(hist[i].ym),
@@ -146,12 +166,19 @@ class _EntrouSaiu extends StatelessWidget {
           coresRodape: [for (final m in hist) m.sobra >= 0 ? G.pos : corSaida],
         ),
         const SizedBox(height: 10),
-        Wrap(spacing: 16, runSpacing: 6, children: [Legenda(corEntrada, 'Entrou'), Legenda(corSaida, 'Saiu')]),
+        Wrap(spacing: 16, runSpacing: 6, children: [Legenda(corEntrada, 'Entrou'), Legenda(corSaida, 'Saiu'), if (temInv) Legenda(corInvest, 'Investiu')]),
         if (comDados.length >= 2) ...[
           const SizedBox(height: 12),
           Row(children: [
             Expanded(child: _MiniInfo('Sobra média', brl(mediaSobra), mediaSobra >= 0 ? G.pos : corSaida)),
             if (melhor != null) Expanded(child: _MiniInfo('Melhor mês', '${mesLongo(melhor.ym)} · ${brl(melhor.sobra)}', G.texto)),
+          ]),
+        ],
+        if (pctMedio != null) ...[
+          const SizedBox(height: 12),
+          Row(children: [
+            Expanded(child: _MiniInfo('Investe em média', '${(pctMedio * 100).round()}% do que entra', corInvest)),
+            Expanded(child: _MiniInfo('Investido no período', brl(hist.fold<double>(0, (a, m) => a + m.investiu)), corInvest)),
           ]),
         ],
       ]),

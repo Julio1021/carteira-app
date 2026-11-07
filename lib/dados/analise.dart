@@ -5,8 +5,8 @@ import 'resumo.dart';
 
 class MesValores {
   final String ym;
-  final double entrou, saiu;
-  MesValores(this.ym, this.entrou, this.saiu);
+  final double entrou, saiu, investiu;
+  MesValores(this.ym, this.entrou, this.saiu, [this.investiu = 0]);
   double get sobra => entrou - saiu;
 }
 
@@ -16,7 +16,7 @@ List<MesValores> historicoMeses(Repo repo, String ym, int n) => [
         () {
           final m = ymAdd(ym, -i);
           final r = ResumoMes.de(repo, m);
-          return MesValores(m, r.entrou, r.saiu);
+          return MesValores(m, r.entrou, r.saiu, r.investiu);
         }(),
     ];
 

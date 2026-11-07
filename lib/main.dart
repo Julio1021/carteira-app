@@ -146,6 +146,7 @@ class _CascaState extends State<Casca> {
           if (tela == 'lancar') abrirFormLanc(context);
           if (tela == 'entrada') abrirFormLanc(context, entrada: true);
           if (tela == 'menu') abrirMenuLancar(context);
+          if (tela == 'invest') abrirFormLanc(context, investido: true);
           if (tela == 'limites') _abrirLimites();
           if (tela == 'ajustes') Navigator.of(context).pushNamed('/ajustes');
           if (tela == 'busca') Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TelaBusca(inicial: 'mercado')));

@@ -33,7 +33,7 @@ void main() {
       expect(tituloOfx('SUPERMERCADO DIA LTDA ME'), 'Supermercado Dia Ltda ME');
     });
 
-    test('classifica, ignora aplicação e não duplica o que já foi importado', () {
+    test('classifica, guarda aplicação como investido e não duplica o que já foi importado', () {
       final r = Repo.memoria(const []);
       final o = lerOfx(ofx);
       final p = planoImport(r, o, dono: '');
@@ -42,7 +42,9 @@ void main() {
       expect(cats['Ifood · Ifood'], 'alimentacao');
       expect(cats['Joao Pedro Lima'], 'transferencias');
       expect(cats['Pagamento Vivo Fibra'], 'internet');
-      expect(p.ignorados.keys, contains('Aplicação em investimento'));
+      expect(p.ignorados.keys, isNot(contains('Aplicação em investimento')));
+      expect(p.invest.single.cat, 'aplic');
+      expect(p.invest.single.valor, 1000);
       expect(p.entradas.single.cat, 'pix');
       // grava e importa de novo: nada novo
       final docs = docsImportacao(r, o, p, dono: '', over: const {});
@@ -50,7 +52,9 @@ void main() {
       final p2 = planoImport(r, o, dono: '');
       expect(p2.gastos, isEmpty);
       expect(p2.entradas, isEmpty);
-      expect(p2.jaImportados, 6 - 1); // a aplicação continua ignorada
+      expect(p2.invest, isEmpty);
+      expect(p2.jaImportados, 6);
+      expect(r.investidos.single.liquido, 1000);
       expect(r.porId(contaIdOfx(o))!['saldo'], 2350.40);
     });
 
@@ -60,6 +64,17 @@ void main() {
       ]);
       final p = planoImport(r, lerOfx(ofx), dono: '');
       expect(p.gastos.firstWhere((g) => g.desc == 'Supermercado Dia').dup, isTrue);
+    });
+
+    test('Pix para as próprias contas vira investido quando você escolhe', () {
+      final r = Repo.memoria(const []);
+      final o = lerOfx(ofx);
+      final sem = planoImport(r, o, dono: 'João Pedro Lima');
+      expect(sem.propSaidas, 1);
+      expect(sem.invest.length, 1); // só a aplicação
+      final com = planoImport(r, o, dono: 'João Pedro Lima', propInvest: true);
+      expect(com.invest.length, 2);
+      expect(com.invest.map((x) => x.valor), containsAll([1000.0, 50.0]));
     });
 
     test('Pix para o próprio titular não vira gasto', () {

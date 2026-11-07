@@ -50,3 +50,7 @@ final Map<String, Categoria> _e = {for (final c in categoriasEntrada) c.id: c};
 
 Categoria catGasto(String? id) => _g[id] ?? _g['outros']!;
 Categoria catEntrada(String? id) => _e[id] ?? _e['outros_e']!;
+
+/// Visual dos lançamentos "Investido" (não é categoria de gasto nem de entrada).
+const catInvestido = Categoria('investido', 'Investido', Color(0xFF6C72E6), Icons.savings_rounded);
+const catResgate = Categoria('resgate', 'Resgate de investimento', Color(0xFF6C72E6), Icons.savings_outlined);

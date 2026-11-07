@@ -2,18 +2,31 @@ import '../util/fmt.dart';
 import 'modelos.dart';
 import 'repo.dart';
 
-/// Um lançamento na lista (gasto ou entrada).
+/// Um lançamento na lista (gasto, entrada ou investido).
 class Lanc {
   final Gasto? g;
   final Entrada? e;
-  Lanc.gasto(Gasto this.g) : e = null;
-  Lanc.entrada(Entrada this.e) : g = null;
+  final Investido? i;
+  Lanc.gasto(Gasto this.g)
+      : e = null,
+        i = null;
+  Lanc.entrada(Entrada this.e)
+      : g = null,
+        i = null;
+  Lanc.invest(Investido this.i)
+      : g = null,
+        e = null;
   bool get ehEntrada => e != null;
-  String get id => g?.id ?? e!.id;
-  String get desc => g?.desc ?? e!.desc;
-  double get valor => g?.valor ?? e!.valor;
-  String get data => g?.data ?? e!.data;
-  int get criado => g?.criado ?? e!.criado;
+  bool get ehGasto => g != null;
+  bool get ehInvest => i != null;
+  Doc get doc => g?.d ?? e?.d ?? i!.d;
+  String get id => g?.id ?? e?.id ?? i!.id;
+  String get desc => g?.desc ?? e?.desc ?? i!.desc;
+  double get valor => g?.valor ?? e?.valor ?? i!.valor;
+  String get data => g?.data ?? e?.data ?? i!.data;
+  int get criado => g?.criado ?? e?.criado ?? i!.criado;
+  /// Efeito no "Entrou − Saiu" (investido e entre contas não contam).
+  double get efeito => g != null ? -g!.valor : (e != null ? (e!.entreContas ? 0 : e!.valor) : 0);
 }
 
 int ordemLanc(Lanc a, Lanc b) {
@@ -37,6 +50,9 @@ class ResumoMes {
   final String ym;
   final List<Gasto> gastos; // do mês, mais novos primeiro
   final List<Entrada> entradas;
+  final List<Investido> investimentos;
+  /// Aplicado − resgatado no mês.
+  final double investiu, aplicou, resgatou;
   final double saiu, entrou, entreContas;
   final Map<String, double> porCategoria;
   final Map<String, double> limites; // categoria -> limite mensal
@@ -48,6 +64,10 @@ class ResumoMes {
     required this.ym,
     required this.gastos,
     required this.entradas,
+    required this.investimentos,
+    required this.investiu,
+    required this.aplicou,
+    required this.resgatou,
     required this.saiu,
     required this.entrou,
     required this.entreContas,
@@ -60,10 +80,14 @@ class ResumoMes {
   });
 
   double get sobra => entrou - saiu;
+  /// Parte da sobra que não foi investida.
+  double get sobraEmConta => sobra - investiu;
+  /// Quanto do que entrou foi investido (0..1), ou null sem entradas.
+  double? get pctInvestido => entrou > 0 ? investiu / entrou : null;
   double? get usoLimite => limiteTotal > 0 ? gastoComLimite / limiteTotal : null;
 
   List<Lanc> get lancamentos {
-    final l = <Lanc>[...gastos.map(Lanc.gasto), ...entradas.map(Lanc.entrada)];
+    final l = <Lanc>[...gastos.map(Lanc.gasto), ...entradas.map(Lanc.entrada), ...investimentos.map(Lanc.invest)];
     l.sort(ordemLanc);
     return l;
   }
@@ -101,6 +125,19 @@ class ResumoMes {
         entrou += e.valor;
       }
     }
+    final inv = repo.investidos.where((i) => i.data.compareTo(de) >= 0 && i.data.compareTo(ate) <= 0).toList()
+      ..sort((a, b) {
+        final c = b.data.compareTo(a.data);
+        return c != 0 ? c : b.criado.compareTo(a.criado);
+      });
+    var aplicou = 0.0, resgatou = 0.0;
+    for (final i in inv) {
+      if (i.resgate) {
+        resgatou += i.valor;
+      } else {
+        aplicou += i.valor;
+      }
+    }
     final lim = <String, double>{for (final l in repo.limites) l.cat: l.limite};
     final limTotal = lim.values.fold<double>(0, (a, b) => a + b);
     final comLim = lim.keys.fold<double>(0, (a, c) => a + (porCat[c] ?? 0));
@@ -109,6 +146,10 @@ class ResumoMes {
       ym: ym,
       gastos: gs,
       entradas: es,
+      investimentos: inv,
+      investiu: aplicou - resgatou,
+      aplicou: aplicou,
+      resgatou: resgatou,
       saiu: saiu,
       entrou: entrou,
       entreContas: proprias,
@@ -146,6 +187,10 @@ double saldoEmConta(Repo repo) {
     for (final e in repo.entradas) {
       if (e.doExtrato || e.entreContas || contaDe(e.conta) != c.id || !depois(e.data, e.criado, c)) continue;
       v += e.valor;
+    }
+    for (final i in repo.investidos) {
+      if (i.doExtrato || contaDe(i.conta) != c.id || !depois(i.data, i.criado, c)) continue;
+      v -= i.liquido;
     }
     total += (v * 100).round() / 100;
   }

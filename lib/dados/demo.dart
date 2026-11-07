@@ -27,6 +27,12 @@ List<Doc> dadosDemo() {
   out.add({'kind': 'entrada', 'id': 'e_demo1', 'desc': 'Salário', 'valor': 4800.0, 'data': '$ym-01', 'cat': 'salario', 'criado': 1});
   out.add({'kind': 'entrada', 'id': 'e_demo2', 'desc': 'Vale alimentação', 'valor': 900.0, 'data': '$ym-${doisDig(diasNoMes(ym) < 20 ? diasNoMes(ym) : 5)}', 'cat': 'beneficios', 'criado': 2});
   out.add({'kind': 'entrada', 'id': 'e_demo3', 'desc': 'Pix recebido · Maria', 'valor': 150.0, 'data': addDias(h, -2), 'cat': 'pix', 'criado': 3});
+  // dinheiro que foi para investimentos
+  out.add({'kind': 'invest', 'id': 'i_demo0', 'desc': 'CDB Inter', 'valor': 1000.0, 'data': '$ym-01', 'mov': 'aplic', 'criado': 4});
+  for (var k = 1; k <= 11; k++) {
+    out.add({'kind': 'invest', 'id': 'i_demo$k', 'desc': k.isEven ? 'Tesouro Selic' : 'CDB Inter', 'valor': 700.0 + (k * 137) % 600, 'data': '${ymAdd(ym, -k)}-03', 'mov': 'aplic', 'criado': 4});
+  }
+  out.add({'kind': 'invest', 'id': 'i_demo_r', 'desc': 'Resgate Nubank Caixinha', 'valor': 400.0, 'data': '${ymAdd(ym, -2)}-18', 'mov': 'resgate', 'criado': 4});
   out.add({'kind': 'conta', 'id': 'ct_demo', 'nome': 'Banco Inter', 'saldo': 3250.40, 'data': addDias(h, -3), 'ts': 1});
   out.add({'kind': 'orc', 'id': 'orc_mercado', 'cat': 'mercado', 'limite': 900.0});
   out.add({'kind': 'orc', 'id': 'orc_alimentacao', 'cat': 'alimentacao', 'limite': 300.0});

@@ -113,4 +113,20 @@ void main() {
       expect(saldoEmConta(r), 1400);
     });
   });
+
+  test('investido não entra no Saiu e aparece no resumo do mês', () {
+    final r = Repo.memoria([
+      {'kind': 'entrada', 'id': 'e1', 'desc': 'Salário', 'valor': 5000, 'data': '2026-10-31', 'cat': 'salario'},
+      {'kind': 'gasto', 'id': 'g1', 'desc': 'Mercado', 'valor': 1000, 'data': '2026-10-10', 'cat': 'mercado'},
+      {'kind': 'invest', 'id': 'i1', 'desc': 'CDB', 'valor': 1500, 'data': '2026-10-12', 'mov': 'aplic'},
+      {'kind': 'invest', 'id': 'i2', 'desc': 'Resgate', 'valor': 300, 'data': '2026-10-20', 'mov': 'resgate'},
+    ]);
+    final m = ResumoMes.de(r, '2026-10');
+    expect(m.saiu, 1000);
+    expect(m.investiu, 1200);
+    expect(m.sobraEmConta, 5000 - 1000 - 1200);
+    expect(m.pctInvestido, closeTo(.24, .0001));
+    expect(m.lancamentos.where((l) => l.ehInvest).length, 2);
+    expect(m.lancamentos.fold<double>(0, (a, l) => a + l.efeito), 4000);
+  });
 }

@@ -77,6 +77,7 @@ class _TelaImportarExtratoState extends State<TelaImportarExtrato> {
     final repo = RepoScope.ler(context);
     setState(() => ocupado = true);
     final docs = docsImportacao(repo, ofx!, p, dono: dono, over: over, pularDup: pularDup);
+    final ni = docs.where((d) => d['kind'] == 'invest').length;
     if (p.apagarEntradas.isNotEmpty) await repo.apagarVarios(p.apagarEntradas);
     await repo.salvarVarios(docs);
     if (!mounted) return;
@@ -85,7 +86,7 @@ class _TelaImportarExtratoState extends State<TelaImportarExtrato> {
       ocupado = false;
       ofx = null;
     });
-    avisar(context, '$ng gasto(s) e $ne entrada(s) importados.');
+    avisar(context, '$ng gasto(s), $ne entrada(s)${ni > 0 ? ' e $ni investimento(s)' : ''} importados.');
   }
 
   Future<void> _trocarCat(ItemImport x, bool entrada) async {
@@ -142,7 +143,7 @@ class _TelaImportarExtratoState extends State<TelaImportarExtrato> {
                 onPressed: () async {
                   final r = RepoScope.ler(context);
                   if (!await confirmar(context, 'Desfazer esta importação?', 'Apaga os ${f.n} lançamentos que vieram desse arquivo. O que você lançou à mão continua.', sim: 'Desfazer')) return;
-                  await r.apagarVarios([for (final d in [...r.doTipo('gasto'), ...r.doTipo('entrada'), ...r.doTipo('cpag')]) if (d['imp'] == f.id) str(d['id'])]);
+                  await r.apagarVarios([for (final d in [...r.doTipo('gasto'), ...r.doTipo('entrada'), ...r.doTipo('invest'), ...r.doTipo('cpag')]) if (d['imp'] == f.id) str(d['id'])]);
                   if (mounted) avisar(this.context, 'Importação desfeita.');
                 },
                 child: Text('Desfazer', style: TextStyle(color: G.neg)),
@@ -154,7 +155,9 @@ class _TelaImportarExtratoState extends State<TelaImportarExtrato> {
   }
 
   Widget _previa(dynamic repo, Ofx o) {
-    final p = planoImport(RepoScope.of(context), o, dono: dono, over: over);
+    final rp = RepoScope.of(context);
+    final propInv = propriasSaoInvestimento(rp);
+    final p = planoImport(rp, o, dono: dono, over: over, propInvest: propInv);
     final gastos = p.gastos.where((x) => x.cat != 'ignorar').toList();
     final entram = gastos.where((x) => !(x.dup && pularDup)).toList();
     final ents = p.entradas.where((x) => x.cat != 'ignorar').toList();
@@ -171,6 +174,7 @@ class _TelaImportarExtratoState extends State<TelaImportarExtrato> {
             Row(children: [
               Expanded(child: _Num('${entram.length}', 'gastos novos')),
               Expanded(child: _Num('${ents.length}', 'entradas')),
+              if (p.invest.isNotEmpty) Expanded(child: _Num('${p.invest.length}', 'investidos')),
               Expanded(child: _Num('${p.jaImportados}', 'já estavam')),
             ]),
           ]),
@@ -234,6 +238,27 @@ class _TelaImportarExtratoState extends State<TelaImportarExtrato> {
               ),
           ]),
         ],
+        if (p.propSaidas > 0) ...[
+          const SizedBox(height: 12),
+          SwitchListTile(
+            value: propInv,
+            onChanged: (v) => rp.salvar(docPropriasInvest(rp, v)),
+            title: Text('Os ${p.propSaidas} Pix para suas próprias contas foram para investir', style: const TextStyle(fontWeight: FontWeight.w700)),
+            subtitle: Text('Ex.: mandar dinheiro para o Nubank ou o Mercado Pago para aplicar. Ligado, eles aparecem como Investido. A escolha fica salva para as próximas importações.', style: TextStyle(color: G.apagado, fontSize: 12.5)),
+          ),
+        ],
+        if (p.invest.isNotEmpty) ...[
+          const Rotulo('Investido (não conta como gasto)'),
+          CaixaLista([
+            for (final x in p.invest)
+              ListTile(
+                leading: IconeCategoria(x.cat == 'resgate' ? catResgate : catInvestido, tam: 36),
+                title: Text(x.desc, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700)),
+                subtitle: Text('${dataCurta(x.t.data)} · ${x.cat == 'resgate' ? 'Resgate' : 'Aplicação'}', style: TextStyle(color: G.apagado, fontSize: 12)),
+                trailing: Text('${x.cat == 'resgate' ? '←' : '→'} ${brl(x.valor)}', style: TextStyle(fontWeight: FontWeight.w800, color: G.lavanda)),
+              ),
+          ]),
+        ],
         if (p.ignorados.isNotEmpty) ...[
           const Rotulo('Ficaram de fora'),
           CaixaLista([
@@ -252,8 +277,8 @@ class _TelaImportarExtratoState extends State<TelaImportarExtrato> {
             const SizedBox(width: 10),
             Expanded(
               child: FilledButton(
-                onPressed: ocupado || (entram.isEmpty && ents.isEmpty && p.pagFatura.isEmpty) ? null : () => _importar(p),
-                child: Text(ocupado ? 'Importando…' : 'Importar ${entram.length + ents.length} lançamento(s)'),
+                onPressed: ocupado || (entram.isEmpty && ents.isEmpty && p.invest.isEmpty && p.pagFatura.isEmpty) ? null : () => _importar(p),
+                child: Text(ocupado ? 'Importando…' : 'Importar ${entram.length + ents.length + p.invest.length} lançamento(s)'),
               ),
             ),
           ]),

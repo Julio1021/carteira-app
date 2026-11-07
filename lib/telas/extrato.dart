@@ -47,9 +47,10 @@ class _TelaExtratoState extends State<TelaExtrato> {
     final r = ResumoMes.de(repo, widget.ym);
     final q = buscaC.text.trim().toLowerCase();
     var lista = r.lancamentos.where((l) {
-      if (filtro == 'saidas' && l.ehEntrada) return false;
+      if (filtro == 'saidas' && !l.ehGasto) return false;
       if (filtro == 'entradas' && !l.ehEntrada) return false;
-      if (cat != null && (l.ehEntrada || l.g!.cat != cat)) return false;
+      if (filtro == 'investido' && !l.ehInvest) return false;
+      if (cat != null && (!l.ehGasto || l.g!.cat != cat)) return false;
       if (q.isNotEmpty && !l.desc.toLowerCase().contains(q)) return false;
       return true;
     }).toList();
@@ -59,7 +60,7 @@ class _TelaExtratoState extends State<TelaExtrato> {
     for (final l in lista) {
       (grupos[l.data] ??= []).add(l);
     }
-    final totalFiltro = lista.fold<double>(0, (a, l) => a + (l.ehEntrada ? (l.e!.entreContas ? 0 : l.valor) : -l.valor));
+    final totalFiltro = filtro == 'investido' ? lista.fold<double>(0, (a, l) => a + l.i!.liquido) : lista.fold<double>(0, (a, l) => a + l.efeito);
     final catsDoMes = r.porCategoria.keys.toList()..sort((a, b) => (r.porCategoria[b] ?? 0).compareTo(r.porCategoria[a] ?? 0));
 
     return CustomScrollView(slivers: [
@@ -77,6 +78,28 @@ class _TelaExtratoState extends State<TelaExtrato> {
                 Expanded(child: _Resumo('Saiu', r.saiu, G.neg)),
                 Expanded(child: _Resumo('Sobra', r.sobra, r.sobra < 0 ? G.neg : G.texto)),
               ]),
+              if (r.investimentos.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: () => setState(() {
+                    analise = false;
+                    filtro = 'investido';
+                    cat = null;
+                  }),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(color: G.lavandaFundo, borderRadius: BorderRadius.circular(12)),
+                    child: Row(children: [
+                      Icon(Icons.savings_rounded, size: 18, color: G.lavanda),
+                      const SizedBox(width: 8),
+                      Expanded(child: Text(r.investiu >= 0 ? 'Investiu no mês' : 'Resgatou no mês', style: TextStyle(color: G.texto2, fontWeight: FontWeight.w600, fontSize: 13))),
+                      Text(brl(r.investiu.abs()), style: TextStyle(color: G.lavanda, fontWeight: FontWeight.w800)),
+                      if (r.pctInvestido != null && r.investiu > 0) Text('  ·  ${(r.pctInvestido! * 100).round()}%', style: TextStyle(color: G.apagado, fontSize: 12.5, fontWeight: FontWeight.w700)),
+                    ]),
+                  ),
+                ),
+              ],
             ]),
           ),
           const SizedBox(height: 12),
@@ -134,7 +157,7 @@ class _TelaExtratoState extends State<TelaExtrato> {
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(children: [
-              for (final f in const [['tudo', 'Tudo'], ['saidas', 'Saídas'], ['entradas', 'Entradas']])
+              for (final f in [['tudo', 'Tudo'], ['saidas', 'Saídas'], ['entradas', 'Entradas'], if (r.investimentos.isNotEmpty || filtro == 'investido') ['investido', 'Investido']])
                 Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: ChoiceChip(
@@ -143,11 +166,11 @@ class _TelaExtratoState extends State<TelaExtrato> {
                     labelStyle: TextStyle(fontWeight: FontWeight.w700, color: filtro == f[0] ? G.tinta : G.texto2),
                     onSelected: (_) => setState(() {
                       filtro = f[0];
-                      if (filtro == 'entradas') cat = null;
+                      if (filtro == 'entradas' || filtro == 'investido') cat = null;
                     }),
                   ),
                 ),
-              if (filtro != 'entradas')
+              if (filtro != 'entradas' && filtro != 'investido')
                 for (final c in catsDoMes)
                   Padding(
                     padding: const EdgeInsets.only(right: 8),
@@ -167,7 +190,8 @@ class _TelaExtratoState extends State<TelaExtrato> {
               padding: const EdgeInsets.only(bottom: 10, left: 4, right: 4),
               child: Row(children: [
                 Expanded(child: Text('${lista.length} lançamento${lista.length == 1 ? '' : 's'}', style: TextStyle(color: G.apagado))),
-                Text(brl(totalFiltro, sinal: true), style: TextStyle(fontWeight: FontWeight.w800, color: totalFiltro < 0 ? G.texto : G.pos)),
+                Text(filtro == 'investido' ? 'Investiu ${brl(totalFiltro)}' : brl(totalFiltro, sinal: true),
+                    style: TextStyle(fontWeight: FontWeight.w800, color: filtro == 'investido' ? G.lavanda : (totalFiltro < 0 ? G.texto : G.pos))),
               ]),
             ),
           ],
@@ -194,7 +218,7 @@ class _TelaExtratoState extends State<TelaExtrato> {
             itemBuilder: (c, i) {
               final dia = grupos.keys.elementAt(i);
               final ls = grupos[dia]!;
-              final tot = ls.fold<double>(0, (a, l) => a + (l.ehEntrada ? (l.e!.entreContas ? 0 : l.valor) : -l.valor));
+              final tot = ls.fold<double>(0, (a, l) => a + l.efeito);
               return Padding(
                 padding: const EdgeInsets.only(bottom: 14),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -205,7 +229,7 @@ class _TelaExtratoState extends State<TelaExtrato> {
                       Text(brl(tot, sinal: true), style: TextStyle(color: tot < 0 ? G.apagado : G.pos, fontWeight: FontWeight.w700, fontSize: 13)),
                     ]),
                   ),
-                  CaixaLista([for (final l in ls) LinhaLanc(l, onTap: () => abrirFormLanc(context, doc: l.g?.d ?? l.e!.d))]),
+                  CaixaLista([for (final l in ls) LinhaLanc(l, onTap: () => abrirFormLanc(context, doc: l.doc))]),
                 ]),
               );
             },

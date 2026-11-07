@@ -102,6 +102,8 @@ jobs:
           tirar c5-patrimonio "&tema=claro&aba=3" 2400
           tirar c6-ajustes "&tema=claro&tela=ajustes"
           tirar c7-lancar "&tema=claro&tela=lancar"
+          tirar i1-investido "&tela=invest"
+          tirar i2-extrato-inv "&aba=1"
           tirar c8-cartao "&tema=claro&tela=cartao" 1300
           tirar c9-avisos "&tema=claro&tela=avisos"
           ls -la ../../prints

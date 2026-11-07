@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../dados/categorias.dart';
 import '../dados/modelos.dart';
+import '../dados/patrimonio.dart';
 import '../tema.dart';
 import '../util/fmt.dart';
 import '../widgets/comum.dart';
@@ -23,12 +24,33 @@ Future<void> abrirMenuLancar(BuildContext context) async {
             const SizedBox(width: 10),
             Expanded(child: _OpcaoMenu(Icons.arrow_upward_rounded, 'Entrada', 'Salário, Pix recebido…', () => Navigator.pop(c, 'entrada'), corIcone: G.pos)),
           ]),
+          const SizedBox(height: 10),
+          Cartao(
+            onTap: () => Navigator.pop(c, 'invest'),
+            raio: 20,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(color: G.lavandaFundo, borderRadius: BorderRadius.circular(13)),
+                child: Icon(Icons.savings_rounded, color: G.lavanda),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  const Text('Investido', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                  Text('Dinheiro que foi para investir (ou voltou de um resgate)', style: TextStyle(color: G.apagado, fontSize: 12.5)),
+                ]),
+              ),
+            ]),
+          ),
         ]),
       ),
     ),
   );
   if (escolha == null || !context.mounted) return;
-  await abrirFormLanc(context, entrada: escolha == 'entrada');
+  await abrirFormLanc(context, entrada: escolha == 'entrada', investido: escolha == 'invest');
 }
 
 class _OpcaoMenu extends StatelessWidget {
@@ -58,26 +80,32 @@ class _OpcaoMenu extends StatelessWidget {
   }
 }
 
-/// Formulário de gasto ou entrada. Passe [doc] para editar um existente.
-Future<void> abrirFormLanc(BuildContext context, {bool entrada = false, Doc? doc}) {
+/// Formulário de gasto, entrada ou investido. Passe [doc] para editar um existente.
+Future<void> abrirFormLanc(BuildContext context, {bool entrada = false, bool investido = false, Doc? doc}) {
+  final tipo = doc != null ? (doc['kind'] == 'invest' ? 'invest' : (doc['kind'] == 'entrada' ? 'entrada' : 'gasto')) : (investido ? 'invest' : (entrada ? 'entrada' : 'gasto'));
   return showModalBottomSheet(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
-    builder: (_) => FormLanc(entrada: doc != null ? doc['kind'] == 'entrada' : entrada, doc: doc),
+    builder: (_) => FormLanc(tipo: tipo, doc: doc),
   );
 }
 
 class FormLanc extends StatefulWidget {
-  final bool entrada;
+  /// 'gasto', 'entrada' ou 'invest'
+  final String tipo;
   final Doc? doc;
-  const FormLanc({super.key, required this.entrada, this.doc});
+  const FormLanc({super.key, required this.tipo, this.doc});
   @override
   State<FormLanc> createState() => _FormLancState();
 }
 
 class _FormLancState extends State<FormLanc> {
-  late bool entrada = widget.entrada;
+  late String tipo = widget.tipo;
+  bool get entrada => tipo == 'entrada';
+  bool get invest => tipo == 'invest';
+  bool resgate = false;
+  String? ativo;
   final valorC = TextEditingController();
   final descC = TextEditingController();
   final valorF = FocusNode();
@@ -99,7 +127,10 @@ class _FormLancState extends State<FormLanc> {
       valorC.text = valorCampo(numD(d['valor']));
       descC.text = str(d['desc']);
       data = str(d['data'], hojeIso());
-      if (entrada) {
+      if (invest) {
+        resgate = d['mov'] == 'resgate';
+        ativo = d['ativo'] is String ? d['ativo'] as String : null;
+      } else if (entrada) {
         catE = str(d['cat'], 'outros_e');
       } else {
         cat = str(d['cat'], 'outros');
@@ -127,7 +158,7 @@ class _FormLancState extends State<FormLanc> {
     if (t.length < 2) return const [];
     final vistos = <String>{};
     final out = <Doc>[];
-    final lista = repo.doTipo(entrada ? 'entrada' : 'gasto').toList()
+    final lista = repo.doTipo(invest ? 'invest' : (entrada ? 'entrada' : 'gasto')).toList()
       ..sort((a, b) => str(b['data']).compareTo(str(a['data'])));
     for (final d in lista) {
       final desc = str(d['desc']);
@@ -143,7 +174,9 @@ class _FormLancState extends State<FormLanc> {
   void _usarSugestao(Doc d) {
     setState(() {
       descC.text = str(d['desc']);
-      if (entrada) {
+      if (invest) {
+        if (d['ativo'] is String) ativo = d['ativo'] as String;
+      } else if (entrada) {
         catE = str(d['cat'], catE);
       } else {
         cat = str(d['cat'], cat);
@@ -174,7 +207,24 @@ class _FormLancState extends State<FormLanc> {
     final repo = RepoScope.ler(context);
     final base = Map<String, dynamic>.from(widget.doc ?? {});
     final desc = descC.text.trim();
-    if (entrada) {
+    if (invest) {
+      base.addAll({
+        'kind': 'invest',
+        'id': base['id'] ?? novoId('i'),
+        'desc': desc.isEmpty ? (resgate ? 'Resgate' : 'Aplicação') : desc,
+        'valor': (v * 100).round() / 100,
+        'data': data,
+        'mov': resgate ? 'resgate' : 'aplic',
+      });
+      if (ativo != null) {
+        base['ativo'] = ativo;
+      } else {
+        base.remove('ativo');
+      }
+      base.remove('cat');
+      base.remove('pag');
+      base.remove('fixo');
+    } else if (entrada) {
       base.addAll({
         'kind': 'entrada',
         'id': base['id'] ?? novoId('e'),
@@ -201,13 +251,13 @@ class _FormLancState extends State<FormLanc> {
     // um gasto que vira entrada (ou o contrário) troca de id para não misturar
     if (widget.doc != null && widget.doc!['kind'] != base['kind']) {
       await repo.apagar(widget.doc!['id'] as String);
-      base['id'] = novoId(entrada ? 'e' : 'g');
+      base['id'] = novoId(invest ? 'i' : (entrada ? 'e' : 'g'));
     }
     await repo.salvar(base);
     HapticFeedback.lightImpact();
     if (!mounted) return;
     Navigator.pop(context);
-    avisar(context, editando ? 'Lançamento atualizado.' : (entrada ? 'Entrada lançada.' : 'Gasto lançado.'));
+    avisar(context, editando ? 'Lançamento atualizado.' : (invest ? (resgate ? 'Resgate registrado.' : 'Investimento registrado.') : (entrada ? 'Entrada lançada.' : 'Gasto lançado.')));
   }
 
   Future<void> _excluir() async {
@@ -232,6 +282,9 @@ class _FormLancState extends State<FormLanc> {
   @override
   Widget build(BuildContext context) {
     final cats = entrada ? categoriasEntrada : categoriasGasto;
+    final repoA = RepoScope.of(context);
+    final paiIds = {for (final a in repoA.doTipo('ativo')) if (a['pai'] is String) a['pai'] as String};
+    final ativos = repoA.doTipo('ativo').map(Ativo.new).where((a) => !a.oculto && !paiIds.contains(a.id)).toList()..sort((a, b) => a.ordem.compareTo(b.ordem));
     final catAtual = entrada ? catE : cat;
     final sugs = editando ? const <Doc>[] : _sugestoes(descC.text);
     final h = hojeIso();
@@ -241,16 +294,17 @@ class _FormLancState extends State<FormLanc> {
         padding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Row(children: [
-            Expanded(child: Text(editando ? 'Editar lançamento' : (entrada ? 'Nova entrada' : 'Novo gasto'), style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w800))),
+            Expanded(child: Text(editando ? 'Editar lançamento' : (invest ? 'Investido' : (entrada ? 'Nova entrada' : 'Novo gasto')), style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w800))),
             if (editando) IconButton(tooltip: 'Excluir', onPressed: _excluir, icon: Icon(Icons.delete_outline_rounded, color: G.neg)),
           ]),
           const SizedBox(height: 12),
-          SegmentedButton<bool>(
+          SegmentedButton<String>(
             segments: const [
-              ButtonSegment(value: false, label: Text('Gasto'), icon: Icon(Icons.remove_rounded)),
-              ButtonSegment(value: true, label: Text('Entrada'), icon: Icon(Icons.add_rounded)),
+              ButtonSegment(value: 'gasto', label: Text('Gasto')),
+              ButtonSegment(value: 'entrada', label: Text('Entrada')),
+              ButtonSegment(value: 'invest', label: Text('Investido')),
             ],
-            selected: {entrada},
+            selected: {tipo},
             showSelectedIcon: false,
             style: SegmentedButton.styleFrom(
               selectedBackgroundColor: G.branco,
@@ -258,7 +312,7 @@ class _FormLancState extends State<FormLanc> {
               foregroundColor: G.texto2,
               side: BorderSide(color: G.borda),
             ),
-            onSelectionChanged: (s) => setState(() => entrada = s.first),
+            onSelectionChanged: (s) => setState(() => tipo = s.first),
           ),
           const SizedBox(height: 16),
           TextField(
@@ -266,7 +320,7 @@ class _FormLancState extends State<FormLanc> {
             focusNode: valorF,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))],
-            style: TextStyle(fontSize: 34, fontWeight: FontWeight.w800, color: entrada ? G.pos : G.texto, letterSpacing: -1),
+            style: TextStyle(fontSize: 34, fontWeight: FontWeight.w800, color: invest ? G.lavanda : (entrada ? G.pos : G.texto), letterSpacing: -1),
             decoration: InputDecoration(prefixText: 'R\$ ', prefixStyle: TextStyle(fontSize: 22, color: G.apagado, fontWeight: FontWeight.w700), hintText: '0,00', errorText: erro),
             onChanged: (_) {
               if (erro != null) setState(() => erro = null);
@@ -276,7 +330,7 @@ class _FormLancState extends State<FormLanc> {
           TextField(
             controller: descC,
             textCapitalization: TextCapitalization.sentences,
-            decoration: InputDecoration(labelText: 'Descrição', hintText: entrada ? 'Ex.: Salário' : 'Ex.: Supermercado Dia'),
+            decoration: InputDecoration(labelText: 'Descrição', hintText: invest ? 'Ex.: CDB Inter, Tesouro Selic' : (entrada ? 'Ex.: Salário' : 'Ex.: Supermercado Dia')),
             onChanged: (_) => setState(() {}),
           ),
           if (sugs.isNotEmpty)
@@ -285,12 +339,43 @@ class _FormLancState extends State<FormLanc> {
               child: Wrap(spacing: 8, runSpacing: 8, children: [
                 for (final s in sugs)
                   ActionChip(
-                    avatar: Icon((entrada ? catEntrada(str(s['cat'])) : catGasto(str(s['cat']))).icone, size: 16),
+                    avatar: Icon(invest ? Icons.savings_rounded : (entrada ? catEntrada(str(s['cat'])) : catGasto(str(s['cat']))).icone, size: 16),
                     label: Text(str(s['desc'])),
                     onPressed: () => _usarSugestao(s),
                   ),
               ]),
             ),
+          if (invest) ...[
+            const SizedBox(height: 18),
+            Text('Movimento', style: TextStyle(fontWeight: FontWeight.w700, color: G.texto2)),
+            const SizedBox(height: 10),
+            Wrap(spacing: 8, runSpacing: 8, children: [
+              for (final (r, t) in const [(false, 'Apliquei (saiu da conta)'), (true, 'Resgatei (voltou para a conta)')])
+                ChoiceChip(
+                  selected: resgate == r,
+                  label: Text(t),
+                  labelStyle: TextStyle(fontWeight: FontWeight.w700, color: resgate == r ? G.tinta : G.texto2),
+                  onSelected: (_) => setState(() => resgate = r),
+                ),
+            ]),
+            if (ativos.isNotEmpty) ...[
+              const SizedBox(height: 18),
+              Text('Onde (opcional)', style: TextStyle(fontWeight: FontWeight.w700, color: G.texto2)),
+              const SizedBox(height: 10),
+              Wrap(spacing: 8, runSpacing: 8, children: [
+                for (final a in ativos)
+                  ChoiceChip(
+                    selected: ativo == a.id,
+                    label: Text(a.nome),
+                    labelStyle: TextStyle(fontWeight: FontWeight.w700, color: ativo == a.id ? G.tinta : G.texto2),
+                    onSelected: (v) => setState(() => ativo = v ? a.id : null),
+                  ),
+              ]),
+            ],
+            const SizedBox(height: 10),
+            Text('Não entra no "Saiu" nem nos limites: aparece como Investido no Início, no Extrato e na Análise.', style: TextStyle(color: G.apagado, fontSize: 12.5)),
+          ],
+          if (!invest) ...[
           const SizedBox(height: 18),
           Text('Categoria', style: TextStyle(fontWeight: FontWeight.w700, color: G.texto2)),
           const SizedBox(height: 10),
@@ -311,7 +396,8 @@ class _FormLancState extends State<FormLanc> {
                 }),
               ),
           ]),
-          if (!entrada) ...[
+          ],
+          if (!entrada && !invest) ...[
             const SizedBox(height: 18),
             Text('Como pagou', style: TextStyle(fontWeight: FontWeight.w700, color: G.texto2)),
             const SizedBox(height: 10),
@@ -343,7 +429,7 @@ class _FormLancState extends State<FormLanc> {
               onSelected: (_) => _escolherData(),
             ),
           ]),
-          if (!entrada) ...[
+          if (!entrada && !invest) ...[
             const SizedBox(height: 10),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
@@ -354,7 +440,7 @@ class _FormLancState extends State<FormLanc> {
             ),
           ],
           const SizedBox(height: 18),
-          FilledButton(onPressed: _salvar, child: Text(editando ? 'Salvar alterações' : (entrada ? 'Lançar entrada' : 'Lançar gasto'))),
+          FilledButton(onPressed: _salvar, child: Text(editando ? 'Salvar alterações' : (invest ? (resgate ? 'Registrar resgate' : 'Registrar investimento') : (entrada ? 'Lançar entrada' : 'Lançar gasto')))),
         ]),
       ),
     );

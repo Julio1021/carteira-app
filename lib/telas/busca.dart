@@ -120,7 +120,7 @@ class _TelaBuscaState extends State<TelaBusca> {
                 Text('${e.value.length} · ${brl(e.value.where((l) => !l.ehEntrada).fold<double>(0, (a, l) => a + l.valor))}', style: TextStyle(color: G.apagado, fontSize: 12.5)),
               ]),
             ),
-            CaixaLista([for (final l in e.value) LinhaLanc(l, onTap: () => abrirFormLanc(context, doc: l.g?.d ?? l.e!.d))]),
+            CaixaLista([for (final l in e.value) LinhaLanc(l, onTap: () => abrirFormLanc(context, doc: l.doc))]),
             const SizedBox(height: 12),
           ],
         ],
