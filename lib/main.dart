@@ -6,6 +6,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'dados/demo.dart';
 import 'dados/repo.dart';
 import 'tema.dart';
+import 'telas/abertura.dart';
 import 'telas/ajustes.dart';
 import 'telas/extrato.dart';
 import 'telas/inicio.dart';
@@ -28,6 +29,7 @@ Future<void> main() async {
     aparencia.value = Uri.base.queryParameters['tema'] ?? 'escuro';
   } else {
     await carregarAparencia();
+    await carregarAbertura();
   }
   final repo = demo ? Repo.memoria(dadosDemo()) : Repo();
   if (!demo) await repo.carregar();
@@ -127,6 +129,9 @@ class _CascaState extends State<Casca> {
   String? catExtrato;
   int subPat = 0;
   bool analiseDemo = false;
+  bool abrindo = false;
+  double? congelarAbertura;
+  bool _decidiuAbertura = false;
 
   static const _titulos = ['Início', 'Extrato', 'Planejar', 'Patrimônio'];
 
@@ -139,6 +144,12 @@ class _CascaState extends State<Casca> {
       aba = (int.tryParse(q['aba'] ?? '') ?? 0).clamp(0, 3).toInt();
       subPat = (int.tryParse(q['sub'] ?? '') ?? 0).clamp(0, 3).toInt();
       analiseDemo = q['analise'] == '1';
+      final ab = double.tryParse(q['abertura'] ?? '');
+      if (ab != null) {
+        abrindo = true;
+        congelarAbertura = ab >= 1 ? null : ab;
+      }
+      _decidiuAbertura = true;
       final tela = q['tela'];
       if (tela != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -158,6 +169,14 @@ class _CascaState extends State<Casca> {
         });
       }
     }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_decidiuAbertura) return;
+    _decidiuAbertura = true;
+    abrindo = aberturaLigada.value && !MediaQuery.of(context).disableAnimations;
   }
 
   void _irAba(int i, {String filtro = 'tudo', String? cat}) {
@@ -202,6 +221,10 @@ class _CascaState extends State<Casca> {
         ),
         bottomNavigationBar: _MenuBaixo(aba: aba, onAba: _irAba, onMais: () => abrirMenuLancar(context)),
       ),
+    ).envolverAbertura(
+      abrindo,
+      congelarAbertura,
+      () => setState(() => abrindo = false),
     );
   }
 }
@@ -316,5 +339,16 @@ class _MenuBaixo extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+
+extension _ComAbertura on Widget {
+  Widget envolverAbertura(bool abrindo, double? congelar, VoidCallback onFim) {
+    if (!abrindo) return this;
+    return Stack(children: [
+      this,
+      Positioned.fill(child: Material(type: MaterialType.transparency, child: Abertura(onFim: onFim, congelar: congelar))),
+    ]);
   }
 }

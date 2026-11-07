@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../tema.dart';
+import 'abertura.dart';
 import '../widgets/comum.dart';
 import 'importar.dart';
 
@@ -103,6 +104,8 @@ class _TelaAjustesState extends State<TelaAjustes> {
         if (ocupado) const LinearProgressIndicator(minHeight: 2),
         Padding(padding: const EdgeInsets.fromLTRB(4, 8, 4, 8), child: Text('Aparência', style: TextStyle(color: G.apagado, fontWeight: FontWeight.w700))),
         const _Aparencia(),
+        const SizedBox(height: 12),
+        const _AberturaAjuste(),
         const SizedBox(height: 18),
         Padding(padding: EdgeInsets.fromLTRB(4, 0, 4, 8), child: Text('Seus dados', style: TextStyle(color: G.apagado, fontWeight: FontWeight.w700))),
         CaixaLista([
@@ -182,6 +185,35 @@ class _Aparencia extends StatelessWidget {
           ]),
         );
       },
+    );
+  }
+}
+
+
+class _AberturaAjuste extends StatelessWidget {
+  const _AberturaAjuste();
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: Listenable.merge([aberturaLigada, aberturaValor]),
+      builder: (context, _) => Container(
+        decoration: BoxDecoration(color: G.v(0x07), borderRadius: BorderRadius.circular(18), border: Border.all(color: G.borda)),
+        child: Column(children: [
+          SwitchListTile(
+            value: aberturaLigada.value,
+            onChanged: (v) => definirAbertura(ligada: v),
+            title: const Text('Animação de abertura', style: TextStyle(fontWeight: FontWeight.w700)),
+            subtitle: Text('A carteira, as moedas e o gráfico do seu patrimônio ao abrir o app. Toque na tela para pular.', style: TextStyle(color: G.apagado, fontSize: 12.5)),
+          ),
+          if (aberturaLigada.value)
+            SwitchListTile(
+              value: aberturaValor.value,
+              onChanged: (v) => definirAbertura(valor: v),
+              title: const Text('Mostrar o valor do patrimônio', style: TextStyle(fontWeight: FontWeight.w700)),
+              subtitle: Text('Desligado, ninguém vê seu saldo quando você abre o app em público.', style: TextStyle(color: G.apagado, fontSize: 12.5)),
+            ),
+        ]),
+      ),
     );
   }
 }

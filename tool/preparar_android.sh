@@ -15,6 +15,37 @@ sed -i 's/android:label="carteira"/android:label="Carteira"/' "$MANIFEST"
 grep -q 'android.permission.INTERNET' "$MANIFEST" || \
   sed -i 's#<application#<uses-permission android:name="android.permission.INTERNET"/>\n    <application#' "$MANIFEST"
 
+# tela de abertura do sistema na mesma cor da animação do app (claro/escuro)
+RES=android/app/src/main/res
+fundo() {
+  mkdir -p "$RES/$1"
+  cat > "$RES/$1/launch_background.xml" <<EOF
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item><color android:color="$2"/></item>
+</layer-list>
+EOF
+}
+fundo drawable "#F4F5F9"; fundo drawable-v21 "#F4F5F9"
+fundo drawable-night "#101119"; fundo drawable-night-v21 "#101119"
+splash31() {
+  mkdir -p "$RES/$1"
+  cat > "$RES/$1/styles.xml" <<EOF
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="LaunchTheme" parent="$2">
+        <item name="android:windowBackground">@drawable/launch_background</item>
+        <item name="android:windowSplashScreenBackground">$3</item>
+    </style>
+    <style name="NormalTheme" parent="$2">
+        <item name="android:windowBackground">?android:colorBackground</item>
+    </style>
+</resources>
+EOF
+}
+splash31 values-v31 "@android:style/Theme.Light.NoTitleBar" "#F4F5F9"
+splash31 values-night-v31 "@android:style/Theme.Black.NoTitleBar" "#101119"
+
 # web: título, cor e nome do app instalado
 sed -i 's#<title>carteira</title>#<title>Diário da Carteira</title>#' web/index.html || true
 if [ -f web/manifest.json ]; then

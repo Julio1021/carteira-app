@@ -103,6 +103,10 @@ jobs:
           tirar c6-ajustes "&tema=claro&tela=ajustes"
           tirar c7-lancar "&tema=claro&tela=lancar"
           tirar i1-investido "&tela=invest"
+          tirar a1-abertura "&abertura=0.25"
+          tirar a2-abertura "&abertura=0.5"
+          tirar a3-abertura "&abertura=0.7"
+          tirar a4-abertura-claro "&tema=claro&abertura=0.7"
           tirar i2-extrato-inv "&aba=1"
           tirar c8-cartao "&tema=claro&tela=cartao" 1300
           tirar c9-avisos "&tema=claro&tela=avisos"

@@ -30,4 +30,16 @@ void main() {
     await t.pumpAndSettle();
     expect(find.text('Novo gasto'), findsOneWidget);
   });
+
+  testWidgets('animação de abertura aparece e some sozinha', (t) async {
+    t.view.physicalSize = const Size(1170, 2532);
+    t.view.devicePixelRatio = 3;
+    addTearDown(t.view.reset);
+    await t.pumpWidget(AppCarteira(repo: Repo.memoria(dadosDemo())));
+    await t.pump(const Duration(milliseconds: 1300));
+    expect(find.text('Diário da Carteira'), findsOneWidget);
+    await t.pumpAndSettle();
+    expect(find.text('Diário da Carteira'), findsNothing);
+    expect(find.text('Entrou'), findsOneWidget);
+  });
 }
