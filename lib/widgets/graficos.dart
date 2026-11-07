@@ -19,12 +19,12 @@ class _Entrada extends StatelessWidget {
       );
 }
 
-const _estiloEixo = TextStyle(color: G.apagado, fontSize: 10, fontWeight: FontWeight.w600);
+TextStyle get _estiloEixo => TextStyle(color: G.apagado, fontSize: 10, fontWeight: FontWeight.w600);
 
 FlGridData _grade() => FlGridData(
       show: true,
       drawVerticalLine: false,
-      getDrawingHorizontalLine: (_) => const FlLine(color: Color(0x12FFFFFF), strokeWidth: 1),
+      getDrawingHorizontalLine: (_) => FlLine(color: G.v(0x12), strokeWidth: 1),
     );
 
 /// Gráfico de linhas com toque mostrando os valores.
@@ -122,7 +122,7 @@ class GraficoLinha extends StatelessWidget {
                       label: HorizontalLineLabel(
                         show: nomeLinhaH != null,
                         alignment: Alignment.bottomRight,
-                        style: const TextStyle(color: G.neg, fontSize: 10, fontWeight: FontWeight.w700),
+                        style: TextStyle(color: G.neg, fontSize: 10, fontWeight: FontWeight.w700),
                         labelResolver: (_) => nomeLinhaH ?? '',
                       ),
                     ),
@@ -130,7 +130,7 @@ class GraficoLinha extends StatelessWidget {
             lineTouchData: LineTouchData(
               handleBuiltInTouches: true,
               touchTooltipData: LineTouchTooltipData(
-                getTooltipColor: (_) => const Color(0xF2232434),
+                getTooltipColor: (_) => G.dica,
                 tooltipBorderRadius: BorderRadius.circular(12),
                 fitInsideHorizontally: true,
                 fitInsideVertically: true,
@@ -250,7 +250,7 @@ class GraficoBarras extends StatelessWidget {
                 if (onToque != null && ev is FlTapUpEvent && resp?.spot != null) onToque!(resp!.spot!.touchedBarGroupIndex);
               },
               touchTooltipData: BarTouchTooltipData(
-                getTooltipColor: (_) => const Color(0xF2232434),
+                getTooltipColor: (_) => G.dica,
                 tooltipBorderRadius: BorderRadius.circular(12),
                 fitInsideHorizontally: true,
                 fitInsideVertically: true,
@@ -319,7 +319,7 @@ class _RoscaState extends State<Rosca> {
                 widget.onToque?.call(novo);
               }),
               sections: tot <= 0
-                  ? [PieChartSectionData(value: 1, color: const Color(0x1FFFFFFF), radius: raio * .3, showTitle: false)]
+                  ? [PieChartSectionData(value: 1, color: G.v(0x1F), radius: raio * .3, showTitle: false)]
                   : [
                       for (var i = 0; i < widget.valores.length; i++)
                         if (widget.valores[i] > 0)
@@ -335,7 +335,7 @@ class _RoscaState extends State<Rosca> {
         ),
         Column(mainAxisSize: MainAxisSize.min, children: [
           Text(widget.centro, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
-          if (widget.sub.isNotEmpty) Text(widget.sub, textAlign: TextAlign.center, style: const TextStyle(color: G.apagado, fontSize: 11.5)),
+          if (widget.sub.isNotEmpty) Text(widget.sub, textAlign: TextAlign.center, style: TextStyle(color: G.apagado, fontSize: 11.5)),
         ]),
       ]),
     );
@@ -363,6 +363,6 @@ class Legenda extends StatelessWidget {
             ? SizedBox(width: 14, height: 3, child: Row(children: [Container(width: 5, color: cor), const SizedBox(width: 3), Container(width: 5, color: cor)]))
             : Container(width: 10, height: 10, decoration: BoxDecoration(color: cor, borderRadius: BorderRadius.circular(3))),
         const SizedBox(width: 6),
-        Text(t, style: const TextStyle(color: G.apagado, fontSize: 12)),
+        Text(t, style: TextStyle(color: G.apagado, fontSize: 12)),
       ]);
 }

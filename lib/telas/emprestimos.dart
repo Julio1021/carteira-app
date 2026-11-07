@@ -23,7 +23,7 @@ class TelaEmprestimos extends StatelessWidget {
         label: const Text('Novo empréstimo', style: TextStyle(fontWeight: FontWeight.w800)),
       ),
       body: l.isEmpty
-          ? const Center(
+          ? Center(
               child: Padding(
                 padding: EdgeInsets.all(30),
                 child: Text('Emprestou dinheiro para alguém? Cadastre o valor, quando a pessoa começa a pagar e em quantas parcelas. O app mostra quanto falta e avisa parcela atrasada.',
@@ -58,14 +58,14 @@ class _CartaoEmpState extends State<_CartaoEmp> {
           Container(
             width: 42,
             height: 42,
-            decoration: BoxDecoration(color: const Color(0x29B9BFF6), borderRadius: BorderRadius.circular(14)),
-            child: Center(child: Text(e.pessoa.isEmpty ? '?' : e.pessoa[0].toUpperCase(), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: Color(0xFFC9CDFB)))),
+            decoration: BoxDecoration(color: G.lavandaFundo, borderRadius: BorderRadius.circular(14)),
+            child: Center(child: Text(e.pessoa.isEmpty ? '?' : e.pessoa[0].toUpperCase(), style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: G.lavandaIcone))),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(e.pessoa, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
-              Text('${brl(e.valor)} em ${dataBr(e.data)}${e.obs.isNotEmpty ? ' · ${e.obs}' : ''}', style: const TextStyle(color: G.apagado, fontSize: 12.5)),
+              Text('${brl(e.valor)} em ${dataBr(e.data)}${e.obs.isNotEmpty ? ' · ${e.obs}' : ''}', style: TextStyle(color: G.apagado, fontSize: 12.5)),
             ]),
           ),
           IconButton(tooltip: 'Editar', onPressed: () => abrirFolha(context, FormEmprestimo(doc: e.d)), icon: const Icon(Icons.edit_outlined, size: 20)),
@@ -74,7 +74,7 @@ class _CartaoEmpState extends State<_CartaoEmp> {
         Barra(e.valor > 0 ? d.recebido / e.valor : 0, cor: G.pos),
         const SizedBox(height: 6),
         Row(children: [
-          Expanded(child: Text('Recebido ${brl(d.recebido)}', style: const TextStyle(color: G.pos, fontWeight: FontWeight.w700, fontSize: 13))),
+          Expanded(child: Text('Recebido ${brl(d.recebido)}', style: TextStyle(color: G.pos, fontWeight: FontWeight.w700, fontSize: 13))),
           Text(d.quitado ? 'Quitado 🎉' : 'Falta ${brl(d.falta)}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
         ]),
         if (!d.quitado && d.prox != null) ...[
@@ -107,7 +107,7 @@ class _CartaoEmpState extends State<_CartaoEmp> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   child: Row(children: [
-                    SizedBox(width: 36, child: Text('${p.k}ª', style: const TextStyle(color: G.apagado, fontWeight: FontWeight.w700))),
+                    SizedBox(width: 36, child: Text('${p.k}ª', style: TextStyle(color: G.apagado, fontWeight: FontWeight.w700))),
                     Expanded(child: Text(dataBr(p.venc))),
                     Text(brl(p.valor), style: const TextStyle(fontWeight: FontWeight.w700)),
                     const SizedBox(width: 10),
@@ -126,8 +126,8 @@ class _CartaoEmpState extends State<_CartaoEmp> {
               for (final r in d.recebimentos.reversed)
                 ListTile(
                   dense: true,
-                  title: Text(brl(numD(r['valor'])), style: const TextStyle(fontWeight: FontWeight.w700, color: G.pos)),
-                  subtitle: Text('em ${dataBr(str(r['data'], hojeIso()))}', style: const TextStyle(color: G.apagado)),
+                  title: Text(brl(numD(r['valor'])), style: TextStyle(fontWeight: FontWeight.w700, color: G.pos)),
+                  subtitle: Text('em ${dataBr(str(r['data'], hojeIso()))}', style: TextStyle(color: G.apagado)),
                   trailing: IconButton(
                     tooltip: 'Desfazer',
                     icon: const Icon(Icons.undo_rounded, size: 20),
@@ -177,7 +177,7 @@ class _FolhaReceberState extends State<FolhaReceber> {
         value: lancar,
         onChanged: (v) => setState(() => lancar = v),
         title: const Text('Lançar também nas entradas', style: TextStyle(fontWeight: FontWeight.w700)),
-        subtitle: const Text('Desligue se o Pix já veio no extrato importado.', style: TextStyle(color: G.apagado, fontSize: 12.5)),
+        subtitle: Text('Desligue se o Pix já veio no extrato importado.', style: TextStyle(color: G.apagado, fontSize: 12.5)),
       ),
       const SizedBox(height: 12),
       FilledButton(
@@ -244,7 +244,7 @@ class _FormEmprestimoState extends State<FormEmprestimo> {
         ],
         onChanged: (x) => setState(() => parc = x ?? parc),
       ),
-      if (parc > 1 && v > 0) Padding(padding: const EdgeInsets.only(top: 6), child: Text('$parc × ${brl(v / parc)}', style: const TextStyle(color: G.lavanda, fontWeight: FontWeight.w700))),
+      if (parc > 1 && v > 0) Padding(padding: const EdgeInsets.only(top: 6), child: Text('$parc × ${brl(v / parc)}', style: TextStyle(color: G.lavanda, fontWeight: FontWeight.w700))),
       if (parc > 0) ...[
         const SizedBox(height: 12),
         Row(children: [

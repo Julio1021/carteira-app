@@ -16,7 +16,7 @@ Future<void> abrirMenuLancar(BuildContext context) async {
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
           const Text('Lançar', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
-          const Text('O que você quer registrar?', style: TextStyle(color: G.apagado)),
+          Text('O que você quer registrar?', style: TextStyle(color: G.apagado)),
           const SizedBox(height: 14),
           Row(children: [
             Expanded(child: _OpcaoMenu(Icons.remove_rounded, 'Gasto', 'Débito, Pix, dinheiro', () => Navigator.pop(c, 'gasto'), destaque: true)),
@@ -47,12 +47,12 @@ class _OpcaoMenu extends StatelessWidget {
         Container(
           width: 40,
           height: 40,
-          decoration: BoxDecoration(color: destaque ? G.branco : const Color(0x14FFFFFF), borderRadius: BorderRadius.circular(13)),
+          decoration: BoxDecoration(color: destaque ? G.branco : G.v(0x14), borderRadius: BorderRadius.circular(13)),
           child: Icon(ic, color: destaque ? G.tinta : (corIcone ?? G.texto)),
         ),
         const SizedBox(height: 14),
         Text(t, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
-        Text(sub, style: const TextStyle(color: G.apagado, fontSize: 12.5)),
+        Text(sub, style: TextStyle(color: G.apagado, fontSize: 12.5)),
       ]),
     );
   }
@@ -242,7 +242,7 @@ class _FormLancState extends State<FormLanc> {
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Row(children: [
             Expanded(child: Text(editando ? 'Editar lançamento' : (entrada ? 'Nova entrada' : 'Novo gasto'), style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w800))),
-            if (editando) IconButton(tooltip: 'Excluir', onPressed: _excluir, icon: const Icon(Icons.delete_outline_rounded, color: G.neg)),
+            if (editando) IconButton(tooltip: 'Excluir', onPressed: _excluir, icon: Icon(Icons.delete_outline_rounded, color: G.neg)),
           ]),
           const SizedBox(height: 12),
           SegmentedButton<bool>(
@@ -256,7 +256,7 @@ class _FormLancState extends State<FormLanc> {
               selectedBackgroundColor: G.branco,
               selectedForegroundColor: G.tinta,
               foregroundColor: G.texto2,
-              side: const BorderSide(color: G.borda),
+              side: BorderSide(color: G.borda),
             ),
             onSelectionChanged: (s) => setState(() => entrada = s.first),
           ),
@@ -267,7 +267,7 @@ class _FormLancState extends State<FormLanc> {
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))],
             style: TextStyle(fontSize: 34, fontWeight: FontWeight.w800, color: entrada ? G.pos : G.texto, letterSpacing: -1),
-            decoration: InputDecoration(prefixText: 'R\$ ', prefixStyle: const TextStyle(fontSize: 22, color: G.apagado, fontWeight: FontWeight.w700), hintText: '0,00', errorText: erro),
+            decoration: InputDecoration(prefixText: 'R\$ ', prefixStyle: TextStyle(fontSize: 22, color: G.apagado, fontWeight: FontWeight.w700), hintText: '0,00', errorText: erro),
             onChanged: (_) {
               if (erro != null) setState(() => erro = null);
             },
@@ -292,7 +292,7 @@ class _FormLancState extends State<FormLanc> {
               ]),
             ),
           const SizedBox(height: 18),
-          const Text('Categoria', style: TextStyle(fontWeight: FontWeight.w700, color: G.texto2)),
+          Text('Categoria', style: TextStyle(fontWeight: FontWeight.w700, color: G.texto2)),
           const SizedBox(height: 10),
           Wrap(spacing: 8, runSpacing: 8, children: [
             for (final c in cats)
@@ -313,7 +313,7 @@ class _FormLancState extends State<FormLanc> {
           ]),
           if (!entrada) ...[
             const SizedBox(height: 18),
-            const Text('Como pagou', style: TextStyle(fontWeight: FontWeight.w700, color: G.texto2)),
+            Text('Como pagou', style: TextStyle(fontWeight: FontWeight.w700, color: G.texto2)),
             const SizedBox(height: 10),
             Wrap(spacing: 8, runSpacing: 8, children: [
               for (final p in formasPagamento)
@@ -326,7 +326,7 @@ class _FormLancState extends State<FormLanc> {
             ]),
           ],
           const SizedBox(height: 18),
-          const Text('Data', style: TextStyle(fontWeight: FontWeight.w700, color: G.texto2)),
+          Text('Data', style: TextStyle(fontWeight: FontWeight.w700, color: G.texto2)),
           const SizedBox(height: 10),
           Wrap(spacing: 8, runSpacing: 8, children: [
             ChoiceChip(selected: data == h, label: const Text('Hoje'), labelStyle: TextStyle(fontWeight: FontWeight.w700, color: data == h ? G.tinta : G.texto2), onSelected: (_) => setState(() => data = h)),
@@ -350,7 +350,7 @@ class _FormLancState extends State<FormLanc> {
               value: fixo,
               onChanged: (v) => setState(() => fixo = v),
               title: const Text('Gasto fixo', style: TextStyle(fontWeight: FontWeight.w700)),
-              subtitle: const Text('Repete todo mês (aluguel, internet…). O app lembra de lançar.', style: TextStyle(color: G.apagado, fontSize: 12.5)),
+              subtitle: Text('Repete todo mês (aluguel, internet…). O app lembra de lançar.', style: TextStyle(color: G.apagado, fontSize: 12.5)),
             ),
           ],
           const SizedBox(height: 18),

@@ -23,26 +23,76 @@ import 'widgets/comum.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.light,
-    systemNavigationBarColor: G.fundo,
-    systemNavigationBarIconBrightness: Brightness.light,
-  ));
   final demo = kIsWeb && Uri.base.queryParameters['demo'] == '1';
+  if (demo) {
+    aparencia.value = Uri.base.queryParameters['tema'] ?? 'escuro';
+  } else {
+    await carregarAparencia();
+  }
   final repo = demo ? Repo.memoria(dadosDemo()) : Repo();
   if (!demo) await repo.carregar();
   runApp(AppCarteira(repo: repo));
 }
 
-class AppCarteira extends StatelessWidget {
+/// Liga/desliga o tema claro a partir da escolha em Ajustes e do tema do celular.
+bool resolverClaro(String modo, Brightness celular) => modo == 'claro' || (modo == 'auto' && celular == Brightness.light);
+
+void _barrasDoSistema() {
+  final icones = G.claro ? Brightness.dark : Brightness.light;
+  SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: icones,
+    statusBarBrightness: G.claro ? Brightness.light : Brightness.dark,
+    systemNavigationBarColor: G.fundo,
+    systemNavigationBarIconBrightness: icones,
+  ));
+}
+
+class AppCarteira extends StatefulWidget {
   final Repo repo;
   const AppCarteira({super.key, required this.repo});
+  @override
+  State<AppCarteira> createState() => _AppCarteiraState();
+}
+
+class _AppCarteiraState extends State<AppCarteira> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    aparencia.addListener(_aplicar);
+    G.claro = resolverClaro(aparencia.value, WidgetsBinding.instance.platformDispatcher.platformBrightness);
+    _barrasDoSistema();
+  }
+
+  @override
+  void dispose() {
+    aparencia.removeListener(_aplicar);
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangePlatformBrightness() => _aplicar();
+
+  void _aplicar() {
+    final claro = resolverClaro(aparencia.value, WidgetsBinding.instance.platformDispatcher.platformBrightness);
+    if (claro == G.claro || !mounted) return;
+    G.claro = claro;
+    _barrasDoSistema();
+    setState(() {});
+    // As cores vêm de G (estático): pede para todas as telas abertas se redesenharem.
+    void refazer(Element e) {
+      e.markNeedsBuild();
+      e.visitChildren(refazer);
+    }
+    (context as Element).visitChildren(refazer);
+  }
 
   @override
   Widget build(BuildContext context) {
     return RepoScope(
-      repo: repo,
+      repo: widget.repo,
       child: MaterialApp(
         title: 'Diário da Carteira',
         debugShowCheckedModeBanner: false,
@@ -167,7 +217,7 @@ class _Cabecalho extends StatelessWidget {
         ClipRRect(borderRadius: BorderRadius.circular(13), child: Image.asset('assets/icone.png', width: 42, height: 42, errorBuilder: (_, __, ___) => const SizedBox(width: 42, height: 42))),
         Expanded(
           child: Column(children: [
-            const Text('DIÁRIO DA CARTEIRA', style: TextStyle(fontSize: 10, letterSpacing: 1.2, color: G.apagado, fontWeight: FontWeight.w700)),
+            Text('DIÁRIO DA CARTEIRA', style: TextStyle(fontSize: 10, letterSpacing: 1.2, color: G.apagado, fontWeight: FontWeight.w700)),
             Text(titulo, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800)),
           ]),
         ),
@@ -177,8 +227,8 @@ class _Cabecalho extends StatelessWidget {
           tooltip: 'Ajustes',
           onPressed: () => Navigator.of(context).pushNamed('/ajustes'),
           style: IconButton.styleFrom(
-            backgroundColor: const Color(0x10FFFFFF),
-            side: const BorderSide(color: G.borda),
+            backgroundColor: G.v(0x10),
+            side: BorderSide(color: G.borda),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             fixedSize: const Size(42, 42),
           ),
@@ -206,9 +256,9 @@ class _MenuBaixo extends StatelessWidget {
           child: FittedBox(
             fit: BoxFit.scaleDown,
             child: Column(mainAxisSize: MainAxisSize.min, children: [
-              Icon(on ? icOn : ic, color: on ? G.branco : const Color(0xFF80849B)),
+              Icon(on ? icOn : ic, color: on ? G.branco : G.navApagado),
               const SizedBox(height: 3),
-              Text(t, maxLines: 1, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: on ? G.branco : const Color(0xFF80849B))),
+              Text(t, maxLines: 1, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: on ? G.branco : G.navApagado)),
               const SizedBox(height: 3),
               AnimatedContainer(duration: const Duration(milliseconds: 200), width: on ? 18 : 0, height: 3, decoration: BoxDecoration(color: G.branco, borderRadius: BorderRadius.circular(3))),
             ]),
@@ -227,10 +277,10 @@ class _MenuBaixo extends StatelessWidget {
             Container(
               height: 68,
               decoration: BoxDecoration(
-                color: const Color(0xEB1E1F2C),
+                color: G.navFundo,
                 borderRadius: BorderRadius.circular(28),
-                border: Border.all(color: const Color(0x14FFFFFF)),
-                boxShadow: const [BoxShadow(color: Color(0xD9000000), blurRadius: 40, offset: Offset(0, 22), spreadRadius: -16)],
+                border: Border.all(color: G.v(0x14)),
+                boxShadow: [BoxShadow(color: G.sombra(0xD9), blurRadius: 40, offset: Offset(0, 22), spreadRadius: -16)],
               ),
               child: Row(children: [
                 item(0, Icons.home_outlined, Icons.home_rounded, 'Início'),
@@ -245,7 +295,7 @@ class _MenuBaixo extends StatelessWidget {
               child: Container(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  boxShadow: [const BoxShadow(color: Color(0xE6000000), blurRadius: 30, offset: Offset(0, 16), spreadRadius: -10), BoxShadow(color: G.fundo, spreadRadius: 6)],
+                  boxShadow: [BoxShadow(color: G.sombra(0xE6), blurRadius: 30, offset: Offset(0, 16), spreadRadius: -10), BoxShadow(color: G.fundo, spreadRadius: 6)],
                 ),
                 child: Material(
                   color: G.branco,
@@ -256,7 +306,7 @@ class _MenuBaixo extends StatelessWidget {
                       HapticFeedback.lightImpact();
                       onMais();
                     },
-                    child: const SizedBox(width: 62, height: 62, child: Icon(Icons.add_rounded, color: G.tinta, size: 32, semanticLabel: 'Lançar')),
+                    child: SizedBox(width: 62, height: 62, child: Icon(Icons.add_rounded, color: G.tinta, size: 32, semanticLabel: 'Lançar')),
                   ),
                 ),
               ),

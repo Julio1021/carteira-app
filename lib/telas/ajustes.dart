@@ -90,30 +90,33 @@ class _TelaAjustesState extends State<TelaAjustes> {
           leading: Container(
             width: 40,
             height: 40,
-            decoration: BoxDecoration(color: const Color(0x14FFFFFF), borderRadius: BorderRadius.circular(13)),
+            decoration: BoxDecoration(color: G.v(0x14), borderRadius: BorderRadius.circular(13)),
             child: Icon(i, color: cor ?? G.texto),
           ),
           title: Text(t, style: TextStyle(fontWeight: FontWeight.w700, color: cor)),
-          subtitle: Text(s, style: const TextStyle(color: G.apagado, fontSize: 12.5)),
-          trailing: const Icon(Icons.chevron_right_rounded, color: G.apagado),
+          subtitle: Text(s, style: TextStyle(color: G.apagado, fontSize: 12.5)),
+          trailing: Icon(Icons.chevron_right_rounded, color: G.apagado),
         );
     return Scaffold(
       appBar: AppBar(title: const Text('Ajustes', style: TextStyle(fontWeight: FontWeight.w800))),
       body: ListView(padding: const EdgeInsets.fromLTRB(14, 4, 14, 40), children: [
         if (ocupado) const LinearProgressIndicator(minHeight: 2),
-        const Padding(padding: EdgeInsets.fromLTRB(4, 8, 4, 8), child: Text('Seus dados', style: TextStyle(color: G.apagado, fontWeight: FontWeight.w700))),
+        Padding(padding: const EdgeInsets.fromLTRB(4, 8, 4, 8), child: Text('Aparência', style: TextStyle(color: G.apagado, fontWeight: FontWeight.w700))),
+        const _Aparencia(),
+        const SizedBox(height: 18),
+        Padding(padding: EdgeInsets.fromLTRB(4, 0, 4, 8), child: Text('Seus dados', style: TextStyle(color: G.apagado, fontWeight: FontWeight.w700))),
         CaixaLista([
           item(Icons.file_upload_outlined, 'Importar backup', 'Traga o arquivo .json exportado do app antigo ou deste app', _importar),
           item(Icons.file_download_outlined, 'Exportar backup', 'Salva uma cópia de tudo (${repo.totalRegistros} registros)', _exportar),
         ]),
         const SizedBox(height: 18),
-        const Padding(padding: EdgeInsets.fromLTRB(4, 0, 4, 8), child: Text('Importar do banco', style: TextStyle(color: G.apagado, fontWeight: FontWeight.w700))),
+        Padding(padding: EdgeInsets.fromLTRB(4, 0, 4, 8), child: Text('Importar do banco', style: TextStyle(color: G.apagado, fontWeight: FontWeight.w700))),
         CaixaLista([
           item(Icons.account_balance_outlined, 'Extrato da conta (OFX)', 'Gastos e entradas do Inter, Nubank, Mercado Pago…', () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TelaImportarExtrato()))),
           item(Icons.picture_as_pdf_outlined, 'Investimentos do Inter (PDF)', 'Extrato de movimentações: aplicações e resgates', () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TelaImportarInter()))),
         ]),
         const SizedBox(height: 18),
-        const Padding(padding: EdgeInsets.fromLTRB(4, 0, 4, 8), child: Text('Em breve', style: TextStyle(color: G.apagado, fontWeight: FontWeight.w700))),
+        Padding(padding: EdgeInsets.fromLTRB(4, 0, 4, 8), child: Text('Em breve', style: TextStyle(color: G.apagado, fontWeight: FontWeight.w700))),
         CaixaLista([
           item(Icons.cloud_sync_outlined, 'Sincronizar com o Google Drive', 'O mesmo arquivo do site, para celular e PC ficarem iguais', null),
         ]),
@@ -122,8 +125,63 @@ class _TelaAjustesState extends State<TelaAjustes> {
           item(Icons.delete_forever_outlined, 'Apagar dados deste aparelho', 'Não mexe no Drive nem em backups salvos', _apagarTudo, cor: G.neg),
         ]),
         const SizedBox(height: 24),
-        const Center(child: Text('Diário da Carteira · versão 0.1', style: TextStyle(color: G.apagado, fontSize: 12))),
+        Center(child: Text('Diário da Carteira · versão 0.1', style: TextStyle(color: G.apagado, fontSize: 12))),
       ]),
+    );
+  }
+}
+
+
+class _Aparencia extends StatelessWidget {
+  const _Aparencia();
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<String>(
+      valueListenable: aparencia,
+      builder: (context, modo, _) {
+        Widget op(String v, IconData i, String t) {
+          final on = modo == v;
+          return Expanded(
+            child: Material(
+              color: on ? G.branco : Colors.transparent,
+              borderRadius: BorderRadius.circular(13),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(13),
+                onTap: () => definirAparencia(v),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  child: Column(children: [
+                    Icon(i, size: 20, color: on ? G.tinta : G.texto2),
+                    const SizedBox(height: 4),
+                    Text(t, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5, color: on ? G.tinta : G.texto2)),
+                  ]),
+                ),
+              ),
+            ),
+          );
+        }
+
+        return Container(
+          padding: const EdgeInsets.all(5),
+          decoration: BoxDecoration(color: G.v(0x07), borderRadius: BorderRadius.circular(18), border: Border.all(color: G.borda)),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Row(children: [
+              op('auto', Icons.brightness_auto_rounded, 'Automático'),
+              const SizedBox(width: 4),
+              op('claro', Icons.light_mode_rounded, 'Claro'),
+              const SizedBox(width: 4),
+              op('escuro', Icons.dark_mode_rounded, 'Escuro'),
+            ]),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
+              child: Text(
+                modo == 'auto' ? 'Segue o tema do celular: claro de dia, escuro quando o celular estiver no modo escuro.' : (modo == 'claro' ? 'Tema claro (Pérola).' : 'Tema escuro (Grafite).'),
+                style: TextStyle(color: G.apagado, fontSize: 12),
+              ),
+            ),
+          ]),
+        );
+      },
     );
   }
 }

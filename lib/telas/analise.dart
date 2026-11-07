@@ -9,8 +9,8 @@ import '../util/fmt.dart';
 import '../widgets/comum.dart';
 import '../widgets/graficos.dart';
 
-const corEntrada = G.pos;
-const corSaida = Color(0xFFFF7A8C);
+Color get corEntrada => G.pos;
+Color get corSaida => G.saida;
 const corAnterior = Color(0xFF8C90A6);
 
 /// Aba "Análise" do Extrato: gráficos que contam a história do mês.
@@ -61,20 +61,20 @@ class _Destaque extends StatelessWidget {
     final ant = rit.anteriorMesmoDia, atual = rit.gastoAteHoje;
     final varAnt = ant > 0 ? atual / ant - 1 : null;
     return Cartao(
-      gradiente: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0x33B9BFF6), Color(0x0AFFFFFF)]),
+      gradiente: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [G.lavandaFundo, G.v(0x0A)]),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          const Icon(Icons.auto_awesome_rounded, color: G.lavanda, size: 18),
+          Icon(Icons.auto_awesome_rounded, color: G.lavanda, size: 18),
           const SizedBox(width: 8),
-          Text(emAndamento ? 'Resumo até hoje' : 'Resumo de $mesNome', style: const TextStyle(color: G.lavanda, fontWeight: FontWeight.w800)),
+          Text(emAndamento ? 'Resumo até hoje' : 'Resumo de $mesNome', style: TextStyle(color: G.lavanda, fontWeight: FontWeight.w800)),
         ]),
         const SizedBox(height: 10),
         Text.rich(
-          TextSpan(style: const TextStyle(fontSize: 15.5, height: 1.45, color: G.texto), children: [
+          TextSpan(style: TextStyle(fontSize: 15.5, height: 1.45, color: G.texto), children: [
             TextSpan(text: emAndamento ? 'Até o dia ${rit.diaHoje}, entraram ' : 'Em $mesNome entraram '),
             TextSpan(text: brl(r.entrou), style: const TextStyle(fontWeight: FontWeight.w800, color: corEntrada)),
             const TextSpan(text: ' e saíram '),
-            TextSpan(text: brl(r.saiu), style: const TextStyle(fontWeight: FontWeight.w800, color: corSaida)),
+            TextSpan(text: brl(r.saiu), style: TextStyle(fontWeight: FontWeight.w800, color: corSaida)),
             const TextSpan(text: '. '),
             if (r.entrou > 0) ...[
               TextSpan(text: r.sobra >= 0 ? 'Sobraram ' : 'Faltaram '),
@@ -90,7 +90,7 @@ class _Destaque extends StatelessWidget {
             varAnt.abs() < .05
                 ? 'Você está gastando no mesmo ritmo do mês passado.'
                 : 'Você gastou ${(varAnt.abs() * 100).round()}% ${varAnt > 0 ? 'a mais' : 'a menos'} que no mesmo dia do mês passado (${brl(ant)}).',
-            style: TextStyle(color: varAnt > .05 ? const Color(0xFFFF8DA0) : (varAnt < -.05 ? G.pos : G.texto2), fontWeight: FontWeight.w600, fontSize: 13),
+            style: TextStyle(color: varAnt > .05 ? G.negTexto : (varAnt < -.05 ? G.pos : G.texto2), fontWeight: FontWeight.w600, fontSize: 13),
           ),
         ],
       ]),
@@ -124,7 +124,7 @@ class _EntrouSaiu extends StatelessWidget {
               selectedBackgroundColor: G.branco,
               selectedForegroundColor: G.tinta,
               foregroundColor: G.texto2,
-              side: const BorderSide(color: G.borda),
+              side: BorderSide(color: G.borda),
               visualDensity: VisualDensity.compact,
               textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
             ),
@@ -132,12 +132,12 @@ class _EntrouSaiu extends StatelessWidget {
           ),
         ]),
         const SizedBox(height: 2),
-        const Text('Toque num mês para ver os valores. Embaixo, quanto sobrou.', style: TextStyle(color: G.apagado, fontSize: 12.5)),
+        Text('Toque num mês para ver os valores. Embaixo, quanto sobrou.', style: TextStyle(color: G.apagado, fontSize: 12.5)),
         const SizedBox(height: 14),
         GraficoBarras(
           rotulos: [for (final m in hist) abr(m.ym)],
           valores: [for (final m in hist) [m.entrou, m.saiu]],
-          cores: const [corEntrada, corSaida],
+          cores: [corEntrada, corSaida],
           nomes: const ['Entrou', 'Saiu'],
           formatoY: curto,
           selecionado: hist.indexWhere((m) => m.ym == ym),
@@ -146,7 +146,7 @@ class _EntrouSaiu extends StatelessWidget {
           coresRodape: [for (final m in hist) m.sobra >= 0 ? G.pos : corSaida],
         ),
         const SizedBox(height: 10),
-        Wrap(spacing: 16, runSpacing: 6, children: const [Legenda(corEntrada, 'Entrou'), Legenda(corSaida, 'Saiu')]),
+        Wrap(spacing: 16, runSpacing: 6, children: [Legenda(corEntrada, 'Entrou'), Legenda(corSaida, 'Saiu')]),
         if (comDados.length >= 2) ...[
           const SizedBox(height: 12),
           Row(children: [
@@ -165,7 +165,7 @@ class _MiniInfo extends StatelessWidget {
   const _MiniInfo(this.t, this.v, this.cor);
   @override
   Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(t, style: const TextStyle(color: G.apagado, fontSize: 12)),
+        Text(t, style: TextStyle(color: G.apagado, fontSize: 12)),
         const SizedBox(height: 2),
         Text(v, style: TextStyle(fontWeight: FontWeight.w800, color: cor, fontSize: 13.5)),
       ]);
@@ -193,7 +193,7 @@ class _RitmoCard extends StatelessWidget {
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         const Text('Ritmo dos gastos', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
         const SizedBox(height: 2),
-        Text(frase, style: const TextStyle(color: G.texto2, fontSize: 12.5)),
+        Text(frase, style: TextStyle(color: G.texto2, fontSize: 12.5)),
         const SizedBox(height: 14),
         GraficoLinha(
           series: [rit.atual, rit.anterior, if (temMedia) rit.media],
@@ -212,19 +212,19 @@ class _RitmoCard extends StatelessWidget {
         Wrap(spacing: 14, runSpacing: 6, children: [
           Legenda(corSaida, mesNome),
           Legenda(corAnterior, ant, tracejada: true),
-          if (temMedia) const Legenda(G.lavanda, 'sua média', tracejada: true),
-          if (rit.limite > 0) const Legenda(G.neg, 'limite', tracejada: true),
+          if (temMedia) Legenda(G.lavanda, 'sua média', tracejada: true),
+          if (rit.limite > 0) Legenda(G.neg, 'limite', tracejada: true),
         ]),
         if (projecao != null) ...[
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: const Color(0x0DFFFFFF), borderRadius: BorderRadius.circular(14)),
+            decoration: BoxDecoration(color: G.v(0x0D), borderRadius: BorderRadius.circular(14)),
             child: Row(children: [
-              const Icon(Icons.timeline_rounded, color: G.lavanda, size: 20),
+              Icon(Icons.timeline_rounded, color: G.lavanda, size: 20),
               const SizedBox(width: 10),
               Expanded(
-                child: Text.rich(TextSpan(style: const TextStyle(fontSize: 13, color: G.texto2), children: [
+                child: Text.rich(TextSpan(style: TextStyle(fontSize: 13, color: G.texto2), children: [
                   const TextSpan(text: 'Nesse ritmo, o mês fecha perto de '),
                   TextSpan(text: brl(projecao), style: TextStyle(fontWeight: FontWeight.w800, color: rit.limite > 0 && projecao > rit.limite ? corSaida : G.texto)),
                   if (rit.limite > 0) TextSpan(text: projecao > rit.limite ? ', acima do limite de ${brl(rit.limite)}.' : ', dentro do limite de ${brl(rit.limite)}.'),
@@ -265,7 +265,7 @@ class _OndeFoiState extends State<_OndeFoi> {
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         const Text('Para onde foi o dinheiro', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
         const SizedBox(height: 2),
-        const Text('Toque numa fatia ou numa categoria para ver os gastos dela.', style: TextStyle(color: G.apagado, fontSize: 12.5)),
+        Text('Toque numa fatia ou numa categoria para ver os gastos dela.', style: TextStyle(color: G.apagado, fontSize: 12.5)),
         const SizedBox(height: 14),
         Center(
           child: Rosca(
@@ -288,10 +288,10 @@ class _OndeFoiState extends State<_OndeFoi> {
                 Container(width: 12, height: 12, decoration: BoxDecoration(color: cores[i], borderRadius: BorderRadius.circular(4))),
                 const SizedBox(width: 10),
                 Expanded(child: Text(nomes[i], style: TextStyle(fontWeight: sel == i ? FontWeight.w800 : FontWeight.w600))),
-                Text(pct(valores[i] / r.saiu, casas: 0), style: const TextStyle(color: G.apagado, fontSize: 12.5)),
+                Text(pct(valores[i] / r.saiu, casas: 0), style: TextStyle(color: G.apagado, fontSize: 12.5)),
                 const SizedBox(width: 12),
                 SizedBox(width: 92, child: Text(brl(valores[i]), textAlign: TextAlign.right, style: const TextStyle(fontWeight: FontWeight.w800))),
-                if (cats[i] != null) const Icon(Icons.chevron_right_rounded, size: 18, color: G.apagado),
+                if (cats[i] != null) Icon(Icons.chevron_right_rounded, size: 18, color: G.apagado),
               ]),
             ),
           ),
@@ -317,7 +317,7 @@ class _Comparativo extends StatelessWidget {
         const SizedBox(height: 2),
         Text(
           atual ? 'Do dia 1 ao dia ${comp.ateDia}, comparado ao mesmo trecho ${comp.nMeses == 1 ? 'do mês anterior' : 'dos ${comp.nMeses} meses anteriores'}.' : 'Comparado ${comp.nMeses == 1 ? 'ao mês anterior' : 'à média dos ${comp.nMeses} meses anteriores'}.',
-          style: const TextStyle(color: G.apagado, fontSize: 12.5),
+          style: TextStyle(color: G.apagado, fontSize: 12.5),
         ),
         const SizedBox(height: 12),
         for (final c in itens)
@@ -336,7 +336,7 @@ class _Comparativo extends StatelessWidget {
                 const SizedBox(height: 6),
                 _BarraDupla(atual: c.atual / mx, media: c.media / mx, cor: catGasto(c.cat).cor),
                 const SizedBox(height: 4),
-                Text('${brl(c.atual)} agora · média ${brl(c.media)}', style: const TextStyle(color: G.apagado, fontSize: 11.5)),
+                Text('${brl(c.atual)} agora · média ${brl(c.media)}', style: TextStyle(color: G.apagado, fontSize: 11.5)),
               ]),
             ),
           ),
@@ -354,8 +354,8 @@ class _Seta extends StatelessWidget {
     if (v == null) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-        decoration: BoxDecoration(color: const Color(0x14FFFFFF), borderRadius: BorderRadius.circular(99)),
-        child: const Text('novo', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: G.texto2)),
+        decoration: BoxDecoration(color: G.v(0x14), borderRadius: BorderRadius.circular(99)),
+        child: Text('novo', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: G.texto2)),
       );
     }
     final sobe = v > .03, desce = v < -.03;

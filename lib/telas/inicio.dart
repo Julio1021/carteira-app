@@ -40,7 +40,7 @@ class TelaInicio extends StatelessWidget {
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             CabecalhoCartao('Últimos lançamentos', sub: mesLongo(ym), acao: 'Ver extrato', onAcao: irExtrato),
             if (ult.isEmpty)
-              const Padding(padding: EdgeInsets.symmetric(vertical: 10), child: Text('Nada lançado neste mês. Toque no + para começar.', style: TextStyle(color: G.apagado)))
+              Padding(padding: EdgeInsets.symmetric(vertical: 10), child: Text('Nada lançado neste mês. Toque no + para começar.', style: TextStyle(color: G.apagado)))
             else
               CaixaLista([for (final l in ult) LinhaLanc(l, onTap: () => abrirFormLanc(context, doc: (l.g?.d ?? l.e!.d)))]),
           ]),
@@ -60,20 +60,20 @@ class HeroMes extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final uso = r.usoLimite;
-    final corLim = uso == null ? G.branco : (uso > 1 ? G.neg : (uso > .85 ? G.alerta : G.branco));
+    final corLim = uso == null ? GE.branco : (uso > 1 ? GE.neg : (uso > .85 ? GE.alerta : GE.branco));
     final principal = r.emConta;
-    return Container(
+    return Escuro(child: Container(
       decoration: BoxDecoration(
-        gradient: G.gradHero,
+        gradient: GE.gradHero,
         borderRadius: BorderRadius.circular(26),
         border: Border.all(color: const Color(0x17FFFFFF)),
-        boxShadow: const [BoxShadow(color: Color(0xCC000000), blurRadius: 50, offset: Offset(0, 28), spreadRadius: -30)],
+        boxShadow: [BoxShadow(color: G.sombra(0xCC), blurRadius: 50, offset: Offset(0, 28), spreadRadius: -30)],
       ),
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 16),
       child: Column(children: [
-        SeletorMes(ym: r.ym, onMudar: onMes),
+        SeletorMes(ym: r.ym, onMudar: onMes, escuro: true),
         const SizedBox(height: 14),
-        Text(principal != null ? 'Em conta' : 'Sobra do mês', style: const TextStyle(color: G.texto2, fontWeight: FontWeight.w600)),
+        Text(principal != null ? 'Em conta' : 'Sobra do mês', style: const TextStyle(color: GE.texto2, fontWeight: FontWeight.w600)),
         const SizedBox(height: 4),
         FittedBox(
           child: Text(brl(principal ?? r.sobra), style: const TextStyle(fontSize: 38, fontWeight: FontWeight.w800, letterSpacing: -1.5, color: Colors.white)),
@@ -81,13 +81,13 @@ class HeroMes extends StatelessWidget {
         if (principal != null)
           Padding(
             padding: const EdgeInsets.only(top: 4),
-            child: Text('Sobra do mês: ${brl(r.sobra)}', style: const TextStyle(color: G.texto2, fontSize: 13)),
+            child: Text('Sobra do mês: ${brl(r.sobra)}', style: const TextStyle(color: GE.texto2, fontSize: 13)),
           ),
         const SizedBox(height: 16),
         Row(children: [
-          Expanded(child: _Bloco(rotulo: 'Entrou', valor: r.entrou, claro: true, icone: Icons.south_west_rounded, corIcone: G.posEscuro, onTap: onEntrou)),
+          Expanded(child: _Bloco(rotulo: 'Entrou', valor: r.entrou, claro: true, icone: Icons.south_west_rounded, corIcone: GE.posEscuro, onTap: onEntrou)),
           const SizedBox(width: 10),
-          Expanded(child: _Bloco(rotulo: 'Saiu', valor: r.saiu, claro: false, icone: Icons.north_east_rounded, corIcone: G.negEscuro, onTap: onSaiu)),
+          Expanded(child: _Bloco(rotulo: 'Saiu', valor: r.saiu, claro: false, icone: Icons.north_east_rounded, corIcone: GE.negEscuro, onTap: onSaiu)),
         ]),
         if (r.limiteTotal > 0) ...[
           const SizedBox(height: 16),
@@ -96,13 +96,13 @@ class HeroMes extends StatelessWidget {
             borderRadius: BorderRadius.circular(10),
             child: Column(children: [
               Row(children: [
-                const Text('Limite de gastos', style: TextStyle(color: G.texto2, fontSize: 13)),
+                const Text('Limite de gastos', style: TextStyle(color: GE.texto2, fontSize: 13)),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text.rich(
                     TextSpan(children: [
                       TextSpan(text: brl(r.gastoComLimite), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
-                      TextSpan(text: ' de ${brl(r.limiteTotal)}', style: const TextStyle(color: G.texto2, fontSize: 12)),
+                      TextSpan(text: ' de ${brl(r.limiteTotal)}', style: const TextStyle(color: GE.texto2, fontSize: 12)),
                     ]),
                     textAlign: TextAlign.right,
                     maxLines: 1,
@@ -111,12 +111,12 @@ class HeroMes extends StatelessWidget {
                 ),
               ]),
               const SizedBox(height: 8),
-              Barra(uso ?? 0, cor: corLim),
+              Barra(uso ?? 0, cor: corLim, trilho: const Color(0x1FFFFFFF)),
             ]),
           ),
         ],
       ]),
-    );
+    ));
   }
 }
 
@@ -133,8 +133,8 @@ class _Bloco extends StatelessWidget {
     final r = BorderRadius.circular(20);
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: claro ? G.branco : null,
-        gradient: claro ? null : G.gradLavanda,
+        color: claro ? GE.branco : null,
+        gradient: claro ? null : GE.gradLavanda,
         borderRadius: r,
         boxShadow: const [BoxShadow(color: Color(0xE6000000), blurRadius: 26, offset: Offset(0, 14), spreadRadius: -18)],
       ),
@@ -156,7 +156,7 @@ class _Bloco extends StatelessWidget {
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text(rotulo, style: const TextStyle(color: Color(0x9E12131C), fontWeight: FontWeight.w700, fontSize: 12.5)),
-                  FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(brl(valor), style: const TextStyle(color: G.tinta, fontWeight: FontWeight.w800, fontSize: 16))),
+                  FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(brl(valor), style: const TextStyle(color: GE.tinta, fontWeight: FontWeight.w800, fontSize: 16))),
                 ]),
               ),
             ]),
@@ -175,7 +175,7 @@ class _Atalhos extends StatelessWidget {
     Widget at(IconData i, String t, VoidCallback f, {bool destaque = false}) => Expanded(
           child: Column(children: [
             Material(
-              color: destaque ? G.branco : const Color(0x10FFFFFF),
+              color: destaque ? G.branco : G.v(0x10),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18), side: BorderSide(color: destaque ? G.branco : G.borda)),
               child: InkWell(
                 borderRadius: BorderRadius.circular(18),
@@ -184,7 +184,7 @@ class _Atalhos extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 7),
-            Text(t, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: G.texto2)),
+            Text(t, style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: G.texto2)),
           ]),
         );
     return Row(children: [
@@ -251,11 +251,11 @@ class _BoasVindas extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Cartao(
-      gradiente: const LinearGradient(colors: [Color(0x29B9BFF6), Color(0x08FFFFFF)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+      gradiente: LinearGradient(colors: [G.lavandaFundo, G.v(0x08)], begin: Alignment.topLeft, end: Alignment.bottomRight),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         const Text('Bem-vindo ao Diário da Carteira', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
         const SizedBox(height: 6),
-        const Text('Traga seus dados do app antigo: lá, toque em Ajustes → Backup → Exportar. Depois, aqui, importe o arquivo.', style: TextStyle(color: G.texto2)),
+        Text('Traga seus dados do app antigo: lá, toque em Ajustes → Backup → Exportar. Depois, aqui, importe o arquivo.', style: TextStyle(color: G.texto2)),
         const SizedBox(height: 12),
         FilledButton.icon(
           onPressed: () => Navigator.of(context).pushNamed('/ajustes'),
@@ -302,7 +302,7 @@ class _ContasInicio extends StatelessWidget {
                     ),
                     const SizedBox(width: 12),
                     Expanded(child: Text('${atr.length} conta${atr.length > 1 ? 's' : ''} atrasada${atr.length > 1 ? 's' : ''}', style: const TextStyle(fontWeight: FontWeight.w700))),
-                    Text(brl(atr.fold<double>(0, (a, i) => a + i.valor)), style: const TextStyle(fontWeight: FontWeight.w800, color: Color(0xFFFF8DA0))),
+                    Text(brl(atr.fold<double>(0, (a, i) => a + i.valor)), style: TextStyle(fontWeight: FontWeight.w800, color: G.negTexto)),
                   ]),
                 ),
               ),

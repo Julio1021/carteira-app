@@ -31,7 +31,7 @@ class TelaCartoes extends StatelessWidget {
         label: const Text('Novo cartão', style: TextStyle(fontWeight: FontWeight.w800)),
       ),
       body: ccs.isEmpty
-          ? const Center(
+          ? Center(
               child: Padding(
                 padding: EdgeInsets.all(30),
                 child: Text('Cadastre seus cartões para ver a fatura atual, o limite disponível e as parcelas dos próximos meses.', textAlign: TextAlign.center, style: TextStyle(color: G.texto2)),
@@ -149,14 +149,14 @@ class _TelaCartaoState extends State<TelaCartao> {
           gradiente: G.gradHero,
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
-              Expanded(child: Text('Fatura de ${mesLongo(sel.ym).toLowerCase()}', style: const TextStyle(color: G.texto2))),
+              Expanded(child: Text('Fatura de ${mesLongo(sel.ym).toLowerCase()}', style: TextStyle(color: G.texto2))),
               _Selo(sel.stTexto),
             ]),
             const SizedBox(height: 4),
             Text(brl(sel.total), style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w800)),
-            Text('Fecha ${dataBr(sel.fech)} · vence ${dataBr(sel.venc)}', style: const TextStyle(color: G.texto2, fontSize: 13)),
-            if (sel.pago > 0) Text('Pago ${brl(sel.pago)} · falta ${brl(sel.falta)}', style: const TextStyle(color: G.pos, fontSize: 13, fontWeight: FontWeight.w700)),
-            if (sel.itens.any((i) => i.prevista)) const Text('Inclui parcelas previstas, que ainda vão entrar.', style: TextStyle(color: G.apagado, fontSize: 12)),
+            Text('Fecha ${dataBr(sel.fech)} · vence ${dataBr(sel.venc)}', style: TextStyle(color: G.texto2, fontSize: 13)),
+            if (sel.pago > 0) Text('Pago ${brl(sel.pago)} · falta ${brl(sel.falta)}', style: TextStyle(color: G.pos, fontSize: 13, fontWeight: FontWeight.w700)),
+            if (sel.itens.any((i) => i.prevista)) Text('Inclui parcelas previstas, que ainda vão entrar.', style: TextStyle(color: G.apagado, fontSize: 12)),
             if (sel.falta > 0 && sel.st != 'futura') ...[
               const SizedBox(height: 12),
               FilledButton.icon(
@@ -169,7 +169,7 @@ class _TelaCartaoState extends State<TelaCartao> {
         ),
         const SizedBox(height: 14),
         if (sel.itens.isEmpty)
-          const Padding(padding: EdgeInsets.all(20), child: Text('Nenhuma compra nesta fatura.', textAlign: TextAlign.center, style: TextStyle(color: G.apagado)))
+          Padding(padding: EdgeInsets.all(20), child: Text('Nenhuma compra nesta fatura.', textAlign: TextAlign.center, style: TextStyle(color: G.apagado)))
         else
           CaixaLista([
             for (final it in sel.itens)
@@ -189,9 +189,9 @@ class _TelaCartaoState extends State<TelaCartao> {
           CaixaLista([
             for (final p in repo.doTipo('cpag').where((p) => p['cartao'] == c.id && p['fat'] == sel.ym))
               ListTile(
-                leading: const Icon(Icons.check_circle_rounded, color: G.pos),
+                leading: Icon(Icons.check_circle_rounded, color: G.pos),
                 title: Text(brl(numD(p['valor'])), style: const TextStyle(fontWeight: FontWeight.w700)),
-                subtitle: Text('em ${dataBr(str(p['data'], sel.venc))}', style: const TextStyle(color: G.apagado)),
+                subtitle: Text('em ${dataBr(str(p['data'], sel.venc))}', style: TextStyle(color: G.apagado)),
                 trailing: IconButton(
                   tooltip: 'Desfazer pagamento',
                   icon: const Icon(Icons.undo_rounded),
@@ -242,8 +242,8 @@ class _TelaCartaoState extends State<TelaCartao> {
       builder: (c) => SafeArea(
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           ListTile(title: Text(g.desc, style: const TextStyle(fontWeight: FontWeight.w800)), subtitle: Text('${brl(g.valor)} · ${dataBr(g.data)}')),
-          ListTile(leading: const Icon(Icons.delete_outline_rounded, color: G.neg), title: Text(parcelada ? 'Excluir só esta parcela' : 'Excluir compra'), onTap: () => Navigator.pop(c, 'uma')),
-          if (parcelada) ListTile(leading: const Icon(Icons.delete_sweep_outlined, color: G.neg), title: const Text('Excluir todas as parcelas'), onTap: () => Navigator.pop(c, 'todas')),
+          ListTile(leading: Icon(Icons.delete_outline_rounded, color: G.neg), title: Text(parcelada ? 'Excluir só esta parcela' : 'Excluir compra'), onTap: () => Navigator.pop(c, 'uma')),
+          if (parcelada) ListTile(leading: Icon(Icons.delete_sweep_outlined, color: G.neg), title: const Text('Excluir todas as parcelas'), onTap: () => Navigator.pop(c, 'todas')),
         ]),
       ),
     );
@@ -293,10 +293,10 @@ class _FormCompraState extends State<FormCompra> {
         items: [for (var q = 1; q <= 24; q++) DropdownMenuItem(value: q, child: Text(q == 1 ? 'À vista' : '$q vezes'))],
         onChanged: (x) => setState(() => parc = x ?? 1),
       ),
-      if (parc > 1 && v > 0) Padding(padding: const EdgeInsets.only(top: 6), child: Text('$parc × ${brl(v / parc)}', style: const TextStyle(color: G.lavanda, fontWeight: FontWeight.w700))),
+      if (parc > 1 && v > 0) Padding(padding: const EdgeInsets.only(top: 6), child: Text('$parc × ${brl(v / parc)}', style: TextStyle(color: G.lavanda, fontWeight: FontWeight.w700))),
       const Rotulo('Data da compra'),
       CampoData(data: data, onMudar: (x) => setState(() => data = x)),
-      Padding(padding: const EdgeInsets.only(top: 6), child: Text('Entra na fatura de ${mesLongo(f0).toLowerCase()}', style: const TextStyle(color: G.apagado, fontSize: 12.5))),
+      Padding(padding: const EdgeInsets.only(top: 6), child: Text('Entra na fatura de ${mesLongo(f0).toLowerCase()}', style: TextStyle(color: G.apagado, fontSize: 12.5))),
       const Rotulo('Categoria'),
       DropdownButtonFormField<String>(
         initialValue: cat,

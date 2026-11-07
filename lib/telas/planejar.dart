@@ -68,12 +68,12 @@ class TelaPlanejar extends StatelessWidget {
       builder: (d) => AlertDialog(
         title: const Text('Quanto você quer que sobre por mês?'),
         content: Column(mainAxisSize: MainAxisSize.min, children: [
-          const Text('Quando o que entrou menos o que saiu chegar nesse valor, o app mostra que você bateu a meta.', style: TextStyle(color: G.texto2)),
+          Text('Quando o que entrou menos o que saiu chegar nesse valor, o app mostra que você bateu a meta.', style: TextStyle(color: G.texto2)),
           const SizedBox(height: 12),
           CampoValor(c, autofocus: true, rotulo: 'Meta'),
         ]),
         actions: [
-          if (atual > 0) TextButton(onPressed: () => Navigator.pop(d, 0.0), child: const Text('Tirar meta', style: TextStyle(color: G.neg))),
+          if (atual > 0) TextButton(onPressed: () => Navigator.pop(d, 0.0), child: Text('Tirar meta', style: TextStyle(color: G.neg))),
           TextButton(onPressed: () => Navigator.pop(d), child: const Text('Cancelar')),
           FilledButton(onPressed: () => Navigator.pop(d, lerValor(c.text) ?? 0), child: const Text('Salvar')),
         ],
@@ -99,22 +99,22 @@ class _Link extends StatelessWidget {
         Container(
           width: 42,
           height: 42,
-          decoration: BoxDecoration(color: const Color(0x29B9BFF6), borderRadius: BorderRadius.circular(14)),
-          child: Icon(icone, color: const Color(0xFFC9CDFB)),
+          decoration: BoxDecoration(color: G.lavandaFundo, borderRadius: BorderRadius.circular(14)),
+          child: Icon(icone, color: G.lavandaIcone),
         ),
         const SizedBox(width: 12),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(titulo, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
             const SizedBox(height: 2),
-            Text(sub, style: const TextStyle(color: G.apagado, fontSize: 12.5)),
+            Text(sub, style: TextStyle(color: G.apagado, fontSize: 12.5)),
             if (progresso != null) ...[
               const SizedBox(height: 8),
               Barra(progresso!, cor: progresso! >= 1 ? G.pos : G.lavanda, altura: 5),
             ],
           ]),
         ),
-        const Icon(Icons.chevron_right_rounded, color: G.apagado),
+        Icon(Icons.chevron_right_rounded, color: G.apagado),
       ]),
     );
   }
@@ -137,14 +137,14 @@ class CartaoRecebimentos extends StatelessWidget {
               Expanded(
                 child: Column(children: [
                   Text(dataCurta(x.data), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
-                  Text(x.nome, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: G.apagado, fontSize: 11.5)),
+                  Text(x.nome, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: G.apagado, fontSize: 11.5)),
                   const SizedBox(height: 8),
                   Icon(x.recebido ? Icons.check_circle_rounded : (x.atrasado ? Icons.error_rounded : Icons.radio_button_unchecked_rounded),
                       color: x.recebido ? G.pos : (x.atrasado ? G.neg : G.lavanda), size: 20),
                   const SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(color: const Color(0x14FFFFFF), borderRadius: BorderRadius.circular(99)),
+                    decoration: BoxDecoration(color: G.v(0x14), borderRadius: BorderRadius.circular(99)),
                     child: Text(brl(x.valor), style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5, color: x.recebido ? G.pos : G.lavanda)),
                   ),
                 ]),
@@ -191,7 +191,7 @@ class _LinhaRenda extends StatelessWidget {
                 style: TextStyle(color: st != null && st.rec == null && st.dias < 0 ? G.alerta : G.apagado, fontSize: 12.5),
               ),
               if (tipo.id == 'rd_salario' && rr != null && rr.mesSeguinte)
-                const Text('Conta como dinheiro do mês seguinte', style: TextStyle(color: G.lavanda, fontSize: 12)),
+                Text('Conta como dinheiro do mês seguinte', style: TextStyle(color: G.lavanda, fontSize: 12)),
             ]),
           ),
           if (rr != null && rr.valor > 0) ...[
@@ -260,7 +260,7 @@ class _FormRendaState extends State<FormRenda> {
           value: mesSeg,
           onChanged: (v) => setState(() => mesSeg = v),
           title: const Text('Salário conta no mês seguinte', style: TextStyle(fontWeight: FontWeight.w700)),
-          subtitle: const Text('O salário que cai no fim do mês vira dinheiro do mês seguinte no resumo.', style: TextStyle(color: G.apagado, fontSize: 12.5)),
+          subtitle: Text('O salário que cai no fim do mês vira dinheiro do mês seguinte no resumo.', style: TextStyle(color: G.apagado, fontSize: 12.5)),
         ),
       const SizedBox(height: 14),
       FilledButton(

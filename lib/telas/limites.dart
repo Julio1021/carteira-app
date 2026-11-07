@@ -29,7 +29,7 @@ class TelaLimites extends StatelessWidget {
           Cartao(
             gradiente: G.gradHero,
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(mesLongo(ym), style: const TextStyle(color: G.texto2, fontWeight: FontWeight.w600)),
+              Text(mesLongo(ym), style: TextStyle(color: G.texto2, fontWeight: FontWeight.w600)),
               const SizedBox(height: 6),
               Text(r.limiteTotal > 0 ? '${brl(r.gastoComLimite)} de ${brl(r.limiteTotal)}' : 'Nenhum limite definido',
                   style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
@@ -38,7 +38,7 @@ class TelaLimites extends StatelessWidget {
                 Barra(r.usoLimite ?? 0, cor: (r.usoLimite ?? 0) > 1 ? G.neg : G.branco),
               ],
               const SizedBox(height: 10),
-              const Text('Toque numa categoria para definir quanto quer gastar nela por mês.', style: TextStyle(color: G.texto2, fontSize: 13)),
+              Text('Toque numa categoria para definir quanto quer gastar nela por mês.', style: TextStyle(color: G.texto2, fontSize: 13)),
             ]),
           ),
           const SizedBox(height: 14),
@@ -72,7 +72,7 @@ class _LinhaLimite extends StatelessWidget {
           decoration: const InputDecoration(prefixText: 'R\$ ', labelText: 'Limite por mês', hintText: '0,00'),
         ),
         actions: [
-          if (limite != null) TextButton(onPressed: () => Navigator.pop(d, -1.0), child: const Text('Remover', style: TextStyle(color: G.neg))),
+          if (limite != null) TextButton(onPressed: () => Navigator.pop(d, -1.0), child: Text('Remover', style: TextStyle(color: G.neg))),
           TextButton(onPressed: () => Navigator.pop(d), child: const Text('Cancelar')),
           FilledButton(onPressed: () => Navigator.pop(d, lerValor(c.text) ?? 0), child: const Text('Salvar')),
         ],
@@ -108,13 +108,13 @@ class _LinhaLimite extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(passou ? 'Passou ${brl(gasto - l)}' : 'Restam ${brl(l - gasto)}', style: TextStyle(fontSize: 12, color: passou ? G.neg : G.apagado)),
               ] else
-                Text(gasto > 0 ? 'Gasto no mês: ${brl(gasto)} · sem limite' : 'Sem limite', style: const TextStyle(fontSize: 12, color: G.apagado)),
+                Text(gasto > 0 ? 'Gasto no mês: ${brl(gasto)} · sem limite' : 'Sem limite', style: TextStyle(fontSize: 12, color: G.apagado)),
             ]),
           ),
           const SizedBox(width: 10),
           Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
             Text(brl(gasto), style: const TextStyle(fontWeight: FontWeight.w800)),
-            if (l != null) Text('de ${brl(l)}', style: const TextStyle(fontSize: 12, color: G.apagado)),
+            if (l != null) Text('de ${brl(l)}', style: TextStyle(fontSize: 12, color: G.apagado)),
           ]),
         ]),
       ),

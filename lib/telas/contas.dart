@@ -43,13 +43,13 @@ class _CartaoContasState extends State<CartaoContas> {
         ]),
         const SizedBox(height: 12),
         if (!temContas)
-          const Text('Cadastre aluguel, luz, internet, parcelas e boletos. O app mostra o que vence primeiro, avisa o que está atrasado e calcula quanto falta pagar.',
+          Text('Cadastre aluguel, luz, internet, parcelas e boletos. O app mostra o que vence primeiro, avisa o que está atrasado e calcula quanto falta pagar.',
               style: TextStyle(color: G.texto2, height: 1.35))
         else ...[
           SeletorMes(ym: ym, onMudar: (v) => setState(() => ym = v)),
           const SizedBox(height: 14),
           Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            const Text('Falta pagar ', style: TextStyle(color: G.texto2)),
+            Text('Falta pagar ', style: TextStyle(color: G.texto2)),
             Expanded(
               child: FittedBox(
                 alignment: Alignment.centerLeft,
@@ -61,7 +61,7 @@ class _CartaoContasState extends State<CartaoContas> {
           const SizedBox(height: 8),
           Barra(pct, cor: G.pos),
           const SizedBox(height: 6),
-          Text('Pago ${brl(m.pago)} de ${brl(m.total)}${ab.isNotEmpty ? ' · ${ab.length} em aberto' : ''}', style: const TextStyle(color: G.apagado, fontSize: 12.5)),
+          Text('Pago ${brl(m.pago)} de ${brl(m.total)}${ab.isNotEmpty ? ' · ${ab.length} em aberto' : ''}', style: TextStyle(color: G.apagado, fontSize: 12.5)),
           const SizedBox(height: 12),
           if (atr.isNotEmpty) ...[
             _BlocoAtrasadas(lista: atr, aberto: verAtrasadas, onTap: () => setState(() => verAtrasadas = !verAtrasadas)),
@@ -86,7 +86,7 @@ class _CartaoContasState extends State<CartaoContas> {
             ),
             if (verPagas) ...[const SizedBox(height: 6), CaixaLista([for (final i in m.pagas) LinhaConta(i)])],
           ],
-          if (ab.isEmpty && m.pagas.isEmpty) Text('Nenhuma conta em ${mesLongo(ym).toLowerCase()}.', style: const TextStyle(color: G.apagado)),
+          if (ab.isEmpty && m.pagas.isEmpty) Text('Nenhuma conta em ${mesLongo(ym).toLowerCase()}.', style: TextStyle(color: G.apagado)),
         ],
       ]),
     );
@@ -101,7 +101,7 @@ class _TituloGrupo extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
         padding: semPadding ? EdgeInsets.zero : const EdgeInsets.only(bottom: 8, left: 2),
-        child: Text('$nome  ·  ${l.length} · ${brl(l.fold<double>(0, (a, i) => a + i.valor))}', style: const TextStyle(fontWeight: FontWeight.w700, color: G.texto2, fontSize: 13)),
+        child: Text('$nome  ·  ${l.length} · ${brl(l.fold<double>(0, (a, i) => a + i.valor))}', style: TextStyle(fontWeight: FontWeight.w700, color: G.texto2, fontSize: 13)),
       );
 }
 
@@ -136,13 +136,13 @@ class _BlocoAtrasadas extends StatelessWidget {
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text('${lista.length} atrasada${lista.length > 1 ? 's' : ''} · ${brl(lista.fold<double>(0, (a, i) => a + i.valor))}',
-                      style: const TextStyle(fontWeight: FontWeight.w800, color: Color(0xFFFF8DA0))),
-                  Text(nomes, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: G.apagado, fontSize: 12)),
+                      style: TextStyle(fontWeight: FontWeight.w800, color: G.negTexto)),
+                  Text(nomes, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: G.apagado, fontSize: 12)),
                 ]),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(color: const Color(0x14FFFFFF), borderRadius: BorderRadius.circular(99)),
+                decoration: BoxDecoration(color: G.v(0x14), borderRadius: BorderRadius.circular(99)),
                 child: Text(aberto ? 'Fechar' : 'Ver', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5)),
               ),
             ]),
@@ -181,7 +181,7 @@ class LinhaConta extends StatelessWidget {
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(i.b.nome, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
                 Text(i.statusTexto, style: TextStyle(color: corSt, fontSize: 12.5, fontWeight: FontWeight.w600)),
-                Text(meta, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: G.apagado, fontSize: 12)),
+                Text(meta, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: G.apagado, fontSize: 12)),
               ]),
             ),
             const SizedBox(width: 8),
@@ -213,9 +213,9 @@ class LinhaConta extends StatelessWidget {
         Container(
           margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
           padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(color: const Color(0x0DFFFFFF), borderRadius: BorderRadius.circular(14)),
+          decoration: BoxDecoration(color: G.v(0x0D), borderRadius: BorderRadius.circular(14)),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Já foi paga? Encontrei “${i.sug!.desc}” de ${brl(i.sug!.valor)} em ${dataCurta(i.sug!.data)}.', style: const TextStyle(fontSize: 12.5, color: G.texto2)),
+            Text('Já foi paga? Encontrei “${i.sug!.desc}” de ${brl(i.sug!.valor)} em ${dataCurta(i.sug!.data)}.', style: TextStyle(fontSize: 12.5, color: G.texto2)),
             const SizedBox(height: 6),
             Row(children: [
               OutlinedButton(
@@ -261,7 +261,7 @@ class _FolhaPagarState extends State<FolhaPagar> {
     final perto = gastosParecidos(repo, widget.i);
     return CorpoFolha([
       TituloFolha('Pagar ${widget.i.b.nome}'),
-      Text('Vencimento ${dataBr(widget.i.venc)}', style: const TextStyle(color: G.apagado)),
+      Text('Vencimento ${dataBr(widget.i.venc)}', style: TextStyle(color: G.apagado)),
       const SizedBox(height: 14),
       CampoValor(valorC, rotulo: 'Valor pago', grande: true, erro: erro),
       const Rotulo('Data do pagamento'),
@@ -274,7 +274,7 @@ class _FolhaPagarState extends State<FolhaPagar> {
         title: const Text('Lançar também nos gastos', style: TextStyle(fontWeight: FontWeight.w700)),
         subtitle: Text(
           widget.i.b.chave.isNotEmpty ? 'Desligado porque esta conta é reconhecida no extrato: ao importar, o gasto entra sozinho.' : 'Cria o gasto no extrato do mês, já ligado a esta conta.',
-          style: const TextStyle(color: G.apagado, fontSize: 12.5),
+          style: TextStyle(color: G.apagado, fontSize: 12.5),
         ),
       ),
       const SizedBox(height: 10),
@@ -437,12 +437,12 @@ class _FormContaState extends State<FormConta> {
       TextField(controller: nomeC, textCapitalization: TextCapitalization.sentences, decoration: const InputDecoration(labelText: 'Nome', hintText: 'Ex.: Aluguel, Luz, Internet')),
       const SizedBox(height: 12),
       CampoValor(valorC, rotulo: variavel ? 'Valor aproximado' : 'Valor'),
-      if (erro != null) Padding(padding: const EdgeInsets.only(top: 6), child: Text(erro!, style: const TextStyle(color: G.neg))),
+      if (erro != null) Padding(padding: const EdgeInsets.only(top: 6), child: Text(erro!, style: TextStyle(color: G.neg))),
       const Rotulo('Repete?'),
       Opcoes<String>(itens: const [('mensal', 'Todo mês'), ('parcelas', 'Parcelado'), ('unica', 'Uma vez')], valor: rep, onMudar: (v) => setState(() => rep = v)),
       const SizedBox(height: 14),
       if (rep == 'unica') ...[
-        const Text('Vencimento', style: TextStyle(fontWeight: FontWeight.w700, color: G.texto2)),
+        Text('Vencimento', style: TextStyle(fontWeight: FontWeight.w700, color: G.texto2)),
         const SizedBox(height: 8),
         CampoData(data: data, onMudar: (v) => setState(() => data = v), comOntem: false),
       ] else ...[
@@ -502,7 +502,7 @@ class _FormContaState extends State<FormConta> {
         value: variavel,
         onChanged: (v) => setState(() => variavel = v),
         title: const Text('Valor muda todo mês', style: TextStyle(fontWeight: FontWeight.w700)),
-        subtitle: const Text('Como luz e água: o app usa o último valor pago como estimativa.', style: TextStyle(color: G.apagado, fontSize: 12.5)),
+        subtitle: Text('Como luz e água: o app usa o último valor pago como estimativa.', style: TextStyle(color: G.apagado, fontSize: 12.5)),
       ),
       const SizedBox(height: 12),
       FilledButton(onPressed: _salvar, child: Text(base != null ? 'Salvar alterações' : 'Adicionar conta')),

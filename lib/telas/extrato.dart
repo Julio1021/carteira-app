@@ -91,7 +91,7 @@ class _TelaExtratoState extends State<TelaExtrato> {
               selectedBackgroundColor: G.branco,
               selectedForegroundColor: G.tinta,
               foregroundColor: G.texto2,
-              side: const BorderSide(color: G.borda),
+              side: BorderSide(color: G.borda),
               textStyle: const TextStyle(fontWeight: FontWeight.w800),
             ),
             onSelectionChanged: (s) => setState(() => analise = s.first),
@@ -113,7 +113,7 @@ class _TelaExtratoState extends State<TelaExtrato> {
             onChanged: (_) => setState(() {}),
             decoration: InputDecoration(
               hintText: 'Buscar no mês',
-              prefixIcon: const Icon(Icons.search_rounded, color: G.apagado),
+              prefixIcon: Icon(Icons.search_rounded, color: G.apagado),
               suffixIcon: buscaC.text.isEmpty
                   ? null
                   : IconButton(
@@ -166,7 +166,7 @@ class _TelaExtratoState extends State<TelaExtrato> {
             Padding(
               padding: const EdgeInsets.only(bottom: 10, left: 4, right: 4),
               child: Row(children: [
-                Expanded(child: Text('${lista.length} lançamento${lista.length == 1 ? '' : 's'}', style: const TextStyle(color: G.apagado))),
+                Expanded(child: Text('${lista.length} lançamento${lista.length == 1 ? '' : 's'}', style: TextStyle(color: G.apagado))),
                 Text(brl(totalFiltro, sinal: true), style: TextStyle(fontWeight: FontWeight.w800, color: totalFiltro < 0 ? G.texto : G.pos)),
               ]),
             ),
@@ -180,9 +180,9 @@ class _TelaExtratoState extends State<TelaExtrato> {
           child: Padding(
             padding: const EdgeInsets.all(30),
             child: Column(children: [
-              const Icon(Icons.receipt_long_rounded, size: 40, color: G.apagado),
+              Icon(Icons.receipt_long_rounded, size: 40, color: G.apagado),
               const SizedBox(height: 10),
-              Text(q.isNotEmpty ? 'Nada encontrado para “${buscaC.text}”.' : 'Nenhum lançamento em ${mesLongo(widget.ym).toLowerCase()}.', textAlign: TextAlign.center, style: const TextStyle(color: G.apagado)),
+              Text(q.isNotEmpty ? 'Nada encontrado para “${buscaC.text}”.' : 'Nenhum lançamento em ${mesLongo(widget.ym).toLowerCase()}.', textAlign: TextAlign.center, style: TextStyle(color: G.apagado)),
             ]),
           ),
         )
@@ -223,7 +223,7 @@ class _Resumo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(children: [
-      Text(t, style: const TextStyle(color: G.texto2, fontSize: 12.5, fontWeight: FontWeight.w600)),
+      Text(t, style: TextStyle(color: G.texto2, fontSize: 12.5, fontWeight: FontWeight.w600)),
       const SizedBox(height: 2),
       FittedBox(fit: BoxFit.scaleDown, child: Text(brl(v), style: TextStyle(color: cor, fontWeight: FontWeight.w800, fontSize: 15))),
     ]);

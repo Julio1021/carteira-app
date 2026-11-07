@@ -61,7 +61,7 @@ class _TelaBuscaState extends State<TelaBusca> {
           onChanged: (_) => setState(() {}),
           decoration: InputDecoration(
             hintText: 'Buscar em todo o histórico',
-            prefixIcon: const Icon(Icons.search_rounded, color: G.apagado),
+            prefixIcon: Icon(Icons.search_rounded, color: G.apagado),
             suffixIcon: c.text.isEmpty ? null : IconButton(tooltip: 'Limpar', icon: const Icon(Icons.close_rounded), onPressed: () => setState(() => c.clear())),
           ),
         ),
@@ -96,19 +96,19 @@ class _TelaBuscaState extends State<TelaBusca> {
         ),
         const SizedBox(height: 12),
         if (!ativo)
-          const Padding(
+          Padding(
             padding: EdgeInsets.all(24),
             child: Text('Digite uma descrição (ex.: "ifood"), uma categoria ou um valor (ex.: 120,00). A busca olha todos os meses.', textAlign: TextAlign.center, style: TextStyle(color: G.apagado, height: 1.4)),
           )
         else if (res.isEmpty)
-          const Padding(padding: EdgeInsets.all(24), child: Text('Nada encontrado.', textAlign: TextAlign.center, style: TextStyle(color: G.apagado)))
+          Padding(padding: EdgeInsets.all(24), child: Text('Nada encontrado.', textAlign: TextAlign.center, style: TextStyle(color: G.apagado)))
         else ...[
           Cartao(
             gradiente: G.gradHero,
             child: Row(children: [
-              Expanded(child: Column(children: [Text('${res.length}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)), const Text('lançamentos', style: TextStyle(color: G.texto2, fontSize: 12))])),
-              Expanded(child: Column(children: [FittedBox(child: Text(brl(totG), style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: G.neg))), const Text('em gastos', style: TextStyle(color: G.texto2, fontSize: 12))])),
-              Expanded(child: Column(children: [FittedBox(child: Text(brl(totE), style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: G.pos))), const Text('em entradas', style: TextStyle(color: G.texto2, fontSize: 12))])),
+              Expanded(child: Column(children: [Text('${res.length}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)), Text('lançamentos', style: TextStyle(color: G.texto2, fontSize: 12))])),
+              Expanded(child: Column(children: [FittedBox(child: Text(brl(totG), style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: G.neg))), Text('em gastos', style: TextStyle(color: G.texto2, fontSize: 12))])),
+              Expanded(child: Column(children: [FittedBox(child: Text(brl(totE), style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: G.pos))), Text('em entradas', style: TextStyle(color: G.texto2, fontSize: 12))])),
             ]),
           ),
           const SizedBox(height: 12),
@@ -117,7 +117,7 @@ class _TelaBuscaState extends State<TelaBusca> {
               padding: const EdgeInsets.fromLTRB(4, 4, 4, 8),
               child: Row(children: [
                 Expanded(child: Text(mesLongo(e.key), style: const TextStyle(fontWeight: FontWeight.w800))),
-                Text('${e.value.length} · ${brl(e.value.where((l) => !l.ehEntrada).fold<double>(0, (a, l) => a + l.valor))}', style: const TextStyle(color: G.apagado, fontSize: 12.5)),
+                Text('${e.value.length} · ${brl(e.value.where((l) => !l.ehEntrada).fold<double>(0, (a, l) => a + l.valor))}', style: TextStyle(color: G.apagado, fontSize: 12.5)),
               ]),
             ),
             CaixaLista([for (final l in e.value) LinhaLanc(l, onTap: () => abrirFormLanc(context, doc: l.g?.d ?? l.e!.d))]),

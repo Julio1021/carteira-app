@@ -30,7 +30,7 @@ class Cartao extends StatelessWidget {
         gradient: gradiente ?? G.gradCartao,
         borderRadius: r,
         border: Border.all(color: G.borda),
-        boxShadow: const [BoxShadow(color: Color(0x66000000), blurRadius: 30, offset: Offset(0, 14), spreadRadius: -18)],
+        boxShadow: [BoxShadow(color: G.sombra(0x66), blurRadius: 30, offset: Offset(0, 14), spreadRadius: -18)],
       ),
       child: Material(
         type: MaterialType.transparency,
@@ -55,7 +55,7 @@ class CabecalhoCartao extends StatelessWidget {
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(titulo, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, letterSpacing: -.2)),
-            if (sub != null) Padding(padding: const EdgeInsets.only(top: 2), child: Text(sub!, style: const TextStyle(color: G.apagado, fontSize: 12.5))),
+            if (sub != null) Padding(padding: const EdgeInsets.only(top: 2), child: Text(sub!, style: TextStyle(color: G.apagado, fontSize: 12.5))),
           ]),
         ),
         if (acao != null)
@@ -115,7 +115,7 @@ class LinhaLanc extends StatelessWidget {
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(l.desc, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
               const SizedBox(height: 2),
-              Text(sub, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: G.apagado, fontSize: 12.5)),
+              Text(sub, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: G.apagado, fontSize: 12.5)),
             ]),
           ),
           const SizedBox(width: 10),
@@ -141,7 +141,7 @@ class CaixaLista extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(color: const Color(0x07FFFFFF), borderRadius: BorderRadius.circular(20), border: Border.all(color: G.borda)),
+      decoration: BoxDecoration(color: G.v(0x07), borderRadius: BorderRadius.circular(20), border: Border.all(color: G.borda)),
       clipBehavior: Clip.antiAlias,
       child: Column(children: [
         for (var i = 0; i < filhos.length; i++) ...[
@@ -157,13 +157,14 @@ class CaixaLista extends StatelessWidget {
 class SeletorMes extends StatelessWidget {
   final String ym;
   final ValueChanged<String> onMudar;
-  const SeletorMes({super.key, required this.ym, required this.onMudar});
+  final bool escuro;
+  const SeletorMes({super.key, required this.ym, required this.onMudar, this.escuro = false});
   @override
   Widget build(BuildContext context) {
     Widget seta(IconData i, int n, String rotulo) => IconButton(
           tooltip: rotulo,
           onPressed: () => onMudar(ymAdd(ym, n)),
-          style: IconButton.styleFrom(backgroundColor: const Color(0x14FFFFFF), side: const BorderSide(color: G.borda)),
+          style: IconButton.styleFrom(backgroundColor: escuro ? const Color(0x14FFFFFF) : G.v(0x14), side: BorderSide(color: escuro ? GE.borda : G.borda)),
           icon: Icon(i, size: 20),
         );
     return Row(children: [
@@ -173,7 +174,7 @@ class SeletorMes extends StatelessWidget {
           onTap: ym == ymDe(hojeIso()) ? null : () => onMudar(ymDe(hojeIso())),
           child: Column(children: [
             Text(mesLongo(ym), textAlign: TextAlign.center, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
-            if (ym != ymDe(hojeIso())) const Text('toque para voltar ao mês atual', style: TextStyle(fontSize: 11, color: G.apagado)),
+            if (ym != ymDe(hojeIso())) Text('toque para voltar ao mês atual', style: TextStyle(fontSize: 11, color: escuro ? GE.apagado : G.apagado)),
           ]),
         ),
       ),
@@ -185,10 +186,14 @@ class SeletorMes extends StatelessWidget {
 /// Barra de progresso fininha.
 class Barra extends StatelessWidget {
   final double valor; // 0..1 (pode passar de 1)
-  final Color cor;
-  final Color trilho;
+  final Color? _cor;
+  final Color? _trilho;
   final double altura;
-  const Barra(this.valor, {super.key, this.cor = G.branco, this.trilho = const Color(0x1FFFFFFF), this.altura = 7});
+  const Barra(this.valor, {super.key, Color? cor, Color? trilho, this.altura = 7})
+      : _cor = cor,
+        _trilho = trilho;
+  Color get cor => _cor ?? G.branco;
+  Color get trilho => _trilho ?? G.v(0x1F);
   @override
   Widget build(BuildContext context) {
     final f = valor.isNaN ? 0.0 : valor.clamp(0, 1).toDouble();
@@ -215,4 +220,23 @@ void avisar(BuildContext context, String msg) {
   ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
     ..showSnackBar(SnackBar(content: Text(msg)));
+}
+
+
+/// Força o visual escuro (grafite) num trecho da tela, como o cartão principal.
+class Escuro extends StatelessWidget {
+  final Widget child;
+  const Escuro({super.key, required this.child});
+  static ThemeData? _t;
+  @override
+  Widget build(BuildContext context) {
+    final t = _t ??= temaDe(false);
+    return Theme(
+      data: t,
+      child: DefaultTextStyle.merge(
+        style: const TextStyle(color: GE.texto),
+        child: IconTheme.merge(data: const IconThemeData(color: GE.texto), child: child),
+      ),
+    );
+  }
 }

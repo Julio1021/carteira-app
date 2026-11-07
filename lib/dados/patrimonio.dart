@@ -3,6 +3,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../tema.dart';
+
 import '../util/fmt.dart';
 import 'modelos.dart';
 import 'repo.dart';
@@ -10,7 +12,7 @@ import 'repo.dart';
 const classesAtivo = ['Renda Fixa', 'Tesouro Direto', 'Ações', 'Fundos Imobiliários', 'Fundos de Investimento', 'Previdência', 'Criptomoedas', 'Exterior', 'Poupança', 'Outros'];
 
 /// Cores de série (as mesmas do tema do site) para ativos com cor numérica.
-const coresSerie = [Color(0xFFB9BFF6), Color(0xFF4FD98C), Color(0xFFFF8A7A), Color(0xFF6EC1FF), Color(0xFFF5C26B), Color(0xFFF28DC0), Color(0xFF5ED6C8), Color(0xFF9AA0BC)];
+List<Color> get coresSerie => G.coresSerie;
 
 class Ativo {
   final Doc d;

@@ -99,7 +99,7 @@ class _TelaImportarExtratoState extends State<TelaImportarExtrato> {
           child: ListView(shrinkWrap: true, children: [
             ListTile(title: Text(x.desc, style: const TextStyle(fontWeight: FontWeight.w800)), subtitle: const Text('Vale para todos deste estabelecimento, agora e nas próximas importações.')),
             for (final cat in cats) ListTile(leading: Icon(cat.icone, color: cat.cor), title: Text(cat.nome), selected: cat.id == x.cat, onTap: () => Navigator.pop(c, cat.id)),
-            ListTile(leading: const Icon(Icons.block_rounded, color: G.apagado), title: const Text('Não é gasto (ignorar)'), onTap: () => Navigator.pop(c, 'ignorar')),
+            ListTile(leading: Icon(Icons.block_rounded, color: G.apagado), title: const Text('Não é gasto (ignorar)'), onTap: () => Navigator.pop(c, 'ignorar')),
           ]),
         ),
       ),
@@ -124,7 +124,7 @@ class _TelaImportarExtratoState extends State<TelaImportarExtrato> {
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           const Text('Traga os gastos e entradas do banco de uma vez', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
           const SizedBox(height: 6),
-          const Text(
+          Text(
               'No app do banco (Inter, Nubank, Mercado Pago…), exporte o extrato da conta no formato OFX e escolha o arquivo aqui. O app separa gastos e entradas, sugere a categoria, reconhece salário e vale, pagamento de fatura e transferências entre suas contas, e não duplica o que já foi importado ou lançado à mão.',
               style: TextStyle(color: G.texto2, height: 1.4)),
           const SizedBox(height: 14),
@@ -137,7 +137,7 @@ class _TelaImportarExtratoState extends State<TelaImportarExtrato> {
           for (final f in feitas)
             ListTile(
               title: Text('${f.n} lançamento(s)', style: const TextStyle(fontWeight: FontWeight.w700)),
-              subtitle: Text('${dataBr(f.ini)} a ${dataBr(f.fim)}${f.quando > 0 ? ' · importado em ${dataBr(isoDe(DateTime.fromMillisecondsSinceEpoch(f.quando)))}' : ''}', style: const TextStyle(color: G.apagado, fontSize: 12.5)),
+              subtitle: Text('${dataBr(f.ini)} a ${dataBr(f.fim)}${f.quando > 0 ? ' · importado em ${dataBr(isoDe(DateTime.fromMillisecondsSinceEpoch(f.quando)))}' : ''}', style: TextStyle(color: G.apagado, fontSize: 12.5)),
               trailing: TextButton(
                 onPressed: () async {
                   final r = RepoScope.ler(context);
@@ -145,7 +145,7 @@ class _TelaImportarExtratoState extends State<TelaImportarExtrato> {
                   await r.apagarVarios([for (final d in [...r.doTipo('gasto'), ...r.doTipo('entrada'), ...r.doTipo('cpag')]) if (d['imp'] == f.id) str(d['id'])]);
                   if (mounted) avisar(this.context, 'Importação desfeita.');
                 },
-                child: const Text('Desfazer', style: TextStyle(color: G.neg)),
+                child: Text('Desfazer', style: TextStyle(color: G.neg)),
               ),
             ),
         ]),
@@ -165,8 +165,8 @@ class _TelaImportarExtratoState extends State<TelaImportarExtrato> {
           gradiente: G.gradHero,
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(nomeBanco(o), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
-            Text('${o.inicio != null ? dataBr(o.inicio!) : '?'} a ${o.fim != null ? dataBr(o.fim!) : '?'} · ${o.tx.length} movimentações', style: const TextStyle(color: G.texto2)),
-            if (o.saldo != null) Text('Saldo em ${dataBr(o.saldoData!)}: ${brl(o.saldo!)} (atualiza "Em conta")', style: const TextStyle(color: G.texto2, fontSize: 12.5)),
+            Text('${o.inicio != null ? dataBr(o.inicio!) : '?'} a ${o.fim != null ? dataBr(o.fim!) : '?'} · ${o.tx.length} movimentações', style: TextStyle(color: G.texto2)),
+            if (o.saldo != null) Text('Saldo em ${dataBr(o.saldoData!)}: ${brl(o.saldo!)} (atualiza "Em conta")', style: TextStyle(color: G.texto2, fontSize: 12.5)),
             const SizedBox(height: 12),
             Row(children: [
               Expanded(child: _Num('${entram.length}', 'gastos novos')),
@@ -179,7 +179,7 @@ class _TelaImportarExtratoState extends State<TelaImportarExtrato> {
         Cartao(
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             const Text('Seu nome no extrato', style: TextStyle(fontWeight: FontWeight.w800)),
-            const Text('Pix entre suas próprias contas não viram gasto nem entrada.', style: TextStyle(color: G.apagado, fontSize: 12.5)),
+            Text('Pix entre suas próprias contas não viram gasto nem entrada.', style: TextStyle(color: G.apagado, fontSize: 12.5)),
             const SizedBox(height: 10),
             TextField(controller: donoC, decoration: const InputDecoration(hintText: 'Nome completo, como aparece no Pix'), onSubmitted: (v) => setState(() => dono = v.trim())),
             if (candidatos.isNotEmpty) ...[
@@ -205,7 +205,7 @@ class _TelaImportarExtratoState extends State<TelaImportarExtrato> {
             value: pularDup,
             onChanged: (v) => setState(() => pularDup = v),
             title: Text('Pular ${p.duplicados} que parecem já lançados à mão', style: const TextStyle(fontWeight: FontWeight.w700)),
-            subtitle: const Text('Mesmo dia e mesmo valor de um gasto que você já tinha lançado.', style: TextStyle(color: G.apagado, fontSize: 12.5)),
+            subtitle: Text('Mesmo dia e mesmo valor de um gasto que você já tinha lançado.', style: TextStyle(color: G.apagado, fontSize: 12.5)),
           ),
         ],
         if (gastos.isNotEmpty) ...[
@@ -229,8 +229,8 @@ class _TelaImportarExtratoState extends State<TelaImportarExtrato> {
                 onTap: x.ch.startsWith('__') ? null : () => _trocarCat(x, true),
                 leading: IconeCategoria(catEntrada(x.cat), tam: 36),
                 title: Text(x.desc, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700)),
-                subtitle: Text('${dataCurta(x.t.data)} · ${catEntrada(x.cat).nome}', style: const TextStyle(color: G.apagado, fontSize: 12)),
-                trailing: Text(brl(x.valor, sinal: true), style: const TextStyle(fontWeight: FontWeight.w800, color: G.pos)),
+                subtitle: Text('${dataCurta(x.t.data)} · ${catEntrada(x.cat).nome}', style: TextStyle(color: G.apagado, fontSize: 12)),
+                trailing: Text(brl(x.valor, sinal: true), style: TextStyle(fontWeight: FontWeight.w800, color: G.pos)),
               ),
           ]),
         ],
@@ -238,7 +238,7 @@ class _TelaImportarExtratoState extends State<TelaImportarExtrato> {
           const Rotulo('Ficaram de fora'),
           CaixaLista([
             for (final e in p.ignorados.entries)
-              ListTile(dense: true, title: Text(e.key), trailing: Text('${e.value.n} · ${brl(e.value.v)}', style: const TextStyle(color: G.apagado))),
+              ListTile(dense: true, title: Text(e.key), trailing: Text('${e.value.n} · ${brl(e.value.v)}', style: TextStyle(color: G.apagado))),
           ]),
         ],
       ]),
@@ -269,7 +269,7 @@ class _Num extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(children: [
         Text(n, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
-        Text(t, style: const TextStyle(color: G.texto2, fontSize: 12)),
+        Text(t, style: TextStyle(color: G.texto2, fontSize: 12)),
       ]);
 }
 
@@ -381,11 +381,11 @@ class _TelaImportarInterState extends State<TelaImportarInter> {
             child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
               const Text('Importe o extrato de movimentações', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
               const SizedBox(height: 6),
-              const Text('No app do Inter: Investimentos → Extrato de movimentações → escolha o período → exportar PDF. O app lê as aplicações e os resgates e monta o histórico de cada tipo (CDB, LCI/LCA, Tesouro…).',
+              Text('No app do Inter: Investimentos → Extrato de movimentações → escolha o período → exportar PDF. O app lê as aplicações e os resgates e monta o histórico de cada tipo (CDB, LCI/LCA, Tesouro…).',
                   style: TextStyle(color: G.texto2, height: 1.4)),
               const SizedBox(height: 14),
               FilledButton.icon(onPressed: ocupado ? null : _abrir, icon: const Icon(Icons.picture_as_pdf_outlined), label: Text(ocupado ? 'Lendo o PDF…' : 'Escolher PDF')),
-              if (erro != null) Padding(padding: const EdgeInsets.only(top: 10), child: Text(erro!, style: const TextStyle(color: G.neg))),
+              if (erro != null) Padding(padding: const EdgeInsets.only(top: 10), child: Text(erro!, style: TextStyle(color: G.neg))),
             ]),
           ),
           if (feitas.isNotEmpty) ...[
@@ -394,13 +394,13 @@ class _TelaImportarInterState extends State<TelaImportarInter> {
               for (final f in feitas)
                 ListTile(
                   title: Text('${f.lanc} lançamento(s)', style: const TextStyle(fontWeight: FontWeight.w700)),
-                  subtitle: Text(f.quando > 0 ? 'em ${dataBr(isoDe(DateTime.fromMillisecondsSinceEpoch(f.quando)))}' : '', style: const TextStyle(color: G.apagado)),
+                  subtitle: Text(f.quando > 0 ? 'em ${dataBr(isoDe(DateTime.fromMillisecondsSinceEpoch(f.quando)))}' : '', style: TextStyle(color: G.apagado)),
                   trailing: TextButton(
                     onPressed: () async {
                       if (!await confirmar(context, 'Desfazer esta importação?', 'Apaga os ativos e lançamentos que vieram desse PDF.', sim: 'Desfazer')) return;
                       await repo.apagarVarios(idsDaImportacaoInter(repo, f.id));
                     },
-                    child: const Text('Desfazer', style: TextStyle(color: G.neg)),
+                    child: Text('Desfazer', style: TextStyle(color: G.neg)),
                   ),
                 ),
             ]),
@@ -411,7 +411,7 @@ class _TelaImportarInterState extends State<TelaImportarInter> {
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('${e.rows.length} movimentações', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
               Text('${e.inicio != null ? dataBr(e.inicio!) : '?'} a ${e.fim != null ? dataBr(e.fim!) : '?'}${e.posicaoTotal != null && e.posicaoTotal!.isFinite ? ' · posição total ${brl(e.posicaoTotal!)}' : ''}',
-                  style: const TextStyle(color: G.texto2)),
+                  style: TextStyle(color: G.texto2)),
             ]),
           ),
           const Rotulo('O que encontrei'),
@@ -419,7 +419,7 @@ class _TelaImportarInterState extends State<TelaImportarInter> {
             for (final g in grupos)
               ListTile(
                 title: Text(g.tipo.nome, style: const TextStyle(fontWeight: FontWeight.w700)),
-                subtitle: Text('Aplicado ${brl(g.aplicado)} · resgatado ${brl(g.resgatado)}${g.ganho != 0 ? ' · rendeu ${brl(g.ganho, sinal: true)}' : ''}', style: const TextStyle(color: G.apagado, fontSize: 12.5)),
+                subtitle: Text('Aplicado ${brl(g.aplicado)} · resgatado ${brl(g.resgatado)}${g.ganho != 0 ? ' · rendeu ${brl(g.ganho, sinal: true)}' : ''}', style: TextStyle(color: G.apagado, fontSize: 12.5)),
                 trailing: Text(brl(g.saldoFinal), style: const TextStyle(fontWeight: FontWeight.w800)),
               ),
           ]),
@@ -440,14 +440,14 @@ class _TelaImportarInterState extends State<TelaImportarInter> {
           if (modo == 'junto') ...[
             const SizedBox(height: 12),
             CampoValor(saldoC, rotulo: 'Saldo no fim do período (opcional)'),
-            const Text('Com o saldo atual do app do Inter, o rendimento do período fica certo.', style: TextStyle(color: G.apagado, fontSize: 12)),
+            Text('Com o saldo atual do app do Inter, o rendimento do período fica certo.', style: TextStyle(color: G.apagado, fontSize: 12)),
           ],
           const SizedBox(height: 16),
           FilledButton(onPressed: ocupado ? null : _importar, child: Text(ocupado ? 'Importando…' : 'Importar')),
           const SizedBox(height: 8),
           OutlinedButton(onPressed: ocupado ? null : () => setState(() => ex = null), child: const Text('Cancelar')),
           const SizedBox(height: 8),
-          const Text('Dias em que você já lançou um saldo à mão não são sobrescritos.', style: TextStyle(color: G.apagado, fontSize: 12)),
+          Text('Dias em que você já lançou um saldo à mão não são sobrescritos.', style: TextStyle(color: G.apagado, fontSize: 12)),
         ],
       ]),
     );

@@ -95,6 +95,15 @@ jobs:
           tirar 17-busca "&tela=busca" 1400
           tirar 18-importar "&tela=importar"
           tirar 19-analise "&aba=1&analise=1" 3600
+          tirar c1-inicio "&tema=claro" 1900
+          tirar c2-extrato "&tema=claro&aba=1"
+          tirar c3-analise "&tema=claro&aba=1&analise=1" 3600
+          tirar c4-planejar "&tema=claro&aba=2" 2200
+          tirar c5-patrimonio "&tema=claro&aba=3" 2400
+          tirar c6-ajustes "&tema=claro&tela=ajustes"
+          tirar c7-lancar "&tema=claro&tela=lancar"
+          tirar c8-cartao "&tema=claro&tela=cartao" 1300
+          tirar c9-avisos "&tema=claro&tela=avisos"
           ls -la ../../prints
 
       - name: Guardar APK

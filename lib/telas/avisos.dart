@@ -26,12 +26,12 @@ class BotaoAvisos extends StatelessWidget {
           if (context.mounted) abrirAvisos(context, verCategoria);
         },
         style: IconButton.styleFrom(
-          backgroundColor: const Color(0x10FFFFFF),
-          side: const BorderSide(color: G.borda),
+          backgroundColor: G.v(0x10),
+          side: BorderSide(color: G.borda),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           fixedSize: const Size(42, 42),
         ),
-        icon: Icon(Icons.notifications_none_rounded, color: grave ? const Color(0xFFFF8DA0) : G.texto),
+        icon: Icon(Icons.notifications_none_rounded, color: grave ? G.negTexto : G.texto),
       ),
       if (novos.isNotEmpty)
         Positioned(
@@ -67,14 +67,14 @@ class _FolhaAvisos extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
       child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         const Text('Avisos do mês', style: TextStyle(fontSize: 21, fontWeight: FontWeight.w800)),
-        Text(l.isEmpty ? 'Nada pedindo atenção agora.' : '${l.length} ${l.length > 1 ? 'coisas merecem' : 'coisa merece'} sua atenção', style: const TextStyle(color: G.apagado)),
+        Text(l.isEmpty ? 'Nada pedindo atenção agora.' : '${l.length} ${l.length > 1 ? 'coisas merecem' : 'coisa merece'} sua atenção', style: TextStyle(color: G.apagado)),
         const SizedBox(height: 12),
         Flexible(
           child: ListView(shrinkWrap: true, children: [
             for (final a in l) ...[
               Container(
                 padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: const Color(0x0BFFFFFF), borderRadius: BorderRadius.circular(16), border: Border.all(color: G.borda)),
+                decoration: BoxDecoration(color: G.v(0x0B), borderRadius: BorderRadius.circular(16), border: Border.all(color: G.borda)),
                 child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Container(
                     width: 34,
@@ -119,7 +119,7 @@ class _FolhaAvisos extends StatelessWidget {
                   ),
                   IconButton(
                     tooltip: 'Dispensar aviso',
-                    icon: const Icon(Icons.close_rounded, size: 18, color: G.apagado),
+                    icon: Icon(Icons.close_rounded, size: 18, color: G.apagado),
                     onPressed: () => repo.guardarLista('av.ocultos', [...repo.lista('av.ocultos'), a.k].reversed.take(300).toList()),
                   ),
                 ]),
