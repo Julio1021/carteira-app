@@ -20,10 +20,9 @@ class _TelaAjustesState extends State<TelaAjustes> {
     final repo = RepoScope.ler(context);
     setState(() => ocupado = true);
     try {
-      final r = await FilePicker.pickFiles(type: FileType.any, withData: true);
-      final f = r?.files.single;
-      final bytes = f?.bytes;
-      if (bytes == null) return;
+      final f = await FilePicker.pickFile(type: FileType.any);
+      if (f == null) return;
+      final bytes = await f.readAsBytes();
       final res = await repo.importar(utf8.decode(bytes, allowMalformed: true));
       if (!mounted) return;
       await showDialog<void>(
