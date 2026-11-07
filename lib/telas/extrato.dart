@@ -5,6 +5,7 @@ import '../dados/resumo.dart';
 import '../tema.dart';
 import '../util/fmt.dart';
 import '../widgets/comum.dart';
+import 'analise.dart';
 import 'busca.dart';
 import 'lancar.dart';
 
@@ -13,7 +14,8 @@ class TelaExtrato extends StatefulWidget {
   final ValueChanged<String> onMes;
   final String filtroInicial;
   final String? catInicial;
-  const TelaExtrato({super.key, required this.ym, required this.onMes, this.filtroInicial = 'tudo', this.catInicial});
+  final bool analiseInicial;
+  const TelaExtrato({super.key, required this.ym, required this.onMes, this.filtroInicial = 'tudo', this.catInicial, this.analiseInicial = false});
   @override
   State<TelaExtrato> createState() => _TelaExtratoState();
 }
@@ -22,6 +24,7 @@ class _TelaExtratoState extends State<TelaExtrato> {
   late String filtro = widget.filtroInicial; // tudo | saidas | entradas
   late String? cat = widget.catInicial;
   final buscaC = TextEditingController();
+  late bool analise = widget.analiseInicial;
 
   @override
   void didUpdateWidget(covariant TelaExtrato old) {
@@ -76,7 +79,35 @@ class _TelaExtratoState extends State<TelaExtrato> {
               ]),
             ]),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
+          SegmentedButton<bool>(
+            segments: const [
+              ButtonSegment(value: false, label: Text('Lançamentos'), icon: Icon(Icons.receipt_long_rounded, size: 18)),
+              ButtonSegment(value: true, label: Text('Análise'), icon: Icon(Icons.insights_rounded, size: 18)),
+            ],
+            selected: {analise},
+            showSelectedIcon: false,
+            style: SegmentedButton.styleFrom(
+              selectedBackgroundColor: G.branco,
+              selectedForegroundColor: G.tinta,
+              foregroundColor: G.texto2,
+              side: const BorderSide(color: G.borda),
+              textStyle: const TextStyle(fontWeight: FontWeight.w800),
+            ),
+            onSelectionChanged: (s) => setState(() => analise = s.first),
+          ),
+          const SizedBox(height: 12),
+          if (analise)
+            AnaliseExtrato(
+              ym: widget.ym,
+              onMes: widget.onMes,
+              verCategoria: (c) => setState(() {
+                analise = false;
+                filtro = 'saidas';
+                cat = c;
+              }),
+            ),
+          if (!analise) ...[
           TextField(
             controller: buscaC,
             onChanged: (_) => setState(() {}),
@@ -139,9 +170,12 @@ class _TelaExtratoState extends State<TelaExtrato> {
                 Text(brl(totalFiltro, sinal: true), style: TextStyle(fontWeight: FontWeight.w800, color: totalFiltro < 0 ? G.texto : G.pos)),
               ]),
             ),
+          ],
         ]),
       ),
-      if (lista.isEmpty)
+      if (analise)
+        const SliverToBoxAdapter(child: SizedBox(height: 130))
+      else if (lista.isEmpty)
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.all(30),

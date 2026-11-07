@@ -193,6 +193,8 @@ class _Resumo extends StatelessWidget {
               tracejada: const [false, true],
               formatoY: curto,
               rotulosX: [dataCurta(amostra.first.data), dataCurta(amostra[amostra.length ~/ 2].data), dataCurta(amostra.last.data)],
+              nomes: const ['Saldo', 'Aplicado'],
+              rotuloToque: (i) => dataBr(amostra[i.clamp(0, amostra.length - 1).toInt()].data),
             ),
             const SizedBox(height: 8),
             const Row(children: [
@@ -869,6 +871,8 @@ class _RelatoriosState extends State<_Relatorios> {
             tracejada: const [false, true],
             formatoY: curto,
             rotulosX: ['hoje', '${anos ~/ 2} anos', '$anos anos'],
+            nomes: const ['Saldo', 'Investido'],
+            rotuloToque: (i) => mesLongo(ymAdd(ymDe(hojeIso()), amostra[i.clamp(0, amostra.length - 1).toInt()].m)),
           ),
           const Rotulo('Quanto tempo até chegar em…'),
           CampoValor(metaC, rotulo: 'Meta'),

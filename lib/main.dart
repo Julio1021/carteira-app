@@ -76,6 +76,7 @@ class _CascaState extends State<Casca> {
   String filtroExtrato = 'tudo';
   String? catExtrato;
   int subPat = 0;
+  bool analiseDemo = false;
 
   static const _titulos = ['Início', 'Extrato', 'Planejar', 'Patrimônio'];
 
@@ -87,6 +88,7 @@ class _CascaState extends State<Casca> {
       final q = Uri.base.queryParameters;
       aba = (int.tryParse(q['aba'] ?? '') ?? 0).clamp(0, 3).toInt();
       subPat = (int.tryParse(q['sub'] ?? '') ?? 0).clamp(0, 3).toInt();
+      analiseDemo = q['analise'] == '1';
       final tela = q['tela'];
       if (tela != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -129,7 +131,7 @@ class _CascaState extends State<Casca> {
         irExtratoFiltro: (f) => _irAba(1, filtro: f),
         irPlanejar: () => _irAba(2),
       ),
-      TelaExtrato(ym: ym, onMes: (m) => setState(() => ym = m), filtroInicial: filtroExtrato, catInicial: catExtrato),
+      TelaExtrato(ym: ym, onMes: (m) => setState(() => ym = m), filtroInicial: filtroExtrato, catInicial: catExtrato, analiseInicial: analiseDemo),
       TelaPlanejar(irLimites: _abrirLimites),
       TelaPatrimonio(key: ValueKey('pat$subPat'), subInicial: subPat),
     ];

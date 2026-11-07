@@ -94,6 +94,7 @@ jobs:
           tirar 16-avisos "&tela=avisos"
           tirar 17-busca "&tela=busca" 1400
           tirar 18-importar "&tela=importar"
+          tirar 19-analise "&aba=1&analise=1" 3600
           ls -la ../../prints
 
       - name: Guardar APK
