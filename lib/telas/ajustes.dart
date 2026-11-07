@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 
 import '../tema.dart';
 import '../widgets/comum.dart';
+import 'importar.dart';
 
 class TelaAjustes extends StatefulWidget {
   const TelaAjustes({super.key});
@@ -104,6 +105,12 @@ class _TelaAjustesState extends State<TelaAjustes> {
         CaixaLista([
           item(Icons.file_upload_outlined, 'Importar backup', 'Traga o arquivo .json exportado do app antigo ou deste app', _importar),
           item(Icons.file_download_outlined, 'Exportar backup', 'Salva uma cópia de tudo (${repo.totalRegistros} registros)', _exportar),
+        ]),
+        const SizedBox(height: 18),
+        const Padding(padding: EdgeInsets.fromLTRB(4, 0, 4, 8), child: Text('Importar do banco', style: TextStyle(color: G.apagado, fontWeight: FontWeight.w700))),
+        CaixaLista([
+          item(Icons.account_balance_outlined, 'Extrato da conta (OFX)', 'Gastos e entradas do Inter, Nubank, Mercado Pago…', () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TelaImportarExtrato()))),
+          item(Icons.picture_as_pdf_outlined, 'Investimentos do Inter (PDF)', 'Extrato de movimentações: aplicações e resgates', () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TelaImportarInter()))),
         ]),
         const SizedBox(height: 18),
         const Padding(padding: EdgeInsets.fromLTRB(4, 0, 4, 8), child: Text('Em breve', style: TextStyle(color: G.apagado, fontWeight: FontWeight.w700))),

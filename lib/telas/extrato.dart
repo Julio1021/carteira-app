@@ -5,26 +5,31 @@ import '../dados/resumo.dart';
 import '../tema.dart';
 import '../util/fmt.dart';
 import '../widgets/comum.dart';
+import 'busca.dart';
 import 'lancar.dart';
 
 class TelaExtrato extends StatefulWidget {
   final String ym;
   final ValueChanged<String> onMes;
   final String filtroInicial;
-  const TelaExtrato({super.key, required this.ym, required this.onMes, this.filtroInicial = 'tudo'});
+  final String? catInicial;
+  const TelaExtrato({super.key, required this.ym, required this.onMes, this.filtroInicial = 'tudo', this.catInicial});
   @override
   State<TelaExtrato> createState() => _TelaExtratoState();
 }
 
 class _TelaExtratoState extends State<TelaExtrato> {
   late String filtro = widget.filtroInicial; // tudo | saidas | entradas
-  String? cat;
+  late String? cat = widget.catInicial;
   final buscaC = TextEditingController();
 
   @override
   void didUpdateWidget(covariant TelaExtrato old) {
     super.didUpdateWidget(old);
-    if (old.filtroInicial != widget.filtroInicial) filtro = widget.filtroInicial;
+    if (old.filtroInicial != widget.filtroInicial || old.catInicial != widget.catInicial) {
+      filtro = widget.filtroInicial;
+      cat = widget.catInicial;
+    }
   }
 
   @override
@@ -87,7 +92,14 @@ class _TelaExtratoState extends State<TelaExtrato> {
                     ),
             ),
           ),
-          const SizedBox(height: 10),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => TelaBusca(inicial: buscaC.text))),
+              icon: const Icon(Icons.manage_search_rounded, size: 18),
+              label: const Text('Buscar em todos os meses'),
+            ),
+          ),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(children: [

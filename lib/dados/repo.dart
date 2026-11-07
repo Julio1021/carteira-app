@@ -125,6 +125,14 @@ class Repo extends ChangeNotifier {
     notifyListeners();
   }
 
+  final Map<String, List<String>> _listasMem = {};
+  List<String> lista(String k) => _sp?.getStringList('carteira.$k') ?? _listasMem[k] ?? const [];
+  Future<void> guardarLista(String k, List<String> v) async {
+    _listasMem[k] = v;
+    await _sp?.setStringList('carteira.$k', v);
+    notifyListeners();
+  }
+
   Future<void> apagar(String id) async {
     if (_docs.remove(id) == null) return;
     tomb[id] = DateTime.now().millisecondsSinceEpoch;

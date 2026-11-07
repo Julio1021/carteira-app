@@ -91,6 +91,9 @@ jobs:
           tirar 13-lancar "&aba=3&sub=1" 1500
           tirar 14-ativos "&aba=3&sub=2"
           tirar 15-relatorios "&aba=3&sub=3" 2600
+          tirar 16-avisos "&tela=avisos"
+          tirar 17-busca "&tela=busca" 1400
+          tirar 18-importar "&tela=importar"
           ls -la ../../prints
 
       - name: Guardar APK

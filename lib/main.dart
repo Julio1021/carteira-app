@@ -15,6 +15,9 @@ import 'telas/cartoes.dart';
 import 'telas/emprestimos.dart';
 import 'telas/planejar.dart';
 import 'telas/patrimonio.dart';
+import 'telas/avisos.dart';
+import 'telas/busca.dart';
+import 'telas/importar.dart';
 import 'util/fmt.dart';
 import 'widgets/comum.dart';
 
@@ -71,6 +74,7 @@ class _CascaState extends State<Casca> {
   int aba = 0;
   String ym = ymDe(hojeIso());
   String filtroExtrato = 'tudo';
+  String? catExtrato;
   int subPat = 0;
 
   static const _titulos = ['Início', 'Extrato', 'Planejar', 'Patrimônio'];
@@ -92,6 +96,9 @@ class _CascaState extends State<Casca> {
           if (tela == 'menu') abrirMenuLancar(context);
           if (tela == 'limites') _abrirLimites();
           if (tela == 'ajustes') Navigator.of(context).pushNamed('/ajustes');
+          if (tela == 'busca') Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TelaBusca(inicial: 'mercado')));
+          if (tela == 'importar') Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TelaImportarExtrato()));
+          if (tela == 'avisos') abrirAvisos(context, (c) => _irAba(1, filtro: 'saidas', cat: c));
           if (tela == 'cartoes') Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TelaCartoes()));
           if (tela == 'cartao') Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TelaCartao(id: 'cc_demo')));
           if (tela == 'emprestimos') Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TelaEmprestimos()));
@@ -100,11 +107,12 @@ class _CascaState extends State<Casca> {
     }
   }
 
-  void _irAba(int i, {String filtro = 'tudo'}) {
+  void _irAba(int i, {String filtro = 'tudo', String? cat}) {
     HapticFeedback.selectionClick();
     setState(() {
       aba = i;
       filtroExtrato = filtro;
+      catExtrato = cat;
     });
   }
 
@@ -121,7 +129,7 @@ class _CascaState extends State<Casca> {
         irExtratoFiltro: (f) => _irAba(1, filtro: f),
         irPlanejar: () => _irAba(2),
       ),
-      TelaExtrato(ym: ym, onMes: (m) => setState(() => ym = m), filtroInicial: filtroExtrato),
+      TelaExtrato(ym: ym, onMes: (m) => setState(() => ym = m), filtroInicial: filtroExtrato, catInicial: catExtrato),
       TelaPlanejar(irLimites: _abrirLimites),
       TelaPatrimonio(key: ValueKey('pat$subPat'), subInicial: subPat),
     ];
@@ -135,7 +143,7 @@ class _CascaState extends State<Casca> {
         body: SafeArea(
           bottom: false,
           child: Column(children: [
-            _Cabecalho(titulo: _titulos[aba]),
+            _Cabecalho(titulo: _titulos[aba], verCategoria: (c) => _irAba(1, filtro: 'saidas', cat: c)),
             Expanded(child: IndexedStack(index: aba, children: telas)),
           ]),
         ),
@@ -147,7 +155,8 @@ class _CascaState extends State<Casca> {
 
 class _Cabecalho extends StatelessWidget {
   final String titulo;
-  const _Cabecalho({required this.titulo});
+  final void Function(String cat) verCategoria;
+  const _Cabecalho({required this.titulo, required this.verCategoria});
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -160,6 +169,8 @@ class _Cabecalho extends StatelessWidget {
             Text(titulo, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800)),
           ]),
         ),
+        BotaoAvisos(verCategoria: verCategoria),
+        const SizedBox(width: 8),
         IconButton(
           tooltip: 'Ajustes',
           onPressed: () => Navigator.of(context).pushNamed('/ajustes'),

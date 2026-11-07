@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import '../dados/categorias.dart';
 import '../dados/planejar.dart';
 import '../widgets/formulario.dart';
+import 'busca.dart';
 import 'contas.dart';
+import 'importar.dart';
 import '../dados/resumo.dart';
 import '../tema.dart';
 import '../util/fmt.dart';
@@ -188,7 +190,8 @@ class _Atalhos extends StatelessWidget {
     return Row(children: [
       at(Icons.add_rounded, 'Gasto', () => abrirFormLanc(context), destaque: true),
       at(Icons.arrow_upward_rounded, 'Entrada', () => abrirFormLanc(context, entrada: true)),
-      at(Icons.receipt_long_rounded, 'Extrato', irExtrato),
+      at(Icons.file_download_outlined, 'Importar', () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TelaImportarExtrato()))),
+      at(Icons.search_rounded, 'Buscar', () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TelaBusca()))),
       at(Icons.tune_rounded, 'Limites', irLimites),
     ]);
   }
