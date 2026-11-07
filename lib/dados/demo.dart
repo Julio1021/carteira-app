@@ -48,5 +48,19 @@ List<Doc> dadosDemo() {
   }
   out.add({'kind': 'emprestimo', 'id': 'em_demo', 'pessoa': 'Carlos Souza', 'valor': 1500.0, 'data': '${ymAdd(ym, -3)}-05', 'ini': ymAdd(ym, -2), 'parc': 5, 'dia': 10, 'obs': '', 'criado': 1});
   out.add({'kind': 'receb', 'id': 'rc_demo1', 'emp': 'em_demo', 'valor': 300.0, 'data': '${ymAdd(ym, -2)}-10'});
+  // Patrimônio: 4 ativos com lançamentos semanais nos últimos 10 meses
+  const ativos = [('a_demo1', 'Inter CDB', 'Renda Fixa', 'Banco Inter', 18000.0, 600.0), ('a_demo2', 'Tesouro Selic', 'Tesouro Direto', 'Banco Inter', 12000.0, 400.0),
+    ('a_demo3', 'Nubank Caixinha', 'Renda Fixa', 'Nubank', 9000.0, 300.0), ('a_demo4', 'Mercado Pago Cofrinho', 'Renda Fixa', 'Mercado Pago', 6000.0, 200.0)];
+  for (var k = 0; k < ativos.length; k++) {
+    final (id, nome, classe, inst, v0, ap) = ativos[k];
+    out.add({'kind': 'ativo', 'id': id, 'nome': nome, 'classe': classe, 'inst': inst, 'cor': k, 'ordem': k});
+    var v = v0;
+    for (var w = 40; w >= 0; w--) {
+      final d = addDias(h, -w * 7);
+      final aporte = (w < 40 && w % 4 == 0) ? ap : 0.0;
+      if (w < 40) v = v * (1.0022 + (k * 0.0003) + ((w * 7 + k) % 5 - 2) * 0.0004) + aporte;
+      out.add({'kind': 'lanc', 'id': 'l_${id}_$d', 'ativo': id, 'data': d, 'saldo': (v * 100).round() / 100, 'aporte': aporte});
+    }
+  }
   return out;
 }

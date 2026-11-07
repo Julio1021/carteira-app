@@ -14,6 +14,7 @@ import 'telas/limites.dart';
 import 'telas/cartoes.dart';
 import 'telas/emprestimos.dart';
 import 'telas/planejar.dart';
+import 'telas/patrimonio.dart';
 import 'util/fmt.dart';
 import 'widgets/comum.dart';
 
@@ -70,6 +71,7 @@ class _CascaState extends State<Casca> {
   int aba = 0;
   String ym = ymDe(hojeIso());
   String filtroExtrato = 'tudo';
+  int subPat = 0;
 
   static const _titulos = ['Início', 'Extrato', 'Planejar', 'Patrimônio'];
 
@@ -80,6 +82,7 @@ class _CascaState extends State<Casca> {
     if (kIsWeb && Uri.base.queryParameters['demo'] == '1') {
       final q = Uri.base.queryParameters;
       aba = (int.tryParse(q['aba'] ?? '') ?? 0).clamp(0, 3).toInt();
+      subPat = (int.tryParse(q['sub'] ?? '') ?? 0).clamp(0, 3).toInt();
       final tela = q['tela'];
       if (tela != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -120,7 +123,7 @@ class _CascaState extends State<Casca> {
       ),
       TelaExtrato(ym: ym, onMes: (m) => setState(() => ym = m), filtroInicial: filtroExtrato),
       TelaPlanejar(irLimites: _abrirLimites),
-      const _EmBreve(icone: Icons.show_chart_rounded, titulo: 'Patrimônio', texto: 'Investimentos, saldos diários e relatórios chegam numa próxima versão. Seus dados de investimentos já vêm no backup e ficam guardados.'),
+      TelaPatrimonio(key: ValueKey('pat$subPat'), subInicial: subPat),
     ];
     return PopScope(
       canPop: aba == 0,
@@ -247,32 +250,6 @@ class _MenuBaixo extends StatelessWidget {
             ),
           ]),
         ),
-      ),
-    );
-  }
-}
-
-class _EmBreve extends StatelessWidget {
-  final IconData icone;
-  final String titulo, texto;
-  const _EmBreve({required this.icone, required this.titulo, required this.texto});
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(28, 0, 28, 120),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(color: const Color(0x14FFFFFF), borderRadius: BorderRadius.circular(24), border: Border.all(color: G.borda)),
-            child: Icon(icone, size: 34, color: G.lavanda),
-          ),
-          const SizedBox(height: 16),
-          Text('$titulo em construção', style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800)),
-          const SizedBox(height: 8),
-          Text(texto, textAlign: TextAlign.center, style: const TextStyle(color: G.texto2, height: 1.4)),
-        ]),
       ),
     );
   }

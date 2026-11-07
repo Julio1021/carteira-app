@@ -87,6 +87,10 @@ jobs:
           tirar 9-cartoes "&tela=cartoes"
           tirar 10-cartao "&tela=cartao" 1300
           tirar 11-emprestimos "&tela=emprestimos"
+          tirar 12-patrimonio "&aba=3" 2400
+          tirar 13-lancar "&aba=3&sub=1" 1500
+          tirar 14-ativos "&aba=3&sub=2"
+          tirar 15-relatorios "&aba=3&sub=3" 2600
           ls -la ../../prints
 
       - name: Guardar APK
