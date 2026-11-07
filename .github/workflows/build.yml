@@ -1,0 +1,105 @@
+name: Compilar app
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      TEM_CHAVE: ${{ secrets.KEYSTORE_BASE64 != '' && 'sim' || 'nao' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Versão do Flutter
+        run: flutter --version
+
+      - name: Preparar Android e web
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        run: bash tool/preparar_android.sh
+
+      - name: Dependências
+        run: flutter pub get
+
+      - name: Ícone do app
+        run: dart run flutter_launcher_icons
+
+      - name: Análise do código
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: Testes
+        run: flutter test
+
+      - name: Número da versão
+        id: ver
+        run: echo "n=$(( 100 + ${{ github.run_number }} ))" >> "$GITHUB_OUTPUT"
+
+      - name: APK (para instalar e testar)
+        run: flutter build apk --release --build-number=${{ steps.ver.outputs.n }}
+
+      - name: AAB (para a Play Store)
+        if: ${{ env.TEM_CHAVE == 'sim' }}
+        run: flutter build appbundle --release --build-number=${{ steps.ver.outputs.n }}
+
+      - name: Web (para os prints)
+        run: flutter build web --release
+
+      - name: Prints das telas
+        run: |
+          cd build/web
+          python3 -m http.server 8080 >/dev/null 2>&1 &
+          sleep 2
+          mkdir -p ../../prints
+          tirar() {
+            google-chrome --headless=new --no-sandbox --disable-gpu --hide-scrollbars \
+              --window-size=390,844 --force-device-scale-factor=2 \
+              --virtual-time-budget=15000 \
+              --screenshot="../../prints/$1.png" "http://localhost:8080/?demo=1$2" || true
+          }
+          tirar 1-inicio ""
+          tirar 2-extrato "&aba=1"
+          tirar 3-menu-mais "&tela=menu"
+          tirar 4-novo-gasto "&tela=lancar"
+          tirar 5-nova-entrada "&tela=entrada"
+          tirar 6-limites "&tela=limites"
+          tirar 7-ajustes "&tela=ajustes"
+          ls -la ../../prints
+
+      - name: Guardar APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: carteira-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Guardar AAB
+        if: ${{ hashFiles('build/app/outputs/bundle/release/app-release.aab') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: carteira-aab
+          path: build/app/outputs/bundle/release/app-release.aab
+
+      - name: Guardar prints
+        uses: actions/upload-artifact@v4
+        with:
+          name: prints
+          path: prints/
