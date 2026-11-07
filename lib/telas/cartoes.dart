@@ -88,12 +88,13 @@ class _ResumoCartaoWidget extends StatelessWidget {
 
 class _Selo extends StatelessWidget {
   final String t;
-  const _Selo(this.t);
+  final bool tema;
+  const _Selo(this.t, {this.tema = false});
   @override
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(color: const Color(0x33FFFFFF), borderRadius: BorderRadius.circular(99)),
-        child: Text(t, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 12)),
+        decoration: BoxDecoration(color: tema ? G.v(0x14) : const Color(0x33FFFFFF), borderRadius: BorderRadius.circular(99)),
+        child: Text(t, style: TextStyle(color: tema ? G.texto : Colors.white, fontWeight: FontWeight.w800, fontSize: 12)),
       );
 }
 
@@ -150,7 +151,7 @@ class _TelaCartaoState extends State<TelaCartao> {
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
               Expanded(child: Text('Fatura de ${mesLongo(sel.ym).toLowerCase()}', style: TextStyle(color: G.texto2))),
-              _Selo(sel.stTexto),
+              _Selo(sel.stTexto, tema: true),
             ]),
             const SizedBox(height: 4),
             Text(brl(sel.total), style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w800)),
