@@ -72,7 +72,7 @@ class _Destaque extends StatelessWidget {
         Text.rich(
           TextSpan(style: TextStyle(fontSize: 15.5, height: 1.45, color: G.texto), children: [
             TextSpan(text: emAndamento ? 'Até o dia ${rit.diaHoje}, entraram ' : 'Em $mesNome entraram '),
-            TextSpan(text: brl(r.entrou), style: const TextStyle(fontWeight: FontWeight.w800, color: corEntrada)),
+            TextSpan(text: brl(r.entrou), style: TextStyle(fontWeight: FontWeight.w800, color: corEntrada)),
             const TextSpan(text: ' e saíram '),
             TextSpan(text: brl(r.saiu), style: TextStyle(fontWeight: FontWeight.w800, color: corSaida)),
             const TextSpan(text: '. '),
