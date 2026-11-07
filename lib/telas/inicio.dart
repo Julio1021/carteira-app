@@ -380,7 +380,7 @@ class _Investiu extends StatelessWidget {
             Expanded(
               flex: 2,
               child: Text(
-                vazio ? 'toque para registrar' : (pct != null && !resgatou ? '${(pct * 100).round()}% do que entrou' : ''),
+                vazio ? 'toque para registrar' : (pct != null && !resgatou ? '${(pct * 100).round()}% da renda' : ''),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.right,
