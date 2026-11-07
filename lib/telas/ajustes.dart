@@ -20,7 +20,7 @@ class _TelaAjustesState extends State<TelaAjustes> {
     final repo = RepoScope.ler(context);
     setState(() => ocupado = true);
     try {
-      final r = await FilePicker.platform.pickFiles(type: FileType.any, withData: true);
+      final r = await FilePicker.pickFiles(type: FileType.any, withData: true);
       final f = r?.files.single;
       final bytes = f?.bytes;
       if (bytes == null) return;
@@ -50,7 +50,7 @@ class _TelaAjustesState extends State<TelaAjustes> {
     final repo = RepoScope.ler(context);
     final bytes = Uint8List.fromList(utf8.encode(repo.exportar()));
     try {
-      final caminho = await FilePicker.platform.saveFile(
+      final caminho = await FilePicker.saveFile(
         dialogTitle: 'Salvar backup',
         fileName: repo.nomeBackup(),
         type: FileType.custom,
