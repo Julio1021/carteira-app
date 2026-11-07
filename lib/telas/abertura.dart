@@ -163,10 +163,9 @@ class _Carteira extends CustomPainter {
     canvas.scale(s);
     final fundo = RRect.fromRectAndRadius(const Rect.fromLTWH(0, 0, 512, 512), const Radius.circular(116));
     canvas.drawRRect(fundo, Paint()..color = const Color(0xFF2A2D44));
-    canvas.clipRRect(fundo);
 
-    // moedas caindo (por trás da carteira: somem ao entrar)
-    const moedas = [(x: 196.0, ini: .10), (x: 262.0, ini: .19), (x: 228.0, ini: .28)];
+    // moedas caindo de cima da tela para dentro da carteira (somem atrás dela)
+    const moedas = [(x: 190.0, ini: .08), (x: 268.0, ini: .17), (x: 228.0, ini: .26)];
     var tranco = 0.0;
     for (final m in moedas) {
       final p = _f(m.ini, m.ini + .14, Curves.easeInQuad);
@@ -174,21 +173,23 @@ class _Carteira extends CustomPainter {
         if (p >= 1) tranco = math.max(tranco, 1 - _f(m.ini + .14, m.ini + .2));
         continue;
       }
-      final y = -40 + (270 - -40) * p;
-      final giro = math.cos(p * math.pi * 3).abs() * .7 + .3;
+      final y = -420 + (290 - -420) * p;
+      final giro = math.cos(p * math.pi * 2).abs() * .45 + .55;
+      final op = (1 - _f(m.ini + .12, m.ini + .14)).clamp(0.0, 1.0);
       canvas.save();
       canvas.translate(m.x, y);
       canvas.scale(giro, 1);
-      canvas.drawCircle(Offset.zero, 30, Paint()..color = const Color(0xFFD69A2D));
-      canvas.drawCircle(Offset.zero, 23, Paint()..color = const Color(0xFFF5C26B));
+      canvas.drawCircle(Offset.zero, 46, Paint()..color = const Color(0xFFD69A2D).withValues(alpha: op));
+      canvas.drawCircle(Offset.zero, 36, Paint()..color = const Color(0xFFF5C26B).withValues(alpha: op));
       final tp = TextPainter(
-        text: const TextSpan(text: r'$', style: TextStyle(fontSize: 30, fontWeight: FontWeight.w900, color: Color(0xFFB07A1E))),
+        text: const TextSpan(text: r'$', style: TextStyle(fontSize: 46, fontWeight: FontWeight.w900, color: Color(0xFFB07A1E))),
         textDirection: TextDirection.ltr,
       )..layout();
       tp.paint(canvas, Offset(-tp.width / 2, -tp.height / 2));
       canvas.restore();
     }
 
+    canvas.clipRRect(fundo);
     // carteira (dá um pulinho quando a moeda cai)
     final dy = -10 * math.sin(tranco * math.pi);
     canvas.save();
@@ -221,7 +222,7 @@ class _Carteira extends CustomPainter {
         Paint()
           ..color = const Color(0xFFB9BFF6)
           ..style = PaintingStyle.stroke
-          ..strokeWidth = c != null ? 22 : 26
+          ..strokeWidth = 28
           ..strokeCap = StrokeCap.round
           ..strokeJoin = StrokeJoin.round,
       );
