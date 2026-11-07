@@ -90,9 +90,18 @@ class HeroMes extends StatelessWidget {
             child: Column(children: [
               Row(children: [
                 const Text('Limite de gastos', style: TextStyle(color: G.texto2, fontSize: 13)),
-                const Spacer(),
-                Text(brl(r.gastoComLimite), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
-                Text(' de ${brl(r.limiteTotal)}', style: const TextStyle(color: G.texto2, fontSize: 12)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text.rich(
+                    TextSpan(children: [
+                      TextSpan(text: brl(r.gastoComLimite), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+                      TextSpan(text: ' de ${brl(r.limiteTotal)}', style: const TextStyle(color: G.texto2, fontSize: 12)),
+                    ]),
+                    textAlign: TextAlign.right,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
               ]),
               const SizedBox(height: 8),
               Barra(uso ?? 0, cor: corLim),

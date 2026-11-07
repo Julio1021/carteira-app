@@ -180,12 +180,12 @@ class _MenuBaixo extends StatelessWidget {
         child: InkResponse(
           onTap: () => onAba(i),
           radius: 36,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
             child: Column(mainAxisSize: MainAxisSize.min, children: [
               Icon(on ? icOn : ic, color: on ? G.branco : const Color(0xFF80849B)),
               const SizedBox(height: 3),
-              Text(t, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: on ? G.branco : const Color(0xFF80849B))),
+              Text(t, maxLines: 1, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: on ? G.branco : const Color(0xFF80849B))),
               const SizedBox(height: 3),
               AnimatedContainer(duration: const Duration(milliseconds: 200), width: on ? 18 : 0, height: 3, decoration: BoxDecoration(color: G.branco, borderRadius: BorderRadius.circular(3))),
             ]),

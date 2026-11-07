@@ -123,8 +123,7 @@ class _TelaExtratoState extends State<TelaExtrato> {
             Padding(
               padding: const EdgeInsets.only(bottom: 10, left: 4, right: 4),
               child: Row(children: [
-                Text('${lista.length} lançamento${lista.length == 1 ? '' : 's'}', style: const TextStyle(color: G.apagado)),
-                const Spacer(),
+                Expanded(child: Text('${lista.length} lançamento${lista.length == 1 ? '' : 's'}', style: const TextStyle(color: G.apagado))),
                 Text(brl(totalFiltro, sinal: true), style: TextStyle(fontWeight: FontWeight.w800, color: totalFiltro < 0 ? G.texto : G.pos)),
               ]),
             ),
@@ -156,8 +155,7 @@ class _TelaExtratoState extends State<TelaExtrato> {
                   Padding(
                     padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
                     child: Row(children: [
-                      Text(rotuloDia(dia), style: const TextStyle(fontWeight: FontWeight.w800)),
-                      const Spacer(),
+                      Expanded(child: Text(rotuloDia(dia), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800))),
                       Text(brl(tot, sinal: true), style: TextStyle(color: tot < 0 ? G.apagado : G.pos, fontWeight: FontWeight.w700, fontSize: 13)),
                     ]),
                   ),

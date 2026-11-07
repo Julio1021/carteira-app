@@ -15,6 +15,7 @@ void main() {
 
     expect(find.text('Início'), findsWidgets);
     expect(find.text('Entrou'), findsOneWidget);
+    await t.scrollUntilVisible(find.text('Últimos lançamentos'), 300, scrollable: find.byType(Scrollable).first);
     expect(find.text('Últimos lançamentos'), findsOneWidget);
 
     await t.tap(find.text('Extrato').last);
