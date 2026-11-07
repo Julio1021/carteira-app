@@ -368,13 +368,13 @@ class _Investiu extends StatelessWidget {
             Text(resgatou ? 'Resgatou' : 'Investiu', style: const TextStyle(color: GE.texto2, fontWeight: FontWeight.w700, fontSize: 13)),
             const SizedBox(width: 8),
             Text(brl(r.investiu.abs()), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15.5)),
-            const Spacer(),
-            Flexible(
-              flex: 0,
+            const SizedBox(width: 8),
+            Expanded(
               child: Text(
                 vazio ? 'toque para registrar' : (pct != null && !resgatou ? '${(pct * 100).round()}% do que entrou' : ''),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.right,
                 style: const TextStyle(color: GE.texto2, fontSize: 12, fontWeight: FontWeight.w600),
               ),
             ),
