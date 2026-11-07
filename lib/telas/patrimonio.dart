@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../dados/modelos.dart';
 import '../dados/patrimonio.dart';
+import '../dados/repo.dart';
 import '../dados/resumo.dart';
 import '../tema.dart';
 import '../util/fmt.dart';
