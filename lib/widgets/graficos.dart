@@ -121,7 +121,7 @@ class GraficoLinha extends StatelessWidget {
                       dashArray: [6, 5],
                       label: HorizontalLineLabel(
                         show: nomeLinhaH != null,
-                        alignment: Alignment.topRight,
+                        alignment: Alignment.bottomRight,
                         style: const TextStyle(color: G.neg, fontSize: 10, fontWeight: FontWeight.w700),
                         labelResolver: (_) => nomeLinhaH ?? '',
                       ),

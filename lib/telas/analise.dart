@@ -212,7 +212,7 @@ class _RitmoCard extends StatelessWidget {
         Wrap(spacing: 14, runSpacing: 6, children: [
           Legenda(corSaida, mesNome),
           Legenda(corAnterior, ant, tracejada: true),
-          if (temMedia) const Legenda(G.lavanda, 'média de 3 meses', tracejada: true),
+          if (temMedia) const Legenda(G.lavanda, 'sua média', tracejada: true),
           if (rit.limite > 0) const Legenda(G.neg, 'limite', tracejada: true),
         ]),
         if (projecao != null) ...[
@@ -316,7 +316,7 @@ class _Comparativo extends StatelessWidget {
         const Text('Este mês × sua média', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
         const SizedBox(height: 2),
         Text(
-          atual ? 'Do dia 1 ao dia ${comp.ateDia}, comparado ao mesmo trecho dos ${comp.nMeses} meses anteriores.' : 'Comparado à média dos ${comp.nMeses} meses anteriores.',
+          atual ? 'Do dia 1 ao dia ${comp.ateDia}, comparado ao mesmo trecho ${comp.nMeses == 1 ? 'do mês anterior' : 'dos ${comp.nMeses} meses anteriores'}.' : 'Comparado ${comp.nMeses == 1 ? 'ao mês anterior' : 'à média dos ${comp.nMeses} meses anteriores'}.',
           style: const TextStyle(color: G.apagado, fontSize: 12.5),
         ),
         const SizedBox(height: 12),
