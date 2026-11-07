@@ -365,11 +365,20 @@ class _Investiu extends StatelessWidget {
               child: const Icon(Icons.savings_rounded, size: 18, color: GE.lavanda),
             ),
             const SizedBox(width: 10),
-            Text(resgatou ? 'Resgatou' : 'Investiu', style: const TextStyle(color: GE.texto2, fontWeight: FontWeight.w700, fontSize: 13)),
-            const SizedBox(width: 8),
-            Text(brl(r.investiu.abs()), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15.5)),
-            const SizedBox(width: 8),
             Expanded(
+              flex: 3,
+              child: Text.rich(
+                TextSpan(children: [
+                  TextSpan(text: resgatou ? 'Resgatou  ' : 'Investiu  ', style: const TextStyle(color: GE.texto2, fontWeight: FontWeight.w700, fontSize: 13)),
+                  TextSpan(text: brl(r.investiu.abs()), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15.5)),
+                ]),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              flex: 2,
               child: Text(
                 vazio ? 'toque para registrar' : (pct != null && !resgatou ? '${(pct * 100).round()}% do que entrou' : ''),
                 maxLines: 1,
