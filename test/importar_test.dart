@@ -30,7 +30,7 @@ void main() {
       expect(o.saldoData, '2026-11-06');
       expect(nomeBanco(o), 'Inter');
       expect(limpaNome(o.tx.first), 'SUPERMERCADO DIA');
-      expect(tituloOfx('SUPERMERCADO DIA LTDA'), 'Supermercado Dia LTDA');
+      expect(tituloOfx('SUPERMERCADO DIA LTDA ME'), 'Supermercado Dia Ltda ME');
     });
 
     test('classifica, ignora aplicação e não duplica o que já foi importado', () {
