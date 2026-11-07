@@ -72,17 +72,21 @@ jobs:
           mkdir -p ../../prints
           tirar() {
             google-chrome --headless=new --no-sandbox --disable-gpu --hide-scrollbars \
-              --window-size=390,844 --force-device-scale-factor=2 \
+              --window-size=390,${3:-844} --force-device-scale-factor=2 \
               --virtual-time-budget=15000 \
               --screenshot="../../prints/$1.png" "http://localhost:8080/?demo=1$2" || true
           }
-          tirar 1-inicio ""
+          tirar 1-inicio "" 1700
           tirar 2-extrato "&aba=1"
           tirar 3-menu-mais "&tela=menu"
           tirar 4-novo-gasto "&tela=lancar"
           tirar 5-nova-entrada "&tela=entrada"
           tirar 6-limites "&tela=limites"
           tirar 7-ajustes "&tela=ajustes"
+          tirar 8-planejar "&aba=2" 2200
+          tirar 9-cartoes "&tela=cartoes"
+          tirar 10-cartao "&tela=cartao" 1300
+          tirar 11-emprestimos "&tela=emprestimos"
           ls -la ../../prints
 
       - name: Guardar APK

@@ -31,5 +31,22 @@ List<Doc> dadosDemo() {
   out.add({'kind': 'orc', 'id': 'orc_mercado', 'cat': 'mercado', 'limite': 900.0});
   out.add({'kind': 'orc', 'id': 'orc_alimentacao', 'cat': 'alimentacao', 'limite': 300.0});
   out.add({'kind': 'orc', 'id': 'orc_lazer', 'cat': 'lazer', 'limite': 200.0});
+  // Planejar
+  final criado = DateTime.now().subtract(const Duration(days: 90)).millisecondsSinceEpoch;
+  out.add({'kind': 'pagar', 'id': 'pg_demo1', 'nome': 'Aluguel', 'valor': 1300.0, 'rep': 'mensal', 'dia': 10, 'ini': ymAdd(ym, -2), 'cat': 'moradia', 'pag': 'Pix', 'criado': criado});
+  out.add({'kind': 'pagar', 'id': 'pg_demo2', 'nome': 'Internet', 'valor': 120.0, 'rep': 'mensal', 'dia': 15, 'ini': ymAdd(ym, -2), 'cat': 'internet', 'pag': 'Boleto', 'criado': criado});
+  out.add({'kind': 'pagar', 'id': 'pg_demo3', 'nome': 'Luz', 'valor': 187.4, 'rep': 'mensal', 'dia': 6, 'ini': ymAdd(ym, -1), 'cat': 'contas', 'pag': 'Boleto', 'variavel': true, 'criado': criado});
+  out.add({'kind': 'pagar', 'id': 'pg_demo4', 'nome': 'Geladeira', 'valor': 350.0, 'rep': 'parcelas', 'parc': 6, 'dia': 3, 'ini': ymAdd(ym, -1), 'cat': 'compras', 'pag': 'Boleto', 'criado': criado});
+  out.add({'kind': 'pagto', 'id': 'pp_pg_demo1_${ymAdd(ym, -2)}', 'conta': 'pg_demo1', 'mes': ymAdd(ym, -2), 'pago': true, 'valor': 1300.0, 'data': '${ymAdd(ym, -2)}-10'});
+  out.add({'kind': 'pagto', 'id': 'pp_pg_demo2_${ymAdd(ym, -2)}', 'conta': 'pg_demo2', 'mes': ymAdd(ym, -2), 'pago': true, 'valor': 120.0, 'data': '${ymAdd(ym, -2)}-15'});
+  out.add({'kind': 'renda', 'id': 'rd_salario', 'nome': 'Salário', 'valor': 4800.0, 'regra': 'util', 'mesSeg': false});
+  out.add({'kind': 'renda', 'id': 'rd_va', 'nome': 'Vale alimentação', 'valor': 900.0, 'regra': 'dia', 'dia': 20});
+  out.add({'kind': 'cartao', 'id': 'cc_demo', 'nome': 'Nubank', 'banco': 'Nubank', 'limite': 4000.0, 'fecha': 3, 'vence': 10, 'cor': '#820ad1', 'criado': 1});
+  out.add({'kind': 'gasto', 'id': 'g_cc1', 'desc': 'Amazon', 'valor': 189.9, 'data': addDias(h, -1), 'cat': 'compras', 'pag': 'Crédito', 'cartao': 'cc_demo', 'fat': ymAdd(ym, 1), 'criado': 5000});
+  for (var i = 0; i < 2; i++) {
+    out.add({'kind': 'gasto', 'id': 'g_ccp$i', 'desc': 'Celular (${i + 1}/10)', 'valor': 249.9, 'data': '${ymAdd(ym, i - 1)}-20', 'cat': 'compras', 'pag': 'Crédito', 'cartao': 'cc_demo', 'fat': ymAdd(ym, i), 'parc': {'i': i + 1, 'n': 10, 'g': 'cpdemo'}, 'criado': 5001 + i});
+  }
+  out.add({'kind': 'emprestimo', 'id': 'em_demo', 'pessoa': 'Carlos Souza', 'valor': 1500.0, 'data': '${ymAdd(ym, -3)}-05', 'ini': ymAdd(ym, -2), 'parc': 5, 'dia': 10, 'obs': '', 'criado': 1});
+  out.add({'kind': 'receb', 'id': 'rc_demo1', 'emp': 'em_demo', 'valor': 300.0, 'data': '${ymAdd(ym, -2)}-10'});
   return out;
 }

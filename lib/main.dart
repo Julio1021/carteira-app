@@ -11,6 +11,9 @@ import 'telas/extrato.dart';
 import 'telas/inicio.dart';
 import 'telas/lancar.dart';
 import 'telas/limites.dart';
+import 'telas/cartoes.dart';
+import 'telas/emprestimos.dart';
+import 'telas/planejar.dart';
 import 'util/fmt.dart';
 import 'widgets/comum.dart';
 
@@ -86,6 +89,9 @@ class _CascaState extends State<Casca> {
           if (tela == 'menu') abrirMenuLancar(context);
           if (tela == 'limites') _abrirLimites();
           if (tela == 'ajustes') Navigator.of(context).pushNamed('/ajustes');
+          if (tela == 'cartoes') Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TelaCartoes()));
+          if (tela == 'cartao') Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TelaCartao(id: 'cc_demo')));
+          if (tela == 'emprestimos') Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TelaEmprestimos()));
         });
       }
     }
@@ -110,9 +116,10 @@ class _CascaState extends State<Casca> {
         irExtrato: () => _irAba(1),
         irLimites: _abrirLimites,
         irExtratoFiltro: (f) => _irAba(1, filtro: f),
+        irPlanejar: () => _irAba(2),
       ),
       TelaExtrato(ym: ym, onMes: (m) => setState(() => ym = m), filtroInicial: filtroExtrato),
-      const _EmBreve(icone: Icons.event_note_rounded, titulo: 'Planejar', texto: 'Contas a pagar, cartões de crédito, recebimentos e metas chegam na próxima versão.'),
+      TelaPlanejar(irLimites: _abrirLimites),
       const _EmBreve(icone: Icons.show_chart_rounded, titulo: 'Patrimônio', texto: 'Investimentos, saldos diários e relatórios chegam numa próxima versão. Seus dados de investimentos já vêm no backup e ficam guardados.'),
     ];
     return PopScope(

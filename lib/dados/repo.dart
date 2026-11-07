@@ -89,6 +89,42 @@ class Repo extends ChangeNotifier {
     await _salvar();
   }
 
+  /// Salva vários registros de uma vez (um só aviso às telas).
+  Future<void> salvarVarios(Iterable<Doc> docs) async {
+    final t = DateTime.now().millisecondsSinceEpoch;
+    for (final d in docs) {
+      final c = Map<String, dynamic>.from(d);
+      c['_u'] = t;
+      _docs[c['id'] as String] = c;
+      tomb.remove(c['id']);
+    }
+    notifyListeners();
+    await _salvar();
+  }
+
+  Future<void> apagarVarios(Iterable<String> ids) async {
+    final t = DateTime.now().millisecondsSinceEpoch;
+    var mudou = false;
+    for (final id in ids) {
+      if (_docs.remove(id) != null) {
+        tomb[id] = t;
+        mudou = true;
+      }
+    }
+    if (!mudou) return;
+    notifyListeners();
+    await _salvar();
+  }
+
+  // ---------- preferências locais ----------
+  double get metaSobra => _sp?.getDouble('carteira.meta') ?? _metaMem;
+  double _metaMem = 0;
+  Future<void> definirMeta(double v) async {
+    _metaMem = v;
+    await _sp?.setDouble('carteira.meta', v);
+    notifyListeners();
+  }
+
   Future<void> apagar(String id) async {
     if (_docs.remove(id) == null) return;
     tomb[id] = DateTime.now().millisecondsSinceEpoch;

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../dados/categorias.dart';
+import '../dados/planejar.dart';
+import '../widgets/formulario.dart';
+import 'contas.dart';
 import '../dados/resumo.dart';
 import '../tema.dart';
 import '../util/fmt.dart';
@@ -13,7 +16,8 @@ class TelaInicio extends StatelessWidget {
   final VoidCallback irExtrato;
   final VoidCallback irLimites;
   final void Function(String filtro) irExtratoFiltro;
-  const TelaInicio({super.key, required this.ym, required this.onMes, required this.irExtrato, required this.irLimites, required this.irExtratoFiltro});
+  final VoidCallback irPlanejar;
+  const TelaInicio({super.key, required this.ym, required this.onMes, required this.irExtrato, required this.irLimites, required this.irExtratoFiltro, required this.irPlanejar});
 
   @override
   Widget build(BuildContext context) {
@@ -28,6 +32,7 @@ class TelaInicio extends StatelessWidget {
         const SizedBox(height: 16),
         _Atalhos(irExtrato: irExtrato, irLimites: irLimites),
         const SizedBox(height: 16),
+        _ContasInicio(irPlanejar: irPlanejar),
         if (r.porCategoria.isNotEmpty) ...[_OndeFoi(r: r, irLimites: irLimites), const SizedBox(height: 14)],
         Cartao(
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -255,6 +260,74 @@ class _BoasVindas extends StatelessWidget {
           label: const Text('Importar backup'),
         ),
       ]),
+    );
+  }
+}
+
+/// Contas que vencem: atrasadas num bloco e as três próximas.
+class _ContasInicio extends StatelessWidget {
+  final VoidCallback irPlanejar;
+  const _ContasInicio({required this.irPlanejar});
+  @override
+  Widget build(BuildContext context) {
+    final repo = RepoScope.of(context);
+    if (repo.doTipo('pagar').isEmpty) return const SizedBox.shrink();
+    final m = mesContas(repo, ymDe(hojeIso()));
+    final ab = m.abertas;
+    final atr = ab.where((i) => i.st == 'atrasada').toList();
+    final prox = ab.where((i) => i.st != 'atrasada').take(3).toList();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Cartao(
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          CabecalhoCartao('Contas a pagar', sub: ab.isEmpty ? 'Tudo pago este mês' : 'Falta pagar ${brl(m.falta)} este mês', acao: 'Ver contas', onAcao: irPlanejar),
+          if (atr.isNotEmpty)
+            Material(
+              color: const Color(0x1AFF6B81),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: Color(0x47FF6B81))),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: irPlanejar,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(children: [
+                    Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(color: G.neg, borderRadius: BorderRadius.circular(11)),
+                      child: const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 18),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(child: Text('${atr.length} conta${atr.length > 1 ? 's' : ''} atrasada${atr.length > 1 ? 's' : ''}', style: const TextStyle(fontWeight: FontWeight.w700))),
+                    Text(brl(atr.fold<double>(0, (a, i) => a + i.valor)), style: const TextStyle(fontWeight: FontWeight.w800, color: Color(0xFFFF8DA0))),
+                  ]),
+                ),
+              ),
+            ),
+          if (atr.isNotEmpty && prox.isNotEmpty) const SizedBox(height: 10),
+          if (prox.isNotEmpty)
+            CaixaLista([
+              for (final i in prox)
+                InkWell(
+                  onTap: () => abrirFolha(context, FolhaPagar(i)),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    child: Row(children: [
+                      CaixaData(i.venc, destaque: i.st == 'hoje'),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text(i.b.nome, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700)),
+                          Text(i.statusTexto, style: TextStyle(fontSize: 12.5, color: i.st == 'hoje' ? G.alerta : G.apagado)),
+                        ]),
+                      ),
+                      Text(brl(i.valor), style: const TextStyle(fontWeight: FontWeight.w800)),
+                    ]),
+                  ),
+                ),
+            ]),
+        ]),
+      ),
     );
   }
 }
