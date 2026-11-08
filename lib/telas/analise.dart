@@ -8,6 +8,7 @@ import '../tema.dart';
 import '../util/fmt.dart';
 import '../widgets/comum.dart';
 import '../widgets/graficos.dart';
+import 'analise_extras.dart';
 
 Color get corEntrada => G.pos;
 Color get corSaida => G.saida;
@@ -38,10 +39,13 @@ class _AnaliseExtratoState extends State<AnaliseExtrato> {
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       _Destaque(r: r, rit: rit, mesNome: mesNome),
       const SizedBox(height: 14),
+      DestaquesMes(ym: widget.ym),
       _EntrouSaiu(hist: hist, ym: widget.ym, nMeses: nMeses, onN: (n) => setState(() => nMeses = n), onMes: widget.onMes),
       const SizedBox(height: 14),
+      FluxoDinheiro(r: r),
       _RitmoCard(rit: rit, mesNome: mesNome),
       const SizedBox(height: 14),
+      CalendarioCalor(ym: widget.ym),
       _OndeFoi(r: r, verCategoria: widget.verCategoria),
       const SizedBox(height: 14),
       _Comparativo(comp: comp, verCategoria: widget.verCategoria, atual: widget.ym == ymDe(hojeIso())),

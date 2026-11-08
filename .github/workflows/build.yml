@@ -94,10 +94,10 @@ jobs:
           tirar 16-avisos "&tela=avisos"
           tirar 17-busca "&tela=busca" 1400
           tirar 18-importar "&tela=importar"
-          tirar 19-analise "&aba=1&analise=1" 3600
+          tirar 19-analise "&aba=1&analise=1" 6000
           tirar c1-inicio "&tema=claro" 1900
           tirar c2-extrato "&tema=claro&aba=1"
-          tirar c3-analise "&tema=claro&aba=1&analise=1" 3600
+          tirar c3-analise "&tema=claro&aba=1&analise=1" 6000
           tirar c4-planejar "&tema=claro&aba=2" 2200
           tirar c5-patrimonio "&tema=claro&aba=3" 2400
           tirar c6-ajustes "&tema=claro&tela=ajustes"

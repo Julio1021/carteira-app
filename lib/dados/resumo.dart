@@ -171,7 +171,10 @@ double saldoEmConta(Repo repo) {
   final padrao = (contas.toList()..sort((a, b) => b.saldo.compareTo(a.saldo))).first.id;
   final ids = {for (final c in contas) c.id};
   String contaDe(String? c) => (c != null && ids.contains(c)) ? c : padrao;
+  final hoje = hojeIso();
+  // só conta o que já aconteceu: lançamentos com data futura não mexem no saldo de hoje
   bool depois(String data, int criado, ContaBancaria c) {
+    if (data.compareTo(hoje) > 0) return false;
     final x = data.compareTo(c.data);
     if (x != 0) return x > 0;
     return c.ts > 0 && criado > c.ts;
@@ -191,6 +194,13 @@ double saldoEmConta(Repo repo) {
     for (final i in repo.investidos) {
       if (i.doExtrato || contaDe(i.conta) != c.id || !depois(i.data, i.criado, c)) continue;
       v -= i.liquido;
+    }
+    // pagamento de fatura do cartão registrado à mão sai da conta
+    for (final p in repo.doTipo('cpag')) {
+      final ext = p['ext'];
+      if ((ext is String && ext.isNotEmpty) || contaDe(p['conta'] is String ? p['conta'] as String : null) != c.id) continue;
+      if (!depois(str(p['data'], '1970-01-01'), numI(p['criado']) ?? 0, c)) continue;
+      v -= numD(p['valor']);
     }
     total += (v * 100).round() / 100;
   }

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../dados/categorias.dart';
 import '../dados/modelos.dart';
 import '../dados/patrimonio.dart';
+import '../dados/invest_pat.dart';
 import '../tema.dart';
 import '../util/fmt.dart';
 import '../widgets/comum.dart';
@@ -107,6 +108,7 @@ class _FormLancState extends State<FormLanc> {
   bool get invest => tipo == 'invest';
   bool resgate = false;
   String? ativo;
+  bool lancarPat = true;
   final valorC = TextEditingController();
   final descC = TextEditingController();
   final valorF = FocusNode();
@@ -131,6 +133,7 @@ class _FormLancState extends State<FormLanc> {
       if (invest) {
         resgate = d['mov'] == 'resgate';
         ativo = d['ativo'] is String ? d['ativo'] as String : null;
+        lancarPat = d['pat'] != null || ativo == null;
       } else if (entrada) {
         catE = str(d['cat'], 'outros_e');
       } else {
@@ -206,8 +209,12 @@ class _FormLancState extends State<FormLanc> {
       return;
     }
     final repo = RepoScope.ler(context);
-    final base = Map<String, dynamic>.from(widget.doc ?? {});
+    final m = Mudancas(repo);
+    final antigo = widget.doc;
+    final base = Map<String, dynamic>.from(antigo ?? {});
     final desc = descC.text.trim();
+    // desfaz o que o investido antigo tinha lançado no Patrimônio (refaz abaixo se for o caso)
+    if (antigo != null && antigo['kind'] == 'invest') desligarDoPatrimonio(m, base);
     if (invest) {
       base.addAll({
         'kind': 'invest',
@@ -250,16 +257,25 @@ class _FormLancState extends State<FormLanc> {
     }
     base['criado'] ??= DateTime.now().millisecondsSinceEpoch;
     // um gasto que vira entrada (ou o contrário) troca de id para não misturar
-    if (widget.doc != null && widget.doc!['kind'] != base['kind']) {
-      await repo.apagar(widget.doc!['id'] as String);
+    if (antigo != null && antigo['kind'] != base['kind']) {
+      final velho = Map<String, dynamic>.from(antigo);
+      if (velho['kind'] == 'invest') velho.remove('pat');
+      cascataApagar(m, velho);
       base['id'] = novoId(invest ? 'i' : (entrada ? 'e' : 'g'));
+      base.remove('pg');
     }
-    await repo.salvar(base);
+    String? msgPat;
+    if (invest && ativo != null && lancarPat) {
+      msgPat = ligarAoPatrimonio(m, base, ativo!);
+    }
+    if (base['kind'] == 'gasto' && antigo != null && antigo['kind'] == 'gasto') sincronizarPagto(m, base);
+    m.poe(base);
+    await m.gravar();
     HapticFeedback.lightImpact();
     if (!mounted) return;
     if (!editando) mostrarConfirmacao(context, cor: invest ? G.lavanda : G.pos, icone: invest ? Icons.savings_rounded : Icons.check_rounded);
     Navigator.pop(context);
-    avisar(context, editando ? 'Lançamento atualizado.' : (invest ? (resgate ? 'Resgate registrado.' : 'Investimento registrado.') : (entrada ? 'Entrada lançada.' : 'Gasto lançado.')));
+    avisar(context, '${editando ? 'Lançamento atualizado.' : (invest ? (resgate ? 'Resgate registrado.' : 'Investimento registrado.') : (entrada ? 'Entrada lançada.' : 'Gasto lançado.'))}${msgPat != null ? ' $msgPat' : ''}');
   }
 
   Future<void> _excluir() async {
@@ -275,7 +291,9 @@ class _FormLancState extends State<FormLanc> {
       ),
     );
     if (ok != true || !mounted) return;
-    await RepoScope.ler(context).apagar(widget.doc!['id'] as String);
+    final m = Mudancas(RepoScope.ler(context));
+    cascataApagar(m, Map<String, dynamic>.from(widget.doc!));
+    await m.gravar();
     if (!mounted) return;
     Navigator.pop(context);
     avisar(context, 'Lançamento excluído.');
@@ -373,6 +391,25 @@ class _FormLancState extends State<FormLanc> {
                     onSelected: (v) => setState(() => ativo = v ? a.id : null),
                   ),
               ]),
+              if (ativo != null)
+                Builder(builder: (context) {
+                  final v = lerValor(valorC.text) ?? 0;
+                  final liq = resgate ? -v : v;
+                  final ja = v > 0 ? aporteJaLancado(repoA, ativo!, data, liq, exceto: widget.doc?['id'] as String?) : null;
+                  final nome = ativos.firstWhere((a) => a.id == ativo, orElse: () => ativos.first).nome;
+                  return SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    value: lancarPat,
+                    onChanged: (x) => setState(() => lancarPat = x),
+                    title: const Text('Também lançar no Patrimônio', style: TextStyle(fontWeight: FontWeight.w600)),
+                    subtitle: Text(
+                      ja != null
+                          ? 'Já existe um aporte igual em $nome (${dataCurta(ja.data)}): só vou ligar os dois, sem somar de novo.'
+                          : (resgate ? 'Tira ${brl(v)} do saldo de $nome nesta data.' : 'Soma ${brl(v)} ao saldo de $nome como aporte nesta data.'),
+                      style: TextStyle(color: G.apagado, fontSize: 12.5),
+                    ),
+                  );
+                }),
             ],
             const SizedBox(height: 10),
             Text('Não entra no "Saiu" nem nos limites: aparece como Investido no Início, no Extrato e na Análise.', style: TextStyle(color: G.apagado, fontSize: 12.5)),

@@ -330,46 +330,38 @@ class _MenuBaixo extends StatelessWidget {
       top: false,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
-        child: SizedBox(
-          height: 70,
-          child: Stack(clipBehavior: Clip.none, alignment: Alignment.bottomCenter, children: [
-            Container(
-              height: 60,
-              decoration: BoxDecoration(
-                color: G.navFundo,
-                borderRadius: BorderRadius.circular(28),
-                border: Border.all(color: G.v(0x14)),
-                boxShadow: [BoxShadow(color: G.sombra(0xD9), blurRadius: 40, offset: Offset(0, 22), spreadRadius: -16)],
-              ),
-              child: Row(children: [
-                item(0, Icons.home_outlined, Icons.home_rounded, 'Início'),
-                item(1, Icons.receipt_long_outlined, Icons.receipt_long_rounded, 'Extrato'),
-                const SizedBox(width: 68),
-                item(2, Icons.event_note_outlined, Icons.event_note_rounded, 'Planejar'),
-                item(3, Icons.show_chart_rounded, Icons.show_chart_rounded, 'Patrimônio'),
-              ]),
-            ),
-            Positioned(
-              top: -12,
-              child: Toque(escala: .88, child: Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  boxShadow: [BoxShadow(color: G.sombra(0xE6), blurRadius: 30, offset: Offset(0, 16), spreadRadius: -10), BoxShadow(color: G.fundo, spreadRadius: 6)],
-                ),
+        child: Container(
+          height: 62,
+          decoration: BoxDecoration(
+            color: G.navFundo,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: G.v(0x14)),
+            boxShadow: [BoxShadow(color: G.sombra(0xD9), blurRadius: 34, offset: Offset(0, 16), spreadRadius: -14)],
+          ),
+          child: Row(children: [
+            item(0, Icons.home_outlined, Icons.home_rounded, 'Início'),
+            item(1, Icons.receipt_long_outlined, Icons.receipt_long_rounded, 'Extrato'),
+            // botão de lançar, alinhado com os outros itens
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              child: Toque(
+                escala: .88,
                 child: Material(
                   color: G.branco,
-                  shape: const CircleBorder(),
+                  borderRadius: BorderRadius.circular(16),
                   child: InkWell(
-                    customBorder: const CircleBorder(),
+                    borderRadius: BorderRadius.circular(16),
                     onTap: () {
                       HapticFeedback.lightImpact();
                       onMais();
                     },
-                    child: SizedBox(width: 56, height: 56, child: Icon(Icons.add_rounded, color: G.tinta, size: 30, semanticLabel: 'Lançar')),
+                    child: SizedBox(width: 50, height: 44, child: Icon(Icons.add_rounded, color: G.tinta, size: 28, semanticLabel: 'Lançar')),
                   ),
                 ),
-              )),
+              ),
             ),
+            item(2, Icons.event_note_outlined, Icons.event_note_rounded, 'Planejar'),
+            item(3, Icons.show_chart_rounded, Icons.show_chart_rounded, 'Patrimônio'),
           ]),
         ),
       ),
