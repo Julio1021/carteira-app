@@ -76,7 +76,7 @@ class _TelaBuscaState extends State<TelaBusca> {
                 child: ChoiceChip(
                   selected: tipo == f[0],
                   label: Text(f[1]),
-                  labelStyle: TextStyle(fontWeight: FontWeight.w700, color: tipo == f[0] ? G.tinta : G.texto2),
+                  labelStyle: TextStyle(fontWeight: FontWeight.w600, color: tipo == f[0] ? G.tinta : G.texto2),
                   onSelected: (_) => setState(() => tipo = f[0]),
                 ),
               ),
@@ -88,7 +88,7 @@ class _TelaBuscaState extends State<TelaBusca> {
                     selected: cat == cg.id,
                     avatar: Icon(cg.icone, size: 16, color: cat == cg.id ? G.tinta : cg.cor),
                     label: Text(cg.nome),
-                    labelStyle: TextStyle(fontWeight: FontWeight.w700, color: cat == cg.id ? G.tinta : G.texto2),
+                    labelStyle: TextStyle(fontWeight: FontWeight.w600, color: cat == cg.id ? G.tinta : G.texto2),
                     onSelected: (s) => setState(() => cat = s ? cg.id : null),
                   ),
                 ),
@@ -116,7 +116,7 @@ class _TelaBuscaState extends State<TelaBusca> {
             Padding(
               padding: const EdgeInsets.fromLTRB(4, 4, 4, 8),
               child: Row(children: [
-                Expanded(child: Text(mesLongo(e.key), style: const TextStyle(fontWeight: FontWeight.w800))),
+                Expanded(child: Text(mesLongo(e.key), style: const TextStyle(fontWeight: FontWeight.w700))),
                 Text('${e.value.length} · ${brl(e.value.where((l) => !l.ehEntrada).fold<double>(0, (a, l) => a + l.valor))}', style: TextStyle(color: G.apagado, fontSize: 12.5)),
               ]),
             ),

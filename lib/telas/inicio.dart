@@ -10,6 +10,7 @@ import '../dados/resumo.dart';
 import '../tema.dart';
 import '../util/fmt.dart';
 import '../widgets/comum.dart';
+import '../widgets/movimento.dart';
 import 'lancar.dart';
 
 class TelaInicio extends StatelessWidget {
@@ -25,18 +26,19 @@ class TelaInicio extends StatelessWidget {
   Widget build(BuildContext context) {
     final repo = RepoScope.of(context);
     final r = ResumoMes.de(repo, ym);
-    final ult = r.lancamentos.take(6).toList();
+    final ult = r.lancamentos.take(5).toList();
+    var o = 0;
     return ListView(
-      padding: const EdgeInsets.fromLTRB(14, 6, 14, 130),
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 130),
       children: [
-        if (repo.vazio) ...[_BoasVindas(), const SizedBox(height: 14)],
-        HeroMes(r: r, onMes: onMes, onEntrou: () => irExtratoFiltro('entradas'), onSaiu: () => irExtratoFiltro('saidas'), onInvestiu: () => r.investimentos.isEmpty ? abrirFormLanc(context, investido: true) : irExtratoFiltro('investido'), onLimite: irLimites),
-        const SizedBox(height: 16),
-        _Atalhos(irExtrato: irExtrato, irLimites: irLimites),
-        const SizedBox(height: 16),
-        _ContasInicio(irPlanejar: irPlanejar),
-        if (r.porCategoria.isNotEmpty) ...[_OndeFoi(r: r, irLimites: irLimites), const SizedBox(height: 14)],
-        Cartao(
+        if (repo.vazio) ...[Surge(ordem: o++, child: _BoasVindas()), const SizedBox(height: 16)],
+        Surge(ordem: o++, child: HeroMes(r: r, onMes: onMes, onEntrou: () => irExtratoFiltro('entradas'), onSaiu: () => irExtratoFiltro('saidas'), onInvestiu: () => r.investimentos.isEmpty ? abrirFormLanc(context, investido: true) : irExtratoFiltro('investido'), onLimite: irLimites)),
+        const SizedBox(height: 20),
+        Surge(ordem: o++, child: _Atalhos(irExtrato: irExtrato, irLimites: irLimites)),
+        const SizedBox(height: 20),
+        Surge(ordem: o++, child: _ContasInicio(irPlanejar: irPlanejar)),
+        if (r.porCategoria.isNotEmpty) ...[Surge(ordem: o++, child: _OndeFoi(r: r, irLimites: irLimites)), const SizedBox(height: 16)],
+        Surge(ordem: o++, child: Cartao(
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             CabecalhoCartao('Últimos lançamentos', sub: mesLongo(ym), acao: 'Ver extrato', onAcao: irExtrato),
             if (ult.isEmpty)
@@ -44,7 +46,7 @@ class TelaInicio extends StatelessWidget {
             else
               CaixaLista([for (final l in ult) LinhaLanc(l, onTap: () => abrirFormLanc(context, doc: l.doc))]),
           ]),
-        ),
+        )),
       ],
     );
   }
@@ -73,11 +75,36 @@ class HeroMes extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 16),
       child: Column(children: [
         SeletorMes(ym: r.ym, onMudar: onMes, escuro: true),
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 320),
+          switchInCurve: Curves.easeOutCubic,
+          switchOutCurve: Curves.easeInCubic,
+          layoutBuilder: (atual, antigos) => Stack(alignment: Alignment.topCenter, children: [...antigos, if (atual != null) atual]),
+          transitionBuilder: (child, a) => FadeTransition(
+            opacity: a,
+            child: SlideTransition(position: Tween(begin: const Offset(0, .04), end: Offset.zero).animate(a), child: child),
+          ),
+          child: KeyedSubtree(key: ValueKey(r.ym), child: _corpo(context, principal, uso, corLim)),
+        ),
+      ]),
+    ));
+  }
+
+  Widget _corpo(BuildContext context, double? principal, double? uso, Color corLim) {
+    final hoje = hojeIso();
+    final mesAtual = ymDe(hoje) == r.ym;
+    final restante = r.limiteTotal - r.gastoComLimite;
+    final diasRest = mesAtual ? diasNoMes(r.ym) - int.parse(hoje.substring(8, 10)) + 1 : 0;
+    String? porDia;
+    if (r.limiteTotal > 0 && mesAtual) {
+      porDia = restante <= 0 ? 'Limite do mês já foi usado' : 'Dá para gastar ${brl(restante / diasRest)} por dia até o fim do mês';
+    }
+    return Column(children: [
         const SizedBox(height: 14),
         Text(principal != null ? 'Em conta' : 'Sobra do mês', style: const TextStyle(color: GE.texto2, fontWeight: FontWeight.w600)),
         const SizedBox(height: 4),
         FittedBox(
-          child: Text(brl(principal ?? r.sobra), style: const TextStyle(fontSize: 38, fontWeight: FontWeight.w800, letterSpacing: -1.5, color: Colors.white)),
+          child: ValorAnimado(principal ?? r.sobra, estilo: const TextStyle(fontSize: 38, fontWeight: FontWeight.w800, letterSpacing: -1.5, color: Colors.white)),
         ),
         if (principal != null)
           Padding(
@@ -104,7 +131,7 @@ class HeroMes extends StatelessWidget {
                 Expanded(
                   child: Text.rich(
                     TextSpan(children: [
-                      TextSpan(text: brl(r.gastoComLimite), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+                      TextSpan(text: brl(r.gastoComLimite), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
                       TextSpan(text: ' de ${brl(r.limiteTotal)}', style: const TextStyle(color: GE.texto2, fontSize: 12)),
                     ]),
                     textAlign: TextAlign.right,
@@ -115,11 +142,19 @@ class HeroMes extends StatelessWidget {
               ]),
               const SizedBox(height: 8),
               Barra(uso ?? 0, cor: corLim, trilho: const Color(0x1FFFFFFF)),
+              if (porDia != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Row(children: [
+                    Icon(restante <= 0 ? Icons.block_rounded : Icons.today_rounded, size: 15, color: restante <= 0 ? GE.alerta : GE.texto2),
+                    const SizedBox(width: 6),
+                    Expanded(child: Text(porDia, style: TextStyle(color: restante <= 0 ? GE.alerta : GE.texto2, fontSize: 12.5, fontWeight: FontWeight.w600))),
+                  ]),
+                ),
             ]),
           ),
         ],
-      ]),
-    ));
+      ]);
   }
 }
 
@@ -134,7 +169,7 @@ class _Bloco extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final r = BorderRadius.circular(20);
-    return DecoratedBox(
+    return Toque(child: DecoratedBox(
       decoration: BoxDecoration(
         color: claro ? GE.branco : null,
         gradient: claro ? null : GE.gradLavanda,
@@ -158,15 +193,15 @@ class _Bloco extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(rotulo, style: const TextStyle(color: Color(0x9E12131C), fontWeight: FontWeight.w700, fontSize: 12.5)),
-                  FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(brl(valor), style: const TextStyle(color: GE.tinta, fontWeight: FontWeight.w800, fontSize: 16))),
+                  Text(rotulo, style: const TextStyle(color: Color(0x9E12131C), fontWeight: FontWeight.w600, fontSize: 12.5)),
+                  FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: ValorAnimado(valor, estilo: const TextStyle(color: GE.tinta, fontWeight: FontWeight.w800, fontSize: 16))),
                 ]),
               ),
             ]),
           ),
         ),
       ),
-    );
+    ));
   }
 }
 
@@ -175,27 +210,30 @@ class _Atalhos extends StatelessWidget {
   const _Atalhos({required this.irExtrato, required this.irLimites});
   @override
   Widget build(BuildContext context) {
-    Widget at(IconData i, String t, VoidCallback f, {bool destaque = false}) => Expanded(
+    Widget at(IconData i, String t, VoidCallback f, {bool destaque = false, Color? cor}) => Expanded(
           child: Column(children: [
-            Material(
-              color: destaque ? G.branco : G.v(0x10),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18), side: BorderSide(color: destaque ? G.branco : G.borda)),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(18),
-                onTap: f,
-                child: SizedBox(width: 54, height: 54, child: Icon(i, color: destaque ? G.tinta : G.texto, size: 22)),
+            Toque(
+              escala: .9,
+              child: Material(
+                color: destaque ? G.branco : (cor != null ? cor.withValues(alpha: G.claro ? .10 : .14) : G.v(0x10)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18), side: BorderSide(color: destaque ? G.branco : (cor != null ? cor.withValues(alpha: .22) : G.borda))),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(18),
+                  onTap: f,
+                  child: SizedBox(width: 54, height: 54, child: Icon(i, color: destaque ? G.tinta : (cor ?? G.texto), size: 22)),
+                ),
               ),
             ),
             const SizedBox(height: 7),
-            Text(t, style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: G.texto2)),
+            Text(t, style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: G.texto2)),
           ]),
         );
     return Row(children: [
-      at(Icons.add_rounded, 'Gasto', () => abrirFormLanc(context), destaque: true),
-      at(Icons.arrow_upward_rounded, 'Entrada', () => abrirFormLanc(context, entrada: true)),
+      at(Icons.remove_rounded, 'Gasto', () => abrirFormLanc(context), destaque: true),
+      at(Icons.add_rounded, 'Entrada', () => abrirFormLanc(context, entrada: true), cor: G.pos),
+      at(Icons.savings_outlined, 'Investir', () => abrirFormLanc(context, investido: true), cor: G.lavanda),
       at(Icons.file_download_outlined, 'Importar', () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TelaImportarExtrato()))),
       at(Icons.search_rounded, 'Buscar', () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TelaBusca()))),
-      at(Icons.tune_rounded, 'Limites', irLimites),
     ]);
   }
 }
@@ -208,7 +246,7 @@ class _OndeFoi extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final itens = r.porCategoria.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
-    final top = itens.take(5).toList();
+    final top = itens.take(4).toList();
     final maior = top.isEmpty ? 1.0 : top.first.value;
     return Cartao(
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -227,8 +265,8 @@ class _OndeFoi extends StatelessWidget {
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Row(children: [
-                      Expanded(child: Text(cat.nome, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700))),
-                      Text(brl(e.value), style: const TextStyle(fontWeight: FontWeight.w800)),
+                      Expanded(child: Text(cat.nome, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600))),
+                      Text(brl(e.value), style: const TextStyle(fontWeight: FontWeight.w700)),
                     ]),
                     const SizedBox(height: 6),
                     Barra(frac, cor: cor, altura: 5),
@@ -283,14 +321,14 @@ class _ContasInicio extends StatelessWidget {
     final atr = ab.where((i) => i.st == 'atrasada').toList();
     final prox = ab.where((i) => i.st != 'atrasada').take(3).toList();
     return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.only(bottom: 16),
       child: Cartao(
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           CabecalhoCartao('Contas a pagar', sub: ab.isEmpty ? 'Tudo pago este mês' : 'Falta pagar ${brl(m.falta)} este mês', acao: 'Ver contas', onAcao: irPlanejar),
           if (atr.isNotEmpty)
             Material(
-              color: const Color(0x1AFF6B81),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: Color(0x47FF6B81))),
+              color: G.alerta.withValues(alpha: G.claro ? .10 : .12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: G.alerta.withValues(alpha: .35))),
               child: InkWell(
                 borderRadius: BorderRadius.circular(16),
                 onTap: irPlanejar,
@@ -300,12 +338,12 @@ class _ContasInicio extends StatelessWidget {
                     Container(
                       width: 34,
                       height: 34,
-                      decoration: BoxDecoration(color: G.neg, borderRadius: BorderRadius.circular(11)),
-                      child: const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 18),
+                      decoration: BoxDecoration(color: G.alerta.withValues(alpha: .22), borderRadius: BorderRadius.circular(11)),
+                      child: Icon(Icons.schedule_rounded, color: G.alerta, size: 18),
                     ),
                     const SizedBox(width: 12),
-                    Expanded(child: Text('${atr.length} conta${atr.length > 1 ? 's' : ''} atrasada${atr.length > 1 ? 's' : ''}', style: const TextStyle(fontWeight: FontWeight.w700))),
-                    Text(brl(atr.fold<double>(0, (a, i) => a + i.valor)), style: TextStyle(fontWeight: FontWeight.w800, color: G.negTexto)),
+                    Expanded(child: Text('${atr.length} conta${atr.length > 1 ? 's' : ''} atrasada${atr.length > 1 ? 's' : ''}', style: const TextStyle(fontWeight: FontWeight.w600))),
+                    Text(brl(atr.fold<double>(0, (a, i) => a + i.valor)), style: TextStyle(fontWeight: FontWeight.w700, color: G.negTexto)),
                   ]),
                 ),
               ),
@@ -323,11 +361,11 @@ class _ContasInicio extends StatelessWidget {
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text(i.b.nome, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700)),
+                          Text(i.b.nome, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600)),
                           Text(i.statusTexto, style: TextStyle(fontSize: 12.5, color: i.st == 'hoje' ? G.alerta : G.apagado)),
                         ]),
                       ),
-                      Text(brl(i.valor), style: const TextStyle(fontWeight: FontWeight.w800)),
+                      Text(brl(i.valor), style: const TextStyle(fontWeight: FontWeight.w700)),
                     ]),
                   ),
                 ),
@@ -369,7 +407,7 @@ class _Investiu extends StatelessWidget {
               flex: 3,
               child: Text.rich(
                 TextSpan(children: [
-                  TextSpan(text: resgatou ? 'Resgatou  ' : 'Investiu  ', style: const TextStyle(color: GE.texto2, fontWeight: FontWeight.w700, fontSize: 13)),
+                  TextSpan(text: resgatou ? 'Resgatou  ' : 'Investiu  ', style: const TextStyle(color: GE.texto2, fontWeight: FontWeight.w600, fontSize: 13)),
                   TextSpan(text: brl(r.investiu.abs()), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15.5)),
                 ]),
                 maxLines: 1,

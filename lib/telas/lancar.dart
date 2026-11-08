@@ -7,6 +7,7 @@ import '../dados/patrimonio.dart';
 import '../tema.dart';
 import '../util/fmt.dart';
 import '../widgets/comum.dart';
+import '../widgets/movimento.dart';
 
 /// Menu do botão +: o que você quer registrar?
 Future<void> abrirMenuLancar(BuildContext context) async {
@@ -256,6 +257,7 @@ class _FormLancState extends State<FormLanc> {
     await repo.salvar(base);
     HapticFeedback.lightImpact();
     if (!mounted) return;
+    if (!editando) mostrarConfirmacao(context, cor: invest ? G.lavanda : G.pos, icone: invest ? Icons.savings_rounded : Icons.check_rounded);
     Navigator.pop(context);
     avisar(context, editando ? 'Lançamento atualizado.' : (invest ? (resgate ? 'Resgate registrado.' : 'Investimento registrado.') : (entrada ? 'Entrada lançada.' : 'Gasto lançado.')));
   }
@@ -347,27 +349,27 @@ class _FormLancState extends State<FormLanc> {
             ),
           if (invest) ...[
             const SizedBox(height: 18),
-            Text('Movimento', style: TextStyle(fontWeight: FontWeight.w700, color: G.texto2)),
+            Text('Movimento', style: TextStyle(fontWeight: FontWeight.w600, color: G.texto2)),
             const SizedBox(height: 10),
             Wrap(spacing: 8, runSpacing: 8, children: [
               for (final (r, t) in const [(false, 'Apliquei (saiu da conta)'), (true, 'Resgatei (voltou para a conta)')])
                 ChoiceChip(
                   selected: resgate == r,
                   label: Text(t),
-                  labelStyle: TextStyle(fontWeight: FontWeight.w700, color: resgate == r ? G.tinta : G.texto2),
+                  labelStyle: TextStyle(fontWeight: FontWeight.w600, color: resgate == r ? G.tinta : G.texto2),
                   onSelected: (_) => setState(() => resgate = r),
                 ),
             ]),
             if (ativos.isNotEmpty) ...[
               const SizedBox(height: 18),
-              Text('Onde (opcional)', style: TextStyle(fontWeight: FontWeight.w700, color: G.texto2)),
+              Text('Onde (opcional)', style: TextStyle(fontWeight: FontWeight.w600, color: G.texto2)),
               const SizedBox(height: 10),
               Wrap(spacing: 8, runSpacing: 8, children: [
                 for (final a in ativos)
                   ChoiceChip(
                     selected: ativo == a.id,
                     label: Text(a.nome),
-                    labelStyle: TextStyle(fontWeight: FontWeight.w700, color: ativo == a.id ? G.tinta : G.texto2),
+                    labelStyle: TextStyle(fontWeight: FontWeight.w600, color: ativo == a.id ? G.tinta : G.texto2),
                     onSelected: (v) => setState(() => ativo = v ? a.id : null),
                   ),
               ]),
@@ -377,7 +379,7 @@ class _FormLancState extends State<FormLanc> {
           ],
           if (!invest) ...[
           const SizedBox(height: 18),
-          Text('Categoria', style: TextStyle(fontWeight: FontWeight.w700, color: G.texto2)),
+          Text('Categoria', style: TextStyle(fontWeight: FontWeight.w600, color: G.texto2)),
           const SizedBox(height: 10),
           Wrap(spacing: 8, runSpacing: 8, children: [
             for (final c in cats)
@@ -385,7 +387,7 @@ class _FormLancState extends State<FormLanc> {
                 selected: c.id == catAtual,
                 avatar: Icon(c.icone, size: 16, color: c.id == catAtual ? G.tinta : c.cor),
                 label: Text(c.nome),
-                labelStyle: TextStyle(fontWeight: FontWeight.w700, color: c.id == catAtual ? G.tinta : G.texto2),
+                labelStyle: TextStyle(fontWeight: FontWeight.w600, color: c.id == catAtual ? G.tinta : G.texto2),
                 onSelected: (_) => setState(() {
                   if (entrada) {
                     catE = c.id;
@@ -399,33 +401,33 @@ class _FormLancState extends State<FormLanc> {
           ],
           if (!entrada && !invest) ...[
             const SizedBox(height: 18),
-            Text('Como pagou', style: TextStyle(fontWeight: FontWeight.w700, color: G.texto2)),
+            Text('Como pagou', style: TextStyle(fontWeight: FontWeight.w600, color: G.texto2)),
             const SizedBox(height: 10),
             Wrap(spacing: 8, runSpacing: 8, children: [
               for (final p in formasPagamento)
                 ChoiceChip(
                   selected: p == pag,
                   label: Text(p),
-                  labelStyle: TextStyle(fontWeight: FontWeight.w700, color: p == pag ? G.tinta : G.texto2),
+                  labelStyle: TextStyle(fontWeight: FontWeight.w600, color: p == pag ? G.tinta : G.texto2),
                   onSelected: (_) => setState(() => pag = p),
                 ),
             ]),
           ],
           const SizedBox(height: 18),
-          Text('Data', style: TextStyle(fontWeight: FontWeight.w700, color: G.texto2)),
+          Text('Data', style: TextStyle(fontWeight: FontWeight.w600, color: G.texto2)),
           const SizedBox(height: 10),
           Wrap(spacing: 8, runSpacing: 8, children: [
-            ChoiceChip(selected: data == h, label: const Text('Hoje'), labelStyle: TextStyle(fontWeight: FontWeight.w700, color: data == h ? G.tinta : G.texto2), onSelected: (_) => setState(() => data = h)),
+            ChoiceChip(selected: data == h, label: const Text('Hoje'), labelStyle: TextStyle(fontWeight: FontWeight.w600, color: data == h ? G.tinta : G.texto2), onSelected: (_) => setState(() => data = h)),
             ChoiceChip(
                 selected: data == addDias(h, -1),
                 label: const Text('Ontem'),
-                labelStyle: TextStyle(fontWeight: FontWeight.w700, color: data == addDias(h, -1) ? G.tinta : G.texto2),
+                labelStyle: TextStyle(fontWeight: FontWeight.w600, color: data == addDias(h, -1) ? G.tinta : G.texto2),
                 onSelected: (_) => setState(() => data = addDias(h, -1))),
             ChoiceChip(
               selected: data != h && data != addDias(h, -1),
               avatar: Icon(Icons.calendar_month_rounded, size: 16, color: data != h && data != addDias(h, -1) ? G.tinta : G.texto2),
               label: Text(data != h && data != addDias(h, -1) ? dataBr(data) : 'Outra data'),
-              labelStyle: TextStyle(fontWeight: FontWeight.w700, color: data != h && data != addDias(h, -1) ? G.tinta : G.texto2),
+              labelStyle: TextStyle(fontWeight: FontWeight.w600, color: data != h && data != addDias(h, -1) ? G.tinta : G.texto2),
               onSelected: (_) => _escolherData(),
             ),
           ]),
@@ -435,7 +437,7 @@ class _FormLancState extends State<FormLanc> {
               contentPadding: EdgeInsets.zero,
               value: fixo,
               onChanged: (v) => setState(() => fixo = v),
-              title: const Text('Gasto fixo', style: TextStyle(fontWeight: FontWeight.w700)),
+              title: const Text('Gasto fixo', style: TextStyle(fontWeight: FontWeight.w600)),
               subtitle: Text('Repete todo mês (aluguel, internet…). O app lembra de lançar.', style: TextStyle(color: G.apagado, fontSize: 12.5)),
             ),
           ],

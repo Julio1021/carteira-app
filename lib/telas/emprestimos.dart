@@ -14,13 +14,13 @@ class TelaEmprestimos extends StatelessWidget {
     final repo = RepoScope.of(context);
     final l = emprestimos(repo);
     return Scaffold(
-      appBar: AppBar(title: const Text('Dinheiro emprestado', style: TextStyle(fontWeight: FontWeight.w800))),
+      appBar: AppBar(title: const Text('Dinheiro emprestado', style: TextStyle(fontWeight: FontWeight.w700))),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => abrirFolha(context, const FormEmprestimo()),
         backgroundColor: G.branco,
         foregroundColor: G.tinta,
         icon: const Icon(Icons.add_rounded),
-        label: const Text('Novo empréstimo', style: TextStyle(fontWeight: FontWeight.w800)),
+        label: const Text('Novo empréstimo', style: TextStyle(fontWeight: FontWeight.w700)),
       ),
       body: l.isEmpty
           ? Center(
@@ -74,8 +74,8 @@ class _CartaoEmpState extends State<_CartaoEmp> {
         Barra(e.valor > 0 ? d.recebido / e.valor : 0, cor: G.pos),
         const SizedBox(height: 6),
         Row(children: [
-          Expanded(child: Text('Recebido ${brl(d.recebido)}', style: TextStyle(color: G.pos, fontWeight: FontWeight.w700, fontSize: 13))),
-          Text(d.quitado ? 'Quitado 🎉' : 'Falta ${brl(d.falta)}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+          Expanded(child: Text('Recebido ${brl(d.recebido)}', style: TextStyle(color: G.pos, fontWeight: FontWeight.w600, fontSize: 13))),
+          Text(d.quitado ? 'Quitado 🎉' : 'Falta ${brl(d.falta)}', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
         ]),
         if (!d.quitado && d.prox != null) ...[
           const SizedBox(height: 8),
@@ -107,9 +107,9 @@ class _CartaoEmpState extends State<_CartaoEmp> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   child: Row(children: [
-                    SizedBox(width: 36, child: Text('${p.k}ª', style: TextStyle(color: G.apagado, fontWeight: FontWeight.w700))),
+                    SizedBox(width: 36, child: Text('${p.k}ª', style: TextStyle(color: G.apagado, fontWeight: FontWeight.w600))),
                     Expanded(child: Text(dataBr(p.venc))),
-                    Text(brl(p.valor), style: const TextStyle(fontWeight: FontWeight.w700)),
+                    Text(brl(p.valor), style: const TextStyle(fontWeight: FontWeight.w600)),
                     const SizedBox(width: 10),
                     Icon(
                       switch (p.st) { 'pago' => Icons.check_circle_rounded, 'parcial' => Icons.timelapse_rounded, 'atrasada' => Icons.error_rounded, _ => Icons.radio_button_unchecked_rounded },
@@ -126,7 +126,7 @@ class _CartaoEmpState extends State<_CartaoEmp> {
               for (final r in d.recebimentos.reversed)
                 ListTile(
                   dense: true,
-                  title: Text(brl(numD(r['valor'])), style: TextStyle(fontWeight: FontWeight.w700, color: G.pos)),
+                  title: Text(brl(numD(r['valor'])), style: TextStyle(fontWeight: FontWeight.w600, color: G.pos)),
                   subtitle: Text('em ${dataBr(str(r['data'], hojeIso()))}', style: TextStyle(color: G.apagado)),
                   trailing: IconButton(
                     tooltip: 'Desfazer',
@@ -176,7 +176,7 @@ class _FolhaReceberState extends State<FolhaReceber> {
         contentPadding: EdgeInsets.zero,
         value: lancar,
         onChanged: (v) => setState(() => lancar = v),
-        title: const Text('Lançar também nas entradas', style: TextStyle(fontWeight: FontWeight.w700)),
+        title: const Text('Lançar também nas entradas', style: TextStyle(fontWeight: FontWeight.w600)),
         subtitle: Text('Desligue se o Pix já veio no extrato importado.', style: TextStyle(color: G.apagado, fontSize: 12.5)),
       ),
       const SizedBox(height: 12),
@@ -244,7 +244,7 @@ class _FormEmprestimoState extends State<FormEmprestimo> {
         ],
         onChanged: (x) => setState(() => parc = x ?? parc),
       ),
-      if (parc > 1 && v > 0) Padding(padding: const EdgeInsets.only(top: 6), child: Text('$parc × ${brl(v / parc)}', style: TextStyle(color: G.lavanda, fontWeight: FontWeight.w700))),
+      if (parc > 1 && v > 0) Padding(padding: const EdgeInsets.only(top: 6), child: Text('$parc × ${brl(v / parc)}', style: TextStyle(color: G.lavanda, fontWeight: FontWeight.w600))),
       if (parc > 0) ...[
         const SizedBox(height: 12),
         Row(children: [

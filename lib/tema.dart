@@ -68,7 +68,7 @@ class G {
   static Color get pos => _c(0xFF12935A, GE.pos);
   static Color get neg => _c(0xFFE0445E, GE.neg);
   static Color get alerta => _c(0xFFB7791F, GE.alerta);
-  static Color get borda => _c(0x1412131C, GE.borda);
+  static Color get borda => _c(0x1C12131C, GE.borda);
   static Color get vidro => v(0x10);
   static Color get vidro2 => v(0x18);
   static Color get posEscuro => GE.posEscuro;
@@ -133,7 +133,7 @@ ThemeData temaGrafite() {
   return base.copyWith(
     textTheme: t.copyWith(
       headlineLarge: t.headlineLarge?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -1),
-      titleLarge: t.titleLarge?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -.3),
+      titleLarge: t.titleLarge?.copyWith(fontWeight: FontWeight.w700, letterSpacing: -.3),
       titleMedium: t.titleMedium?.copyWith(fontWeight: FontWeight.w700),
     ),
     appBarTheme: AppBarTheme(
@@ -159,7 +159,7 @@ ThemeData temaGrafite() {
         backgroundColor: G.branco,
         foregroundColor: G.tinta,
         minimumSize: const Size(48, 50),
-        textStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+        textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
     ),
@@ -169,19 +169,19 @@ ThemeData temaGrafite() {
         backgroundColor: G.v(0x0F),
         side: BorderSide(color: G.borda),
         minimumSize: const Size(40, 44),
-        textStyle: const TextStyle(fontWeight: FontWeight.w700),
+        textStyle: const TextStyle(fontWeight: FontWeight.w600),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)),
       ),
     ),
     textButtonTheme: TextButtonThemeData(
-      style: TextButton.styleFrom(foregroundColor: G.lavanda, textStyle: const TextStyle(fontWeight: FontWeight.w700)),
+      style: TextButton.styleFrom(foregroundColor: G.lavanda, textStyle: const TextStyle(fontWeight: FontWeight.w600)),
     ),
     chipTheme: ChipThemeData(
       backgroundColor: G.v(0x0D),
       selectedColor: G.branco,
       side: BorderSide(color: G.borda),
-      labelStyle: TextStyle(fontWeight: FontWeight.w700, color: G.texto2),
-      secondaryLabelStyle: TextStyle(fontWeight: FontWeight.w700, color: G.tinta),
+      labelStyle: TextStyle(fontWeight: FontWeight.w600, color: G.texto2),
+      secondaryLabelStyle: TextStyle(fontWeight: FontWeight.w600, color: G.tinta),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(99)),
       showCheckmark: false,
     ),
@@ -199,7 +199,7 @@ ThemeData temaGrafite() {
     ),
     snackBarTheme: SnackBarThemeData(
       backgroundColor: G.branco,
-      contentTextStyle: TextStyle(color: G.tinta, fontWeight: FontWeight.w700),
+      contentTextStyle: TextStyle(color: G.tinta, fontWeight: FontWeight.w600),
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
     ),

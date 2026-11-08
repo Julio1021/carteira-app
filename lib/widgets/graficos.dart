@@ -122,7 +122,7 @@ class GraficoLinha extends StatelessWidget {
                       label: HorizontalLineLabel(
                         show: nomeLinhaH != null,
                         alignment: Alignment.bottomRight,
-                        style: TextStyle(color: G.neg, fontSize: 10, fontWeight: FontWeight.w700),
+                        style: TextStyle(color: G.neg, fontSize: 10, fontWeight: FontWeight.w600),
                         labelResolver: (_) => nomeLinhaH ?? '',
                       ),
                     ),
@@ -138,7 +138,7 @@ class GraficoLinha extends StatelessWidget {
                   for (var k = 0; k < spots.length; k++)
                     LineTooltipItem(
                       '${k == 0 && rotuloToque != null ? '${rotuloToque!(spots[k].x.round())}\n' : ''}${spots[k].barIndex < nomes.length ? '${nomes[spots[k].barIndex]}: ' : ''}${brl(spots[k].y)}',
-                      TextStyle(color: cores[spots[k].barIndex % cores.length], fontWeight: FontWeight.w700, fontSize: 12),
+                      TextStyle(color: cores[spots[k].barIndex % cores.length], fontWeight: FontWeight.w600, fontSize: 12),
                     ),
                 ],
               ),
@@ -238,7 +238,7 @@ class GraficoBarras extends StatelessWidget {
                       child: Column(mainAxisSize: MainAxisSize.min, children: [
                         Text(rotulos[i], style: _estiloEixo.copyWith(color: sel ? G.branco : G.apagado, fontWeight: sel ? FontWeight.w800 : FontWeight.w600)),
                         if (rodape != null)
-                          Text(rodape![i], style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w800, color: coresRodape?[i] ?? G.apagado)),
+                          Text(rodape![i], style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700, color: coresRodape?[i] ?? G.apagado)),
                       ]),
                     );
                   },
@@ -256,7 +256,7 @@ class GraficoBarras extends StatelessWidget {
                 fitInsideVertically: true,
                 getTooltipItem: (group, gi, rod, ri) => BarTooltipItem(
                   '${ri == 0 ? '${rotulos[gi]}\n' : ''}${ri < nomes.length ? '${nomes[ri]}: ' : ''}${brl(valores[gi][ri])}',
-                  TextStyle(color: cores[ri % cores.length], fontWeight: FontWeight.w700, fontSize: 12),
+                  TextStyle(color: cores[ri % cores.length], fontWeight: FontWeight.w600, fontSize: 12),
                 ),
               ),
             ),

@@ -5,6 +5,7 @@ import '../dados/repo.dart';
 import '../dados/resumo.dart';
 import '../tema.dart';
 import '../util/fmt.dart';
+import 'movimento.dart';
 
 /// Dá acesso ao repositório em qualquer tela e redesenha quando os dados mudam.
 class RepoScope extends InheritedNotifier<Repo> {
@@ -25,7 +26,7 @@ class Cartao extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final r = BorderRadius.circular(raio);
-    return DecoratedBox(
+    final caixa = DecoratedBox(
       decoration: BoxDecoration(
         gradient: gradiente ?? G.gradCartao,
         borderRadius: r,
@@ -37,6 +38,7 @@ class Cartao extends StatelessWidget {
         child: InkWell(borderRadius: r, onTap: onTap, child: Padding(padding: padding, child: child)),
       ),
     );
+    return onTap == null ? caixa : Toque(escala: .985, child: caixa);
   }
 }
 
@@ -54,7 +56,7 @@ class CabecalhoCartao extends StatelessWidget {
       child: Row(children: [
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(titulo, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, letterSpacing: -.2)),
+            Text(titulo, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, letterSpacing: -.2)),
             if (sub != null) Padding(padding: const EdgeInsets.only(top: 2), child: Text(sub!, style: TextStyle(color: G.apagado, fontSize: 12.5))),
           ]),
         ),
@@ -207,12 +209,16 @@ class Barra extends StatelessWidget {
         width: w,
         alignment: Alignment.centerLeft,
         decoration: BoxDecoration(color: trilho, borderRadius: BorderRadius.circular(altura)),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 350),
+        child: TweenAnimationBuilder<double>(
+          tween: Tween<double>(begin: 0, end: f),
+          duration: const Duration(milliseconds: 700),
           curve: Curves.easeOutCubic,
-          width: w * f,
-          height: altura,
-          decoration: BoxDecoration(color: cor, borderRadius: BorderRadius.circular(altura)),
+          builder: (_, v, __) => AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            width: w * v,
+            height: altura,
+            decoration: BoxDecoration(color: cor, borderRadius: BorderRadius.circular(altura)),
+          ),
         ),
       );
     });

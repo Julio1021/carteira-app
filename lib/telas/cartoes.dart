@@ -22,13 +22,13 @@ class TelaCartoes extends StatelessWidget {
     final repo = RepoScope.of(context);
     final ccs = cartoes(repo);
     return Scaffold(
-      appBar: AppBar(title: const Text('Cartões de crédito', style: TextStyle(fontWeight: FontWeight.w800))),
+      appBar: AppBar(title: const Text('Cartões de crédito', style: TextStyle(fontWeight: FontWeight.w700))),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => abrirFolha(context, const FormCartao()),
         backgroundColor: G.branco,
         foregroundColor: G.tinta,
         icon: const Icon(Icons.add_rounded),
-        label: const Text('Novo cartão', style: TextStyle(fontWeight: FontWeight.w800)),
+        label: const Text('Novo cartão', style: TextStyle(fontWeight: FontWeight.w700)),
       ),
       body: ccs.isEmpty
           ? Center(
@@ -94,7 +94,7 @@ class _Selo extends StatelessWidget {
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(color: tema ? G.v(0x14) : const Color(0x33FFFFFF), borderRadius: BorderRadius.circular(99)),
-        child: Text(t, style: TextStyle(color: tema ? G.texto : Colors.white, fontWeight: FontWeight.w800, fontSize: 12)),
+        child: Text(t, style: TextStyle(color: tema ? G.texto : Colors.white, fontWeight: FontWeight.w700, fontSize: 12)),
       );
 }
 
@@ -119,7 +119,7 @@ class _TelaCartaoState extends State<TelaCartao> {
     final sel = r.faturas.firstWhere((f) => f.ym == (fat ?? r.atual), orElse: () => r.faturaAtual);
     return Scaffold(
       appBar: AppBar(
-        title: Text(c.nome, style: const TextStyle(fontWeight: FontWeight.w800)),
+        title: Text(c.nome, style: const TextStyle(fontWeight: FontWeight.w700)),
         actions: [IconButton(tooltip: 'Editar cartão', onPressed: () => abrirFolha(context, FormCartao(doc: d)), icon: const Icon(Icons.edit_outlined))],
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -127,7 +127,7 @@ class _TelaCartaoState extends State<TelaCartao> {
         backgroundColor: G.branco,
         foregroundColor: G.tinta,
         icon: const Icon(Icons.add_rounded),
-        label: const Text('Nova compra', style: TextStyle(fontWeight: FontWeight.w800)),
+        label: const Text('Nova compra', style: TextStyle(fontWeight: FontWeight.w700)),
       ),
       body: ListView(padding: const EdgeInsets.fromLTRB(14, 4, 14, 100), children: [
         SingleChildScrollView(
@@ -139,7 +139,7 @@ class _TelaCartaoState extends State<TelaCartao> {
                 child: ChoiceChip(
                   selected: f.ym == sel.ym,
                   label: Text('${mesesAbr[int.parse(f.ym.substring(5)) - 1]}/${f.ym.substring(2, 4)} · ${brl(f.total)}'),
-                  labelStyle: TextStyle(fontWeight: FontWeight.w700, color: f.ym == sel.ym ? G.tinta : G.texto2),
+                  labelStyle: TextStyle(fontWeight: FontWeight.w600, color: f.ym == sel.ym ? G.tinta : G.texto2),
                   onSelected: (_) => setState(() => fat = f.ym),
                 ),
               ),
@@ -156,7 +156,7 @@ class _TelaCartaoState extends State<TelaCartao> {
             const SizedBox(height: 4),
             Text(brl(sel.total), style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w800)),
             Text('Fecha ${dataBr(sel.fech)} · vence ${dataBr(sel.venc)}', style: TextStyle(color: G.texto2, fontSize: 13)),
-            if (sel.pago > 0) Text('Pago ${brl(sel.pago)} · falta ${brl(sel.falta)}', style: TextStyle(color: G.pos, fontSize: 13, fontWeight: FontWeight.w700)),
+            if (sel.pago > 0) Text('Pago ${brl(sel.pago)} · falta ${brl(sel.falta)}', style: TextStyle(color: G.pos, fontSize: 13, fontWeight: FontWeight.w600)),
             if (sel.itens.any((i) => i.prevista)) Text('Inclui parcelas previstas, que ainda vão entrar.', style: TextStyle(color: G.apagado, fontSize: 12)),
             if (sel.falta > 0 && sel.st != 'futura') ...[
               const SizedBox(height: 12),
@@ -177,12 +177,12 @@ class _TelaCartaoState extends State<TelaCartao> {
               ListTile(
                 onTap: it.g == null ? null : () => _opcoesCompra(context, it),
                 leading: IconeCategoria(catGasto(it.cat), tam: 38),
-                title: Text(it.desc, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700)),
+                title: Text(it.desc, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600)),
                 subtitle: Text(
                   [if (it.g != null) dataCurta(it.g!.data), if (it.parcN != null && it.parcN! > 1) 'parcela ${it.parcI}/${it.parcN}', if (it.prevista) 'prevista'].join(' · '),
                   style: TextStyle(color: it.prevista ? G.lavanda : G.apagado, fontSize: 12.5),
                 ),
-                trailing: Text(brl(it.valor), style: TextStyle(fontWeight: FontWeight.w800, color: it.prevista ? G.apagado : G.texto)),
+                trailing: Text(brl(it.valor), style: TextStyle(fontWeight: FontWeight.w700, color: it.prevista ? G.apagado : G.texto)),
               ),
           ]),
         if (sel.pago > 0) ...[
@@ -191,7 +191,7 @@ class _TelaCartaoState extends State<TelaCartao> {
             for (final p in repo.doTipo('cpag').where((p) => p['cartao'] == c.id && p['fat'] == sel.ym))
               ListTile(
                 leading: Icon(Icons.check_circle_rounded, color: G.pos),
-                title: Text(brl(numD(p['valor'])), style: const TextStyle(fontWeight: FontWeight.w700)),
+                title: Text(brl(numD(p['valor'])), style: const TextStyle(fontWeight: FontWeight.w600)),
                 subtitle: Text('em ${dataBr(str(p['data'], sel.venc))}', style: TextStyle(color: G.apagado)),
                 trailing: IconButton(
                   tooltip: 'Desfazer pagamento',
@@ -242,7 +242,7 @@ class _TelaCartaoState extends State<TelaCartao> {
       context: context,
       builder: (c) => SafeArea(
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          ListTile(title: Text(g.desc, style: const TextStyle(fontWeight: FontWeight.w800)), subtitle: Text('${brl(g.valor)} · ${dataBr(g.data)}')),
+          ListTile(title: Text(g.desc, style: const TextStyle(fontWeight: FontWeight.w700)), subtitle: Text('${brl(g.valor)} · ${dataBr(g.data)}')),
           ListTile(leading: Icon(Icons.delete_outline_rounded, color: G.neg), title: Text(parcelada ? 'Excluir só esta parcela' : 'Excluir compra'), onTap: () => Navigator.pop(c, 'uma')),
           if (parcelada) ListTile(leading: Icon(Icons.delete_sweep_outlined, color: G.neg), title: const Text('Excluir todas as parcelas'), onTap: () => Navigator.pop(c, 'todas')),
         ]),
@@ -294,7 +294,7 @@ class _FormCompraState extends State<FormCompra> {
         items: [for (var q = 1; q <= 24; q++) DropdownMenuItem(value: q, child: Text(q == 1 ? 'À vista' : '$q vezes'))],
         onChanged: (x) => setState(() => parc = x ?? 1),
       ),
-      if (parc > 1 && v > 0) Padding(padding: const EdgeInsets.only(top: 6), child: Text('$parc × ${brl(v / parc)}', style: TextStyle(color: G.lavanda, fontWeight: FontWeight.w700))),
+      if (parc > 1 && v > 0) Padding(padding: const EdgeInsets.only(top: 6), child: Text('$parc × ${brl(v / parc)}', style: TextStyle(color: G.lavanda, fontWeight: FontWeight.w600))),
       const Rotulo('Data da compra'),
       CampoData(data: data, onMudar: (x) => setState(() => data = x)),
       Padding(padding: const EdgeInsets.only(top: 6), child: Text('Entra na fatura de ${mesLongo(f0).toLowerCase()}', style: TextStyle(color: G.apagado, fontSize: 12.5))),

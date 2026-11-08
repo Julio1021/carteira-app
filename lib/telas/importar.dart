@@ -98,7 +98,7 @@ class _TelaImportarExtratoState extends State<TelaImportarExtrato> {
         child: ConstrainedBox(
           constraints: BoxConstraints(maxHeight: MediaQuery.of(c).size.height * .75),
           child: ListView(shrinkWrap: true, children: [
-            ListTile(title: Text(x.desc, style: const TextStyle(fontWeight: FontWeight.w800)), subtitle: const Text('Vale para todos deste estabelecimento, agora e nas próximas importações.')),
+            ListTile(title: Text(x.desc, style: const TextStyle(fontWeight: FontWeight.w700)), subtitle: const Text('Vale para todos deste estabelecimento, agora e nas próximas importações.')),
             for (final cat in cats) ListTile(leading: Icon(cat.icone, color: cat.cor), title: Text(cat.nome), selected: cat.id == x.cat, onTap: () => Navigator.pop(c, cat.id)),
             ListTile(leading: Icon(Icons.block_rounded, color: G.apagado), title: const Text('Não é gasto (ignorar)'), onTap: () => Navigator.pop(c, 'ignorar')),
           ]),
@@ -113,7 +113,7 @@ class _TelaImportarExtratoState extends State<TelaImportarExtrato> {
     final repo = RepoScope.of(context);
     final o = ofx;
     return Scaffold(
-      appBar: AppBar(title: const Text('Importar extrato', style: TextStyle(fontWeight: FontWeight.w800))),
+      appBar: AppBar(title: const Text('Importar extrato', style: TextStyle(fontWeight: FontWeight.w700))),
       body: o == null ? _inicio(repo) : _previa(repo, o),
     );
   }
@@ -137,7 +137,7 @@ class _TelaImportarExtratoState extends State<TelaImportarExtrato> {
         CaixaLista([
           for (final f in feitas)
             ListTile(
-              title: Text('${f.n} lançamento(s)', style: const TextStyle(fontWeight: FontWeight.w700)),
+              title: Text('${f.n} lançamento(s)', style: const TextStyle(fontWeight: FontWeight.w600)),
               subtitle: Text('${dataBr(f.ini)} a ${dataBr(f.fim)}${f.quando > 0 ? ' · importado em ${dataBr(isoDe(DateTime.fromMillisecondsSinceEpoch(f.quando)))}' : ''}', style: TextStyle(color: G.apagado, fontSize: 12.5)),
               trailing: TextButton(
                 onPressed: () async {
@@ -182,7 +182,7 @@ class _TelaImportarExtratoState extends State<TelaImportarExtrato> {
         const SizedBox(height: 12),
         Cartao(
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            const Text('Seu nome no extrato', style: TextStyle(fontWeight: FontWeight.w800)),
+            const Text('Seu nome no extrato', style: TextStyle(fontWeight: FontWeight.w700)),
             Text('Pix entre suas próprias contas não viram gasto nem entrada.', style: TextStyle(color: G.apagado, fontSize: 12.5)),
             const SizedBox(height: 10),
             TextField(controller: donoC, decoration: const InputDecoration(hintText: 'Nome completo, como aparece no Pix'), onSubmitted: (v) => setState(() => dono = v.trim())),
@@ -193,7 +193,7 @@ class _TelaImportarExtratoState extends State<TelaImportarExtrato> {
                   ChoiceChip(
                     selected: nomeIgual(c.nome, dono),
                     label: Text(c.nome),
-                    labelStyle: TextStyle(fontWeight: FontWeight.w700, color: nomeIgual(c.nome, dono) ? G.tinta : G.texto2),
+                    labelStyle: TextStyle(fontWeight: FontWeight.w600, color: nomeIgual(c.nome, dono) ? G.tinta : G.texto2),
                     onSelected: (_) => setState(() {
                       dono = c.nome;
                       donoC.text = c.nome;
@@ -208,7 +208,7 @@ class _TelaImportarExtratoState extends State<TelaImportarExtrato> {
           SwitchListTile(
             value: pularDup,
             onChanged: (v) => setState(() => pularDup = v),
-            title: Text('Pular ${p.duplicados} que parecem já lançados à mão', style: const TextStyle(fontWeight: FontWeight.w700)),
+            title: Text('Pular ${p.duplicados} que parecem já lançados à mão', style: const TextStyle(fontWeight: FontWeight.w600)),
             subtitle: Text('Mesmo dia e mesmo valor de um gasto que você já tinha lançado.', style: TextStyle(color: G.apagado, fontSize: 12.5)),
           ),
         ],
@@ -219,9 +219,9 @@ class _TelaImportarExtratoState extends State<TelaImportarExtrato> {
               ListTile(
                 onTap: () => _trocarCat(x, false),
                 leading: IconeCategoria(catGasto(x.cat), tam: 36),
-                title: Text(x.desc, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w700, color: x.dup && pularDup ? G.apagado : G.texto)),
+                title: Text(x.desc, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w600, color: x.dup && pularDup ? G.apagado : G.texto)),
                 subtitle: Text('${dataCurta(x.t.data)} · ${catGasto(x.cat).nome}${x.dup ? ' · já lançado?' : ''}', style: TextStyle(color: x.dup ? G.alerta : G.apagado, fontSize: 12)),
-                trailing: Text(brl(-x.valor), style: TextStyle(fontWeight: FontWeight.w800, decoration: x.dup && pularDup ? TextDecoration.lineThrough : null)),
+                trailing: Text(brl(-x.valor), style: TextStyle(fontWeight: FontWeight.w700, decoration: x.dup && pularDup ? TextDecoration.lineThrough : null)),
               ),
           ]),
         ],
@@ -232,9 +232,9 @@ class _TelaImportarExtratoState extends State<TelaImportarExtrato> {
               ListTile(
                 onTap: x.ch.startsWith('__') ? null : () => _trocarCat(x, true),
                 leading: IconeCategoria(catEntrada(x.cat), tam: 36),
-                title: Text(x.desc, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700)),
+                title: Text(x.desc, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600)),
                 subtitle: Text('${dataCurta(x.t.data)} · ${catEntrada(x.cat).nome}', style: TextStyle(color: G.apagado, fontSize: 12)),
-                trailing: Text(brl(x.valor, sinal: true), style: TextStyle(fontWeight: FontWeight.w800, color: G.pos)),
+                trailing: Text(brl(x.valor, sinal: true), style: TextStyle(fontWeight: FontWeight.w700, color: G.pos)),
               ),
           ]),
         ],
@@ -243,7 +243,7 @@ class _TelaImportarExtratoState extends State<TelaImportarExtrato> {
           SwitchListTile(
             value: propInv,
             onChanged: (v) => rp.salvar(docPropriasInvest(rp, v)),
-            title: Text('Os ${p.propSaidas} Pix para suas próprias contas foram para investir', style: const TextStyle(fontWeight: FontWeight.w700)),
+            title: Text('Os ${p.propSaidas} Pix para suas próprias contas foram para investir', style: const TextStyle(fontWeight: FontWeight.w600)),
             subtitle: Text('Ex.: mandar dinheiro para o Nubank ou o Mercado Pago para aplicar. Ligado, eles aparecem como Investido. A escolha fica salva para as próximas importações.', style: TextStyle(color: G.apagado, fontSize: 12.5)),
           ),
         ],
@@ -253,9 +253,9 @@ class _TelaImportarExtratoState extends State<TelaImportarExtrato> {
             for (final x in p.invest)
               ListTile(
                 leading: IconeCategoria(x.cat == 'resgate' ? catResgate : catInvestido, tam: 36),
-                title: Text(x.desc, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700)),
+                title: Text(x.desc, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600)),
                 subtitle: Text('${dataCurta(x.t.data)} · ${x.cat == 'resgate' ? 'Resgate' : 'Aplicação'}', style: TextStyle(color: G.apagado, fontSize: 12)),
-                trailing: Text('${x.cat == 'resgate' ? '←' : '→'} ${brl(x.valor)}', style: TextStyle(fontWeight: FontWeight.w800, color: G.lavanda)),
+                trailing: Text('${x.cat == 'resgate' ? '←' : '→'} ${brl(x.valor)}', style: TextStyle(fontWeight: FontWeight.w700, color: G.lavanda)),
               ),
           ]),
         ],
@@ -399,7 +399,7 @@ class _TelaImportarInterState extends State<TelaImportarInter> {
     final feitas = importacoesInter(repo);
     final topos = repo.doTipo('ativo').where((a) => a['oculto'] != true && a['pai'] == null).toList();
     return Scaffold(
-      appBar: AppBar(title: const Text('Investimentos do Inter', style: TextStyle(fontWeight: FontWeight.w800))),
+      appBar: AppBar(title: const Text('Investimentos do Inter', style: TextStyle(fontWeight: FontWeight.w700))),
       body: ListView(padding: const EdgeInsets.fromLTRB(14, 4, 14, 40), children: [
         if (e == null) ...[
           Cartao(
@@ -418,7 +418,7 @@ class _TelaImportarInterState extends State<TelaImportarInter> {
             CaixaLista([
               for (final f in feitas)
                 ListTile(
-                  title: Text('${f.lanc} lançamento(s)', style: const TextStyle(fontWeight: FontWeight.w700)),
+                  title: Text('${f.lanc} lançamento(s)', style: const TextStyle(fontWeight: FontWeight.w600)),
                   subtitle: Text(f.quando > 0 ? 'em ${dataBr(isoDe(DateTime.fromMillisecondsSinceEpoch(f.quando)))}' : '', style: TextStyle(color: G.apagado)),
                   trailing: TextButton(
                     onPressed: () async {
@@ -443,9 +443,9 @@ class _TelaImportarInterState extends State<TelaImportarInter> {
           CaixaLista([
             for (final g in grupos)
               ListTile(
-                title: Text(g.tipo.nome, style: const TextStyle(fontWeight: FontWeight.w700)),
+                title: Text(g.tipo.nome, style: const TextStyle(fontWeight: FontWeight.w600)),
                 subtitle: Text('Aplicado ${brl(g.aplicado)} · resgatado ${brl(g.resgatado)}${g.ganho != 0 ? ' · rendeu ${brl(g.ganho, sinal: true)}' : ''}', style: TextStyle(color: G.apagado, fontSize: 12.5)),
-                trailing: Text(brl(g.saldoFinal), style: const TextStyle(fontWeight: FontWeight.w800)),
+                trailing: Text(brl(g.saldoFinal), style: const TextStyle(fontWeight: FontWeight.w700)),
               ),
           ]),
           const Rotulo('Onde guardar'),

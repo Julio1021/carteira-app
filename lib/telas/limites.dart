@@ -22,7 +22,7 @@ class TelaLimites extends StatelessWidget {
         return (r.porCategoria[b.id] ?? 0).compareTo(r.porCategoria[a.id] ?? 0);
       });
     return Scaffold(
-      appBar: AppBar(title: const Text('Limites de gastos', style: TextStyle(fontWeight: FontWeight.w800))),
+      appBar: AppBar(title: const Text('Limites de gastos', style: TextStyle(fontWeight: FontWeight.w700))),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(14, 4, 14, 40),
         children: [
@@ -101,7 +101,7 @@ class _LinhaLimite extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(cat.nome, style: const TextStyle(fontWeight: FontWeight.w700)),
+              Text(cat.nome, style: const TextStyle(fontWeight: FontWeight.w600)),
               const SizedBox(height: 3),
               if (l != null) ...[
                 Barra(gasto / l, cor: passou ? G.neg : cat.cor, altura: 5),
@@ -113,7 +113,7 @@ class _LinhaLimite extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            Text(brl(gasto), style: const TextStyle(fontWeight: FontWeight.w800)),
+            Text(brl(gasto), style: const TextStyle(fontWeight: FontWeight.w700)),
             if (l != null) Text('de ${brl(l)}', style: TextStyle(fontSize: 12, color: G.apagado)),
           ]),
         ]),

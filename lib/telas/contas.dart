@@ -101,7 +101,7 @@ class _TituloGrupo extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
         padding: semPadding ? EdgeInsets.zero : const EdgeInsets.only(bottom: 8, left: 2),
-        child: Text('$nome  ·  ${l.length} · ${brl(l.fold<double>(0, (a, i) => a + i.valor))}', style: TextStyle(fontWeight: FontWeight.w700, color: G.texto2, fontSize: 13)),
+        child: Text('$nome  ·  ${l.length} · ${brl(l.fold<double>(0, (a, i) => a + i.valor))}', style: TextStyle(fontWeight: FontWeight.w600, color: G.texto2, fontSize: 13)),
       );
 }
 
@@ -136,14 +136,14 @@ class _BlocoAtrasadas extends StatelessWidget {
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text('${lista.length} atrasada${lista.length > 1 ? 's' : ''} · ${brl(lista.fold<double>(0, (a, i) => a + i.valor))}',
-                      style: TextStyle(fontWeight: FontWeight.w800, color: G.negTexto)),
+                      style: TextStyle(fontWeight: FontWeight.w700, color: G.negTexto)),
                   Text(nomes, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: G.apagado, fontSize: 12)),
                 ]),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(color: G.v(0x14), borderRadius: BorderRadius.circular(99)),
-                child: Text(aberto ? 'Fechar' : 'Ver', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5)),
+                child: Text(aberto ? 'Fechar' : 'Ver', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12.5)),
               ),
             ]),
           ),
@@ -186,12 +186,12 @@ class LinhaConta extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-              Text(brl(i.valor), style: const TextStyle(fontWeight: FontWeight.w800)),
+              Text(brl(i.valor), style: const TextStyle(fontWeight: FontWeight.w700)),
               const SizedBox(height: 6),
               if (!pago)
                 FilledButton(
                   onPressed: () => abrirFolha(context, FolhaPagar(i)),
-                  style: FilledButton.styleFrom(minimumSize: const Size(10, 32), padding: const EdgeInsets.symmetric(horizontal: 14), textStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+                  style: FilledButton.styleFrom(minimumSize: const Size(10, 32), padding: const EdgeInsets.symmetric(horizontal: 14), textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
                   child: const Text('Pagar'),
                 )
               else if (i.fonte != 'extrato')
@@ -271,7 +271,7 @@ class _FolhaPagarState extends State<FolhaPagar> {
         contentPadding: EdgeInsets.zero,
         value: lancar,
         onChanged: (v) => setState(() => lancar = v),
-        title: const Text('Lançar também nos gastos', style: TextStyle(fontWeight: FontWeight.w700)),
+        title: const Text('Lançar também nos gastos', style: TextStyle(fontWeight: FontWeight.w600)),
         subtitle: Text(
           widget.i.b.chave.isNotEmpty ? 'Desligado porque esta conta é reconhecida no extrato: ao importar, o gasto entra sozinho.' : 'Cria o gasto no extrato do mês, já ligado a esta conta.',
           style: TextStyle(color: G.apagado, fontSize: 12.5),
@@ -442,7 +442,7 @@ class _FormContaState extends State<FormConta> {
       Opcoes<String>(itens: const [('mensal', 'Todo mês'), ('parcelas', 'Parcelado'), ('unica', 'Uma vez')], valor: rep, onMudar: (v) => setState(() => rep = v)),
       const SizedBox(height: 14),
       if (rep == 'unica') ...[
-        Text('Vencimento', style: TextStyle(fontWeight: FontWeight.w700, color: G.texto2)),
+        Text('Vencimento', style: TextStyle(fontWeight: FontWeight.w600, color: G.texto2)),
         const SizedBox(height: 8),
         CampoData(data: data, onMudar: (v) => setState(() => data = v), comOntem: false),
       ] else ...[
@@ -501,7 +501,7 @@ class _FormContaState extends State<FormConta> {
         contentPadding: EdgeInsets.zero,
         value: variavel,
         onChanged: (v) => setState(() => variavel = v),
-        title: const Text('Valor muda todo mês', style: TextStyle(fontWeight: FontWeight.w700)),
+        title: const Text('Valor muda todo mês', style: TextStyle(fontWeight: FontWeight.w600)),
         subtitle: Text('Como luz e água: o app usa o último valor pago como estimativa.', style: TextStyle(color: G.apagado, fontSize: 12.5)),
       ),
       const SizedBox(height: 12),

@@ -6,6 +6,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'dados/demo.dart';
 import 'dados/repo.dart';
 import 'tema.dart';
+import 'widgets/movimento.dart';
 import 'telas/abertura.dart';
 import 'telas/ajustes.dart';
 import 'telas/extrato.dart';
@@ -216,7 +217,7 @@ class _CascaState extends State<Casca> {
           bottom: false,
           child: Column(children: [
             _Cabecalho(titulo: _titulos[aba], verCategoria: (c) => _irAba(1, filtro: 'saidas', cat: c)),
-            Expanded(child: IndexedStack(index: aba, children: telas)),
+            Expanded(child: _Abas(aba: aba, children: telas)),
           ]),
         ),
         bottomNavigationBar: _MenuBaixo(aba: aba, onAba: _irAba, onMais: () => abrirMenuLancar(context)),
@@ -241,7 +242,7 @@ class _Cabecalho extends StatelessWidget {
         ClipRRect(borderRadius: BorderRadius.circular(13), child: Image.asset('assets/icone.png', width: 42, height: 42, errorBuilder: (_, __, ___) => const SizedBox(width: 42, height: 42))),
         Expanded(
           child: Column(children: [
-            Text('DIÁRIO DA CARTEIRA', style: TextStyle(fontSize: 10, letterSpacing: 1.2, color: G.apagado, fontWeight: FontWeight.w700)),
+            Text('DIÁRIO DA CARTEIRA', style: TextStyle(fontSize: 10, letterSpacing: 1.2, color: G.apagado, fontWeight: FontWeight.w600)),
             Text(titulo, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800)),
           ]),
         ),
@@ -274,18 +275,34 @@ class _MenuBaixo extends StatelessWidget {
     Widget item(int i, IconData ic, IconData icOn, String t) {
       final on = aba == i;
       return Expanded(
-        child: InkResponse(
-          onTap: () => onAba(i),
-          radius: 36,
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Column(mainAxisSize: MainAxisSize.min, children: [
-              Icon(on ? icOn : ic, color: on ? G.branco : G.navApagado),
-              const SizedBox(height: 3),
-              Text(t, maxLines: 1, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: on ? G.branco : G.navApagado)),
-              const SizedBox(height: 3),
-              AnimatedContainer(duration: const Duration(milliseconds: 200), width: on ? 18 : 0, height: 3, decoration: BoxDecoration(color: G.branco, borderRadius: BorderRadius.circular(3))),
-            ]),
+        child: Toque(
+          escala: .9,
+          child: InkResponse(
+            onTap: () => onAba(i),
+            radius: 36,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 260),
+                  curve: Curves.easeOutBack,
+                  width: on ? 52 : 34,
+                  height: 30,
+                  decoration: BoxDecoration(color: on ? G.lavandaFundo : Colors.transparent, borderRadius: BorderRadius.circular(15)),
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
+                    transitionBuilder: (c, a) => ScaleTransition(scale: a, child: c),
+                    child: Icon(on ? icOn : ic, key: ValueKey(on), color: on ? G.lavanda : G.navApagado, size: 22),
+                  ),
+                ),
+                const SizedBox(height: 3),
+                AnimatedDefaultTextStyle(
+                  duration: const Duration(milliseconds: 200),
+                  style: TextStyle(fontSize: 10.5, fontWeight: on ? FontWeight.w700 : FontWeight.w600, color: on ? G.texto : G.navApagado),
+                  child: Text(t, maxLines: 1),
+                ),
+              ]),
+            ),
           ),
         ),
       );
@@ -316,7 +333,7 @@ class _MenuBaixo extends StatelessWidget {
             ),
             Positioned(
               top: -14,
-              child: Container(
+              child: Toque(escala: .88, child: Container(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   boxShadow: [BoxShadow(color: G.sombra(0xE6), blurRadius: 30, offset: Offset(0, 16), spreadRadius: -10), BoxShadow(color: G.fundo, spreadRadius: 6)],
@@ -333,7 +350,7 @@ class _MenuBaixo extends StatelessWidget {
                     child: SizedBox(width: 62, height: 62, child: Icon(Icons.add_rounded, color: G.tinta, size: 32, semanticLabel: 'Lançar')),
                   ),
                 ),
-              ),
+              )),
             ),
           ]),
         ),
@@ -350,5 +367,61 @@ extension _ComAbertura on Widget {
       this,
       Positioned.fill(child: Material(type: MaterialType.transparency, child: Abertura(onFim: onFim, congelar: congelar))),
     ]);
+  }
+}
+
+
+/// Abas com troca suave (a aba nova aparece com fade + leve deslize), mantendo o estado de cada uma.
+class _Abas extends StatelessWidget {
+  final int aba;
+  final List<Widget> children;
+  const _Abas({required this.aba, required this.children});
+  @override
+  Widget build(BuildContext context) {
+    return Stack(children: [
+      for (var i = 0; i < children.length; i++)
+        Positioned.fill(
+          child: Offstage(
+            offstage: i != aba,
+            child: TickerMode(enabled: i == aba, child: _Aparece(ativo: i == aba, child: children[i])),
+          ),
+        ),
+    ]);
+  }
+}
+
+class _Aparece extends StatefulWidget {
+  final bool ativo;
+  final Widget child;
+  const _Aparece({required this.ativo, required this.child});
+  @override
+  State<_Aparece> createState() => _ApareceState();
+}
+
+class _ApareceState extends State<_Aparece> with SingleTickerProviderStateMixin {
+  late final AnimationController c = AnimationController(vsync: this, duration: const Duration(milliseconds: 280), value: 1);
+
+  @override
+  void didUpdateWidget(covariant _Aparece old) {
+    super.didUpdateWidget(old);
+    if (widget.ativo && !old.ativo && !semAnimacao(context)) c.forward(from: 0);
+  }
+
+  @override
+  void dispose() {
+    c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: c,
+      child: widget.child,
+      builder: (_, child) {
+        final v = Curves.easeOutCubic.transform(c.value);
+        return Opacity(opacity: v, child: Transform.translate(offset: Offset(0, 12 * (1 - v)), child: child));
+      },
+    );
   }
 }

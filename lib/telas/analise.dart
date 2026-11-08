@@ -67,28 +67,28 @@ class _Destaque extends StatelessWidget {
         Row(children: [
           Icon(Icons.auto_awesome_rounded, color: G.lavanda, size: 18),
           const SizedBox(width: 8),
-          Text(emAndamento ? 'Resumo até hoje' : 'Resumo de $mesNome', style: TextStyle(color: G.lavanda, fontWeight: FontWeight.w800)),
+          Text(emAndamento ? 'Resumo até hoje' : 'Resumo de $mesNome', style: TextStyle(color: G.lavanda, fontWeight: FontWeight.w700)),
         ]),
         const SizedBox(height: 10),
         Text.rich(
           TextSpan(style: TextStyle(fontSize: 15.5, height: 1.45, color: G.texto), children: [
             TextSpan(text: emAndamento ? 'Até o dia ${rit.diaHoje}, entraram ' : 'Em $mesNome entraram '),
-            TextSpan(text: brl(r.entrou), style: TextStyle(fontWeight: FontWeight.w800, color: corEntrada)),
+            TextSpan(text: brl(r.entrou), style: TextStyle(fontWeight: FontWeight.w700, color: corEntrada)),
             const TextSpan(text: ' e saíram '),
-            TextSpan(text: brl(r.saiu), style: TextStyle(fontWeight: FontWeight.w800, color: corSaida)),
+            TextSpan(text: brl(r.saiu), style: TextStyle(fontWeight: FontWeight.w700, color: corSaida)),
             const TextSpan(text: '. '),
             if (r.entrou > 0) ...[
               TextSpan(text: r.sobra >= 0 ? 'Sobraram ' : 'Faltaram '),
-              TextSpan(text: brl(r.sobra.abs()), style: const TextStyle(fontWeight: FontWeight.w800)),
+              TextSpan(text: brl(r.sobra.abs()), style: const TextStyle(fontWeight: FontWeight.w700)),
               if (txaSobra != null && r.sobra >= 0) TextSpan(text: ', ${(txaSobra * 100).round()}% do que entrou.'),
               if (r.sobra < 0) const TextSpan(text: '.'),
               if (r.investiu > 0) ...[
                 const TextSpan(text: ' Você investiu '),
-                TextSpan(text: brl(r.investiu), style: TextStyle(fontWeight: FontWeight.w800, color: corInvest)),
+                TextSpan(text: brl(r.investiu), style: TextStyle(fontWeight: FontWeight.w700, color: corInvest)),
                 TextSpan(text: ' (${((r.pctInvestido ?? 0) * 100).round()}% do que entrou)'),
                 if (r.sobra >= 0) ...[
                   TextSpan(text: r.sobraEmConta >= 0 ? ' e ficaram ' : ' e usou '),
-                  TextSpan(text: brl(r.sobraEmConta.abs()), style: const TextStyle(fontWeight: FontWeight.w800)),
+                  TextSpan(text: brl(r.sobraEmConta.abs()), style: const TextStyle(fontWeight: FontWeight.w700)),
                   TextSpan(text: r.sobraEmConta >= 0 ? ' em conta.' : ' do que já tinha em conta.'),
                 ] else
                   const TextSpan(text: '.'),
@@ -96,7 +96,7 @@ class _Destaque extends StatelessWidget {
             ],
             if (r.entrou <= 0 && r.investiu > 0) ...[
               const TextSpan(text: 'Você investiu '),
-              TextSpan(text: brl(r.investiu), style: TextStyle(fontWeight: FontWeight.w800, color: corInvest)),
+              TextSpan(text: brl(r.investiu), style: TextStyle(fontWeight: FontWeight.w700, color: corInvest)),
               const TextSpan(text: '.'),
             ],
           ]),
@@ -146,7 +146,7 @@ class _EntrouSaiu extends StatelessWidget {
               foregroundColor: G.texto2,
               side: BorderSide(color: G.borda),
               visualDensity: VisualDensity.compact,
-              textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
+              textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
             ),
             onSelectionChanged: (s) => onN(s.first),
           ),
@@ -194,7 +194,7 @@ class _MiniInfo extends StatelessWidget {
   Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(t, style: TextStyle(color: G.apagado, fontSize: 12)),
         const SizedBox(height: 2),
-        Text(v, style: TextStyle(fontWeight: FontWeight.w800, color: cor, fontSize: 13.5)),
+        Text(v, style: TextStyle(fontWeight: FontWeight.w700, color: cor, fontSize: 13.5)),
       ]);
 }
 
@@ -253,7 +253,7 @@ class _RitmoCard extends StatelessWidget {
               Expanded(
                 child: Text.rich(TextSpan(style: TextStyle(fontSize: 13, color: G.texto2), children: [
                   const TextSpan(text: 'Nesse ritmo, o mês fecha perto de '),
-                  TextSpan(text: brl(projecao), style: TextStyle(fontWeight: FontWeight.w800, color: rit.limite > 0 && projecao > rit.limite ? corSaida : G.texto)),
+                  TextSpan(text: brl(projecao), style: TextStyle(fontWeight: FontWeight.w700, color: rit.limite > 0 && projecao > rit.limite ? corSaida : G.texto)),
                   if (rit.limite > 0) TextSpan(text: projecao > rit.limite ? ', acima do limite de ${brl(rit.limite)}.' : ', dentro do limite de ${brl(rit.limite)}.'),
                 ])),
               ),
@@ -314,10 +314,10 @@ class _OndeFoiState extends State<_OndeFoi> {
               child: Row(children: [
                 Container(width: 12, height: 12, decoration: BoxDecoration(color: cores[i], borderRadius: BorderRadius.circular(4))),
                 const SizedBox(width: 10),
-                Expanded(child: Text(nomes[i], style: TextStyle(fontWeight: sel == i ? FontWeight.w800 : FontWeight.w600))),
+                Expanded(child: Text(nomes[i], style: TextStyle(fontWeight: sel == i ? FontWeight.w700 : FontWeight.w600))),
                 Text(pct(valores[i] / r.saiu, casas: 0), style: TextStyle(color: G.apagado, fontSize: 12.5)),
                 const SizedBox(width: 12),
-                SizedBox(width: 92, child: Text(brl(valores[i]), textAlign: TextAlign.right, style: const TextStyle(fontWeight: FontWeight.w800))),
+                SizedBox(width: 92, child: Text(brl(valores[i]), textAlign: TextAlign.right, style: const TextStyle(fontWeight: FontWeight.w700))),
                 if (cats[i] != null) Icon(Icons.chevron_right_rounded, size: 18, color: G.apagado),
               ]),
             ),
@@ -357,7 +357,7 @@ class _Comparativo extends StatelessWidget {
                 Row(children: [
                   Icon(catGasto(c.cat).icone, size: 16, color: catGasto(c.cat).cor),
                   const SizedBox(width: 8),
-                  Expanded(child: Text(catGasto(c.cat).nome, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700))),
+                  Expanded(child: Text(catGasto(c.cat).nome, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600))),
                   _Seta(c),
                 ]),
                 const SizedBox(height: 6),
@@ -382,7 +382,7 @@ class _Seta extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(color: G.v(0x14), borderRadius: BorderRadius.circular(99)),
-        child: Text('novo', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: G.texto2)),
+        child: Text('novo', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: G.texto2)),
       );
     }
     final sobe = v > .03, desce = v < -.03;
@@ -393,7 +393,7 @@ class _Seta extends StatelessWidget {
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         Icon(sobe ? Icons.arrow_upward_rounded : (desce ? Icons.arrow_downward_rounded : Icons.remove_rounded), size: 13, color: cor),
         const SizedBox(width: 2),
-        Text('${(v.abs() * 100).round()}%', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: cor)),
+        Text('${(v.abs() * 100).round()}%', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: cor)),
       ]),
     );
   }

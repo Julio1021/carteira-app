@@ -32,7 +32,7 @@ class Rotulo extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.only(top: 16, bottom: 8),
-        child: Text(t, style: TextStyle(fontWeight: FontWeight.w700, color: G.texto2)),
+        child: Text(t, style: TextStyle(fontWeight: FontWeight.w600, color: G.texto2)),
       );
 }
 
@@ -49,7 +49,7 @@ class Opcoes<T> extends StatelessWidget {
         ChoiceChip(
           selected: v == valor,
           label: Text(t),
-          labelStyle: TextStyle(fontWeight: FontWeight.w700, color: v == valor ? G.tinta : G.texto2),
+          labelStyle: TextStyle(fontWeight: FontWeight.w600, color: v == valor ? G.tinta : G.texto2),
           onSelected: (_) => onMudar(v),
         ),
     ]);
@@ -66,7 +66,7 @@ class CampoData extends StatelessWidget {
   Widget build(BuildContext context) {
     final h = hojeIso(), o = addDias(h, -1);
     final outra = data != h && (!comOntem || data != o);
-    TextStyle st(bool s) => TextStyle(fontWeight: FontWeight.w700, color: s ? G.tinta : G.texto2);
+    TextStyle st(bool s) => TextStyle(fontWeight: FontWeight.w600, color: s ? G.tinta : G.texto2);
     return Wrap(spacing: 8, runSpacing: 8, children: [
       ChoiceChip(selected: data == h, label: const Text('Hoje'), labelStyle: st(data == h), onSelected: (_) => onMudar(h)),
       if (comOntem) ChoiceChip(selected: data == o, label: const Text('Ontem'), labelStyle: st(data == o), onSelected: (_) => onMudar(o)),
@@ -194,7 +194,7 @@ class CaixaData extends StatelessWidget {
       decoration: BoxDecoration(color: fundo, borderRadius: BorderRadius.circular(14)),
       child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
         Text(iso.substring(8, 10), style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: txt, height: 1)),
-        Text(mesesAbr[int.parse(iso.substring(5, 7)) - 1].toUpperCase(), style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w800, color: txt.withValues(alpha: .7))),
+        Text(mesesAbr[int.parse(iso.substring(5, 7)) - 1].toUpperCase(), style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700, color: txt.withValues(alpha: .7))),
       ]),
     );
   }

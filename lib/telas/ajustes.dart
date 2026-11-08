@@ -94,32 +94,32 @@ class _TelaAjustesState extends State<TelaAjustes> {
             decoration: BoxDecoration(color: G.v(0x14), borderRadius: BorderRadius.circular(13)),
             child: Icon(i, color: cor ?? G.texto),
           ),
-          title: Text(t, style: TextStyle(fontWeight: FontWeight.w700, color: cor)),
+          title: Text(t, style: TextStyle(fontWeight: FontWeight.w600, color: cor)),
           subtitle: Text(s, style: TextStyle(color: G.apagado, fontSize: 12.5)),
           trailing: Icon(Icons.chevron_right_rounded, color: G.apagado),
         );
     return Scaffold(
-      appBar: AppBar(title: const Text('Ajustes', style: TextStyle(fontWeight: FontWeight.w800))),
+      appBar: AppBar(title: const Text('Ajustes', style: TextStyle(fontWeight: FontWeight.w700))),
       body: ListView(padding: const EdgeInsets.fromLTRB(14, 4, 14, 40), children: [
         if (ocupado) const LinearProgressIndicator(minHeight: 2),
-        Padding(padding: const EdgeInsets.fromLTRB(4, 8, 4, 8), child: Text('Aparência', style: TextStyle(color: G.apagado, fontWeight: FontWeight.w700))),
+        Padding(padding: const EdgeInsets.fromLTRB(4, 8, 4, 8), child: Text('Aparência', style: TextStyle(color: G.apagado, fontWeight: FontWeight.w600))),
         const _Aparencia(),
         const SizedBox(height: 12),
         const _AberturaAjuste(),
         const SizedBox(height: 18),
-        Padding(padding: EdgeInsets.fromLTRB(4, 0, 4, 8), child: Text('Seus dados', style: TextStyle(color: G.apagado, fontWeight: FontWeight.w700))),
+        Padding(padding: EdgeInsets.fromLTRB(4, 0, 4, 8), child: Text('Seus dados', style: TextStyle(color: G.apagado, fontWeight: FontWeight.w600))),
         CaixaLista([
           item(Icons.file_upload_outlined, 'Importar backup', 'Traga o arquivo .json exportado do app antigo ou deste app', _importar),
           item(Icons.file_download_outlined, 'Exportar backup', 'Salva uma cópia de tudo (${repo.totalRegistros} registros)', _exportar),
         ]),
         const SizedBox(height: 18),
-        Padding(padding: EdgeInsets.fromLTRB(4, 0, 4, 8), child: Text('Importar do banco', style: TextStyle(color: G.apagado, fontWeight: FontWeight.w700))),
+        Padding(padding: EdgeInsets.fromLTRB(4, 0, 4, 8), child: Text('Importar do banco', style: TextStyle(color: G.apagado, fontWeight: FontWeight.w600))),
         CaixaLista([
           item(Icons.account_balance_outlined, 'Extrato da conta (OFX)', 'Gastos e entradas do Inter, Nubank, Mercado Pago…', () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TelaImportarExtrato()))),
           item(Icons.picture_as_pdf_outlined, 'Investimentos do Inter (PDF)', 'Extrato de movimentações: aplicações e resgates', () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TelaImportarInter()))),
         ]),
         const SizedBox(height: 18),
-        Padding(padding: EdgeInsets.fromLTRB(4, 0, 4, 8), child: Text('Em breve', style: TextStyle(color: G.apagado, fontWeight: FontWeight.w700))),
+        Padding(padding: EdgeInsets.fromLTRB(4, 0, 4, 8), child: Text('Em breve', style: TextStyle(color: G.apagado, fontWeight: FontWeight.w600))),
         CaixaLista([
           item(Icons.cloud_sync_outlined, 'Sincronizar com o Google Drive', 'O mesmo arquivo do site, para celular e PC ficarem iguais', null),
         ]),
@@ -156,7 +156,7 @@ class _Aparencia extends StatelessWidget {
                   child: Column(children: [
                     Icon(i, size: 20, color: on ? G.tinta : G.texto2),
                     const SizedBox(height: 4),
-                    Text(t, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5, color: on ? G.tinta : G.texto2)),
+                    Text(t, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: on ? G.tinta : G.texto2)),
                   ]),
                 ),
               ),
@@ -202,14 +202,14 @@ class _AberturaAjuste extends StatelessWidget {
           SwitchListTile(
             value: aberturaLigada.value,
             onChanged: (v) => definirAbertura(ligada: v),
-            title: const Text('Animação de abertura', style: TextStyle(fontWeight: FontWeight.w700)),
+            title: const Text('Animação de abertura', style: TextStyle(fontWeight: FontWeight.w600)),
             subtitle: Text('A carteira, as moedas e o gráfico do seu patrimônio ao abrir o app. Toque na tela para pular.', style: TextStyle(color: G.apagado, fontSize: 12.5)),
           ),
           if (aberturaLigada.value)
             SwitchListTile(
               value: aberturaValor.value,
               onChanged: (v) => definirAbertura(valor: v),
-              title: const Text('Mostrar o valor do patrimônio', style: TextStyle(fontWeight: FontWeight.w700)),
+              title: const Text('Mostrar o valor do patrimônio', style: TextStyle(fontWeight: FontWeight.w600)),
               subtitle: Text('Desligado, ninguém vê seu saldo quando você abre o app em público.', style: TextStyle(color: G.apagado, fontSize: 12.5)),
             ),
         ]),

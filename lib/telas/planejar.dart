@@ -6,6 +6,7 @@ import '../dados/resumo.dart';
 import '../tema.dart';
 import '../util/fmt.dart';
 import '../widgets/comum.dart';
+import '../widgets/movimento.dart';
 import '../widgets/formulario.dart';
 import 'cartoes.dart';
 import 'contas.dart';
@@ -23,7 +24,7 @@ class TelaPlanejar extends StatelessWidget {
     final emAberto = emps.where((e) => !dadosEmprestimo(repo, e).quitado).toList();
     final meta = repo.metaSobra;
     final r = ResumoMes.de(repo, ymDe(hojeIso()));
-    return ListView(padding: const EdgeInsets.fromLTRB(14, 6, 14, 130), children: [
+    return ListView(padding: const EdgeInsets.fromLTRB(16, 6, 16, 130), children: emSequencia([
       const CartaoRecebimentos(),
       const SizedBox(height: 14),
       const CartaoContas(),
@@ -58,7 +59,7 @@ class TelaPlanejar extends StatelessWidget {
             : '${emAberto.length} em aberto · faltam ${brl(emAberto.fold<double>(0, (a, e) => a + dadosEmprestimo(repo, e).falta))}',
         onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TelaEmprestimos())),
       ),
-    ]);
+    ]));
   }
 
   Future<void> _editarMeta(BuildContext context, double atual) async {
@@ -145,7 +146,7 @@ class CartaoRecebimentos extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(color: G.v(0x14), borderRadius: BorderRadius.circular(99)),
-                    child: Text(brl(x.valor), style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5, color: x.recebido ? G.pos : G.lavanda)),
+                    child: Text(brl(x.valor), style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: x.recebido ? G.pos : G.lavanda)),
                   ),
                 ]),
               ),
@@ -181,7 +182,7 @@ class _LinhaRenda extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(tipo.nome, style: const TextStyle(fontWeight: FontWeight.w700)),
+              Text(tipo.nome, style: const TextStyle(fontWeight: FontWeight.w600)),
               Text(
                 rr == null || rr.valor <= 0
                     ? 'Toque para informar o valor e o dia'
@@ -197,7 +198,7 @@ class _LinhaRenda extends StatelessWidget {
           if (rr != null && rr.valor > 0) ...[
             const SizedBox(width: 8),
             Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-              Text(brl(rr.valor), style: const TextStyle(fontWeight: FontWeight.w800)),
+              Text(brl(rr.valor), style: const TextStyle(fontWeight: FontWeight.w700)),
               if (st != null && st.rec == null && st.dias <= 0)
                 TextButton(
                   style: TextButton.styleFrom(minimumSize: const Size(10, 28), padding: const EdgeInsets.symmetric(horizontal: 6)),
@@ -259,7 +260,7 @@ class _FormRendaState extends State<FormRenda> {
           contentPadding: EdgeInsets.zero,
           value: mesSeg,
           onChanged: (v) => setState(() => mesSeg = v),
-          title: const Text('Salário conta no mês seguinte', style: TextStyle(fontWeight: FontWeight.w700)),
+          title: const Text('Salário conta no mês seguinte', style: TextStyle(fontWeight: FontWeight.w600)),
           subtitle: Text('O salário que cai no fim do mês vira dinheiro do mês seguinte no resumo.', style: TextStyle(color: G.apagado, fontSize: 12.5)),
         ),
       const SizedBox(height: 14),

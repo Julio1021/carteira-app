@@ -8,6 +8,7 @@ import '../dados/resumo.dart';
 import '../tema.dart';
 import '../util/fmt.dart';
 import '../widgets/comum.dart';
+import '../widgets/movimento.dart';
 import '../widgets/formulario.dart';
 import '../widgets/graficos.dart';
 
@@ -80,7 +81,7 @@ class _Resumo extends StatelessWidget {
   Widget build(BuildContext context) {
     final repo = RepoScope.of(context);
     if (c.vazia) {
-      return ListView(padding: const EdgeInsets.fromLTRB(14, 6, 14, 130), children: [
+      return ListView(padding: const EdgeInsets.fromLTRB(16, 6, 16, 130), children: emSequencia([
         Cartao(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             const Text('Comece pelos seus investimentos', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
@@ -92,7 +93,7 @@ class _Resumo extends StatelessWidget {
             OutlinedButton.icon(onPressed: () => Navigator.of(context).pushNamed('/ajustes'), icon: const Icon(Icons.file_upload_outlined), label: const Text('Ou importar o backup do site')),
           ]),
         ),
-      ]);
+      ]));
     }
     final emConta = repo.contas.isEmpty ? 0.0 : saldoEmConta(repo);
     final patrimonio = c.total + emConta;
@@ -113,10 +114,10 @@ class _Resumo extends StatelessWidget {
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
-            const Expanded(child: Text('Investido', style: TextStyle(color: GE.texto2, fontWeight: FontWeight.w700))),
+            const Expanded(child: Text('Investido', style: TextStyle(color: GE.texto2, fontWeight: FontWeight.w600))),
             FilledButton(
               onPressed: () => ir(1),
-              style: FilledButton.styleFrom(minimumSize: const Size(10, 34), padding: const EdgeInsets.symmetric(horizontal: 14), textStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+              style: FilledButton.styleFrom(minimumSize: const Size(10, 34), padding: const EdgeInsets.symmetric(horizontal: 14), textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
               child: Text(ult.data == hojeIso() ? 'Lançado hoje' : 'Lançar hoje'),
             ),
           ]),
@@ -127,7 +128,7 @@ class _Resumo extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(color: (c.ganhoUltimo >= 0 ? GE.pos : GE.neg).withValues(alpha: .22), borderRadius: BorderRadius.circular(99)),
               child: Text('${brl(c.ganhoUltimo, sinal: true)} · ${pct(c.rUltimo, sinal: true)}',
-                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5, color: c.ganhoUltimo >= 0 ? GE.pos : GE.neg)),
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: c.ganhoUltimo >= 0 ? GE.pos : GE.neg)),
             ),
             Text('no último lançamento, em ${dataBr(ult.data)}', style: const TextStyle(color: GE.texto2, fontSize: 12.5)),
           ]),
@@ -220,8 +221,8 @@ class _Resumo extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Column(children: [
-                    Text(mesesAbr[int.parse(m.ym.substring(5)) - 1], style: TextStyle(fontSize: 11, color: G.texto2, fontWeight: FontWeight.w700)),
-                    Text(pct(m.rent, casas: 1).replaceAll('%', ''), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800)),
+                    Text(mesesAbr[int.parse(m.ym.substring(5)) - 1], style: TextStyle(fontSize: 11, color: G.texto2, fontWeight: FontWeight.w600)),
+                    Text(pct(m.rent, casas: 1).replaceAll('%', ''), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
                   ]),
                 ),
             ]),
@@ -248,7 +249,7 @@ class _Resumo extends StatelessWidget {
             child: InkWell(borderRadius: BorderRadius.circular(18), onTap: f, child: SizedBox(width: 54, height: 54, child: Icon(i, color: destaque ? G.tinta : G.texto, size: 22))),
           ),
           const SizedBox(height: 7),
-          Text(t, style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: G.texto2)),
+          Text(t, style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: G.texto2)),
         ]),
       );
 }
@@ -292,7 +293,7 @@ class _Bloco extends StatelessWidget {
           const SizedBox(width: 9),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(rotulo, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0x9E12131C), fontWeight: FontWeight.w700, fontSize: 12)),
+              Text(rotulo, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0x9E12131C), fontWeight: FontWeight.w600, fontSize: 12)),
               FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(brl(valor), style: const TextStyle(color: GE.tinta, fontWeight: FontWeight.w800, fontSize: 15))),
             ]),
           ),
@@ -312,8 +313,8 @@ class _LinhaPos extends StatelessWidget {
         Row(children: [
           Container(width: 10, height: 10, decoration: BoxDecoration(color: p.cor, borderRadius: BorderRadius.circular(3))),
           const SizedBox(width: 8),
-          Expanded(child: Text(p.a.nome, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700))),
-          Text(brl(p.valor), style: const TextStyle(fontWeight: FontWeight.w800)),
+          Expanded(child: Text(p.a.nome, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600))),
+          Text(brl(p.valor), style: const TextStyle(fontWeight: FontWeight.w700)),
         ]),
         const SizedBox(height: 6),
         Barra(total > 0 ? p.valor / total : 0, cor: p.cor, altura: 5),
@@ -321,7 +322,7 @@ class _LinhaPos extends StatelessWidget {
         Row(children: [
           Text('${pct(total > 0 ? p.valor / total : 0, casas: 1)} da carteira', style: TextStyle(color: G.apagado, fontSize: 12)),
           const Spacer(),
-          Text('${brl(p.lucro, sinal: true)} (${pct(p.rent, sinal: true)})', style: TextStyle(color: p.lucro >= 0 ? G.pos : G.neg, fontSize: 12, fontWeight: FontWeight.w700)),
+          Text('${brl(p.lucro, sinal: true)} (${pct(p.rent, sinal: true)})', style: TextStyle(color: p.lucro >= 0 ? G.pos : G.neg, fontSize: 12, fontWeight: FontWeight.w600)),
         ]),
       ]),
     );
@@ -491,7 +492,7 @@ class _LancarState extends State<_Lancar> {
               Row(children: [
                 Container(width: 10, height: 10, decoration: BoxDecoration(color: p.cor, borderRadius: BorderRadius.circular(3))),
                 const SizedBox(width: 8),
-                Expanded(child: Text(p.a.nome, style: const TextStyle(fontWeight: FontWeight.w800))),
+                Expanded(child: Text(p.a.nome, style: const TextStyle(fontWeight: FontWeight.w700))),
                 if (p.filhos != null) Text('${p.filhos!.length} itens', style: TextStyle(color: G.apagado, fontSize: 12)),
               ]),
               Padding(
@@ -523,7 +524,7 @@ class _LancarState extends State<_Lancar> {
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Text('Rendimento: ${brl(rend, sinal: true)}${ant! > 0 ? ' (${pct(rend / ant, sinal: true)})' : ''}',
-                      style: TextStyle(color: rend >= 0 ? G.pos : G.neg, fontWeight: FontWeight.w700, fontSize: 12.5)),
+                      style: TextStyle(color: rend >= 0 ? G.pos : G.neg, fontWeight: FontWeight.w600, fontSize: 12.5)),
                 ),
             ]),
           );
@@ -548,7 +549,7 @@ class _Ativos extends StatelessWidget {
     final ocultos = repo.doTipo('ativo').where((d) => d['oculto'] == true).map(Ativo.new).toList();
     return ListView(padding: const EdgeInsets.fromLTRB(14, 0, 14, 130), children: [
       Row(children: [
-        Expanded(child: Text('${c.posicoes.length} ativo(s) · ${brl(c.total)}', style: TextStyle(color: G.texto2, fontWeight: FontWeight.w700))),
+        Expanded(child: Text('${c.posicoes.length} ativo(s) · ${brl(c.total)}', style: TextStyle(color: G.texto2, fontWeight: FontWeight.w600))),
         FilledButton.icon(
           onPressed: () => abrirFolha(context, const FormAtivo()),
           style: FilledButton.styleFrom(minimumSize: const Size(10, 38)),
@@ -569,7 +570,7 @@ class _Ativos extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(color: G.v(0x14), borderRadius: BorderRadius.circular(8)),
-                child: Text(p.a.classe.toUpperCase(), style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: G.texto2, letterSpacing: .5)),
+                child: Text(p.a.classe.toUpperCase(), style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: G.texto2, letterSpacing: .5)),
               ),
             ]),
             const SizedBox(height: 8),
@@ -586,7 +587,7 @@ class _Ativos extends StatelessWidget {
                   child: Row(children: [
                     const SizedBox(width: 22),
                     Expanded(child: Text(f.a.nome, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: G.texto2, fontSize: 13))),
-                    Text(brl(f.valor), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                    Text(brl(f.valor), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                   ]),
                 ),
             ],
@@ -625,18 +626,18 @@ class TelaAtivo extends StatelessWidget {
     final nomes = {for (final x in c.ativos) x.id: x.nome};
     return Scaffold(
       appBar: AppBar(
-        title: Text(a.nome, style: const TextStyle(fontWeight: FontWeight.w800)),
+        title: Text(a.nome, style: const TextStyle(fontWeight: FontWeight.w700)),
         actions: [IconButton(tooltip: 'Editar', onPressed: () => abrirFolha(context, FormAtivo(doc: d)), icon: const Icon(Icons.edit_outlined))],
       ),
       body: lancs.isEmpty
           ? Center(child: Text('Nenhum lançamento ainda.', style: TextStyle(color: G.apagado)))
           : ListView(padding: const EdgeInsets.fromLTRB(14, 4, 14, 40), children: [
-              Text('Histórico · ${lancs.length} lançamento(s)', style: TextStyle(color: G.texto2, fontWeight: FontWeight.w700)),
+              Text('Histórico · ${lancs.length} lançamento(s)', style: TextStyle(color: G.texto2, fontWeight: FontWeight.w600)),
               const SizedBox(height: 10),
               CaixaLista([
                 for (final l in lancs)
                   ListTile(
-                    title: Text(brl(l.saldo), style: const TextStyle(fontWeight: FontWeight.w800)),
+                    title: Text(brl(l.saldo), style: const TextStyle(fontWeight: FontWeight.w700)),
                     subtitle: Text(
                       [dataBr(l.data), if (filhos.isNotEmpty) nomes[l.ativo] ?? '', if (l.aporte != 0) 'aporte ${brl(l.aporte, sinal: true)}'].where((s) => s.isNotEmpty).join(' · '),
                       style: TextStyle(color: G.apagado, fontSize: 12.5),
@@ -804,7 +805,7 @@ class _RelatoriosState extends State<_Relatorios> {
             value: c.anos.contains(ano) ? ano : null,
             dropdownColor: G.fundo2,
             underline: const SizedBox.shrink(),
-            items: [for (final a in c.anos.reversed) DropdownMenuItem(value: a, child: Text(a, style: const TextStyle(fontWeight: FontWeight.w800)))],
+            items: [for (final a in c.anos.reversed) DropdownMenuItem(value: a, child: Text(a, style: const TextStyle(fontWeight: FontWeight.w700)))],
             onChanged: (v) => setState(() => ano = v ?? ano),
           ),
         ]),
@@ -822,11 +823,11 @@ class _RelatoriosState extends State<_Relatorios> {
             padding: const EdgeInsets.all(14),
             child: Column(children: [
               Row(children: [
-                Expanded(child: Text(mesLongo(m.ym), style: const TextStyle(fontWeight: FontWeight.w800))),
+                Expanded(child: Text(mesLongo(m.ym), style: const TextStyle(fontWeight: FontWeight.w700))),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(color: (m.rent >= 0 ? G.pos : G.neg).withValues(alpha: .18), borderRadius: BorderRadius.circular(99)),
-                  child: Text(pct(m.rent, sinal: true), style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5, color: m.rent >= 0 ? G.pos : G.neg)),
+                  child: Text(pct(m.rent, sinal: true), style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: m.rent >= 0 ? G.pos : G.neg)),
                 ),
               ]),
               const SizedBox(height: 8),
@@ -885,7 +886,7 @@ class _RelatoriosState extends State<_Relatorios> {
                     : mm == 0
                         ? 'Você já chegou lá! 🎉'
                         : 'Em ${tempoTexto(mm)} (${mesLongo(ymAdd(ymDe(hojeIso()), mm)).toLowerCase()}).',
-            style: TextStyle(fontWeight: FontWeight.w800, color: G.lavanda),
+            style: TextStyle(fontWeight: FontWeight.w700, color: G.lavanda),
           ),
           const SizedBox(height: 6),
           Text('Estimativa com juros compostos mensais e aportes no fim de cada mês. Não considera impostos nem taxas, e não é garantia de rendimento.', style: TextStyle(color: G.apagado, fontSize: 11.5)),
@@ -921,7 +922,7 @@ class _Lin extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 2),
         child: Row(children: [
           Expanded(child: Text(t, style: TextStyle(color: G.texto2, fontSize: 13))),
-          Text(v, style: TextStyle(fontWeight: forte ? FontWeight.w800 : FontWeight.w600, color: cor ?? G.texto, fontSize: 13.5)),
+          Text(v, style: TextStyle(fontWeight: forte ? FontWeight.w700 : FontWeight.w600, color: cor ?? G.texto, fontSize: 13.5)),
         ]),
       );
 }

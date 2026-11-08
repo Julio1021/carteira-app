@@ -40,7 +40,7 @@ class BotaoAvisos extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
             decoration: BoxDecoration(color: grave ? G.neg : G.branco, borderRadius: BorderRadius.circular(99), border: Border.all(color: G.fundo, width: 2)),
-            child: Text('${novos.length}', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: grave ? Colors.white : G.tinta)),
+            child: Text('${novos.length}', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: grave ? Colors.white : G.tinta)),
           ),
         ),
     ]);

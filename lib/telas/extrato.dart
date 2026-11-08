@@ -5,6 +5,7 @@ import '../dados/resumo.dart';
 import '../tema.dart';
 import '../util/fmt.dart';
 import '../widgets/comum.dart';
+import '../widgets/movimento.dart';
 import 'analise.dart';
 import 'busca.dart';
 import 'lancar.dart';
@@ -94,8 +95,8 @@ class _TelaExtratoState extends State<TelaExtrato> {
                       Icon(Icons.savings_rounded, size: 18, color: G.lavanda),
                       const SizedBox(width: 8),
                       Expanded(child: Text(r.investiu >= 0 ? 'Investiu no mês' : 'Resgatou no mês', style: TextStyle(color: G.texto2, fontWeight: FontWeight.w600, fontSize: 13))),
-                      Text(brl(r.investiu.abs()), style: TextStyle(color: G.lavanda, fontWeight: FontWeight.w800)),
-                      if (r.pctInvestido != null && r.investiu > 0) Text('  ·  ${(r.pctInvestido! * 100).round()}%', style: TextStyle(color: G.apagado, fontSize: 12.5, fontWeight: FontWeight.w700)),
+                      Text(brl(r.investiu.abs()), style: TextStyle(color: G.lavanda, fontWeight: FontWeight.w700)),
+                      if (r.pctInvestido != null && r.investiu > 0) Text('  ·  ${(r.pctInvestido! * 100).round()}%', style: TextStyle(color: G.apagado, fontSize: 12.5, fontWeight: FontWeight.w600)),
                     ]),
                   ),
                 ),
@@ -115,7 +116,7 @@ class _TelaExtratoState extends State<TelaExtrato> {
               selectedForegroundColor: G.tinta,
               foregroundColor: G.texto2,
               side: BorderSide(color: G.borda),
-              textStyle: const TextStyle(fontWeight: FontWeight.w800),
+              textStyle: const TextStyle(fontWeight: FontWeight.w700),
             ),
             onSelectionChanged: (s) => setState(() => analise = s.first),
           ),
@@ -154,8 +155,12 @@ class _TelaExtratoState extends State<TelaExtrato> {
               label: const Text('Buscar em todos os meses'),
             ),
           ),
-          SingleChildScrollView(
+          ShaderMask(
+            blendMode: BlendMode.dstIn,
+            shaderCallback: (r) => const LinearGradient(colors: [Colors.white, Colors.white, Colors.transparent], stops: [0, .9, 1]).createShader(r),
+            child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.only(right: 28),
             child: Row(children: [
               for (final f in [['tudo', 'Tudo'], ['saidas', 'Saídas'], ['entradas', 'Entradas'], if (r.investimentos.isNotEmpty || filtro == 'investido') ['investido', 'Investido']])
                 Padding(
@@ -163,7 +168,7 @@ class _TelaExtratoState extends State<TelaExtrato> {
                   child: ChoiceChip(
                     selected: filtro == f[0],
                     label: Text(f[1]),
-                    labelStyle: TextStyle(fontWeight: FontWeight.w700, color: filtro == f[0] ? G.tinta : G.texto2),
+                    labelStyle: TextStyle(fontWeight: FontWeight.w600, color: filtro == f[0] ? G.tinta : G.texto2),
                     onSelected: (_) => setState(() {
                       filtro = f[0];
                       if (filtro == 'entradas' || filtro == 'investido') cat = null;
@@ -178,12 +183,12 @@ class _TelaExtratoState extends State<TelaExtrato> {
                       selected: cat == c,
                       avatar: Icon(catGasto(c).icone, size: 16, color: cat == c ? G.tinta : catGasto(c).cor),
                       label: Text(catGasto(c).nome),
-                      labelStyle: TextStyle(fontWeight: FontWeight.w700, color: cat == c ? G.tinta : G.texto2),
+                      labelStyle: TextStyle(fontWeight: FontWeight.w600, color: cat == c ? G.tinta : G.texto2),
                       onSelected: (v) => setState(() => cat = v ? c : null),
                     ),
                   ),
             ]),
-          ),
+          )),
           const SizedBox(height: 12),
           if (q.isNotEmpty || cat != null || filtro != 'tudo')
             Padding(
@@ -191,7 +196,7 @@ class _TelaExtratoState extends State<TelaExtrato> {
               child: Row(children: [
                 Expanded(child: Text('${lista.length} lançamento${lista.length == 1 ? '' : 's'}', style: TextStyle(color: G.apagado))),
                 Text(filtro == 'investido' ? 'Investiu ${brl(totalFiltro)}' : brl(totalFiltro, sinal: true),
-                    style: TextStyle(fontWeight: FontWeight.w800, color: filtro == 'investido' ? G.lavanda : (totalFiltro < 0 ? G.texto : G.pos))),
+                    style: TextStyle(fontWeight: FontWeight.w700, color: filtro == 'investido' ? G.lavanda : (totalFiltro < 0 ? G.texto : G.pos))),
               ]),
             ),
           ],
@@ -212,26 +217,29 @@ class _TelaExtratoState extends State<TelaExtrato> {
         )
       else
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(14, 0, 14, 130),
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 130),
           sliver: SliverList.builder(
             itemCount: grupos.length,
             itemBuilder: (c, i) {
               final dia = grupos.keys.elementAt(i);
               final ls = grupos[dia]!;
               final tot = ls.fold<double>(0, (a, l) => a + l.efeito);
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 14),
+              return Surge(
+                key: ValueKey('$dia$filtro${cat ?? ''}'),
+                ordem: i < 6 ? i : 0,
+                child: Padding(
+                padding: const EdgeInsets.only(bottom: 16),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                   Padding(
                     padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
                     child: Row(children: [
-                      Expanded(child: Text(rotuloDia(dia), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800))),
-                      Text(brl(tot, sinal: true), style: TextStyle(color: tot < 0 ? G.apagado : G.pos, fontWeight: FontWeight.w700, fontSize: 13)),
+                      Expanded(child: Text(rotuloDia(dia), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700))),
+                      Text(brl(tot, sinal: true), style: TextStyle(color: tot < 0 ? G.apagado : G.pos, fontWeight: FontWeight.w600, fontSize: 13)),
                     ]),
                   ),
                   CaixaLista([for (final l in ls) LinhaLanc(l, onTap: () => abrirFormLanc(context, doc: l.doc))]),
                 ]),
-              );
+              ));
             },
           ),
         ),
