@@ -89,12 +89,12 @@ class FluxoDinheiro extends StatelessWidget {
   Widget build(BuildContext context) {
     final cats = r.porCategoria.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
     final destinos = <_No>[];
-    final top = cats.take(4).toList();
+    final top = cats.take(3).toList();
     for (final e in top) {
       final c = catGasto(e.key);
       destinos.add(_No(c.nome, e.value, c.cor));
     }
-    final resto = cats.skip(4).fold<double>(0, (t, e) => t + e.value);
+    final resto = cats.skip(3).fold<double>(0, (t, e) => t + e.value);
     if (resto > 0) destinos.add(_No('Outros gastos', resto, G.apagado));
     if (r.investiu > 0) destinos.add(_No('Investido', r.investiu, G.lavanda));
     final ficou = r.entrou - r.saiu - (r.investiu > 0 ? r.investiu : 0);
@@ -103,7 +103,7 @@ class FluxoDinheiro extends StatelessWidget {
     if (saidas <= 0 || r.entrou <= 0) return const SizedBox.shrink();
     final origens = <_No>[_No('Entrou', r.entrou, G.pos)];
     if (saidas > r.entrou + .5) origens.add(_No('Do saldo', saidas - r.entrou, G.alerta));
-    final altura = math.max(190.0, destinos.length * 40.0);
+    final altura = math.max(200.0, destinos.length * 42.0);
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: Cartao(
@@ -152,6 +152,13 @@ class _PintorFluxo extends CustomPainter {
     final total = destinos.fold<double>(0, (s, n) => s + n.valor);
     const gap = 6.0, barW = 10.0, rotE = 74.0, rotD = 118.0;
     final hD = size.height - gap * (destinos.length - 1);
+    // altura de cada destino: proporcional, mas com um mínimo para o nome caber
+    const minH = 26.0;
+    final prop = [for (final d in destinos) hD * d.valor / total];
+    final pequenos = prop.where((h) => h < minH).length;
+    final sobraGrandes = hD - pequenos * minH;
+    final somaGrandes = prop.where((h) => h >= minH).fold<double>(0, (a, b) => a + b);
+    final alturasD = [for (final h in prop) h < minH ? minH : (somaGrandes > 0 ? h * sobraGrandes / somaGrandes : h)];
     final hO = size.height - gap * (origens.length - 1);
     final xE = rotE, xD = size.width - rotD;
     // colunas da esquerda (origens)
@@ -168,14 +175,15 @@ class _PintorFluxo extends CustomPainter {
     var oi = 0;
     var ocupado = 0.0; // quanto da origem atual já foi usado (em valor)
     var yd = 0.0;
-    for (final d in destinos) {
-      final hd = hD * d.valor / total;
+    for (var di = 0; di < destinos.length; di++) {
+      final d = destinos[di];
+      final hd = alturasD[di];
       var resta = d.valor, yDest = yd;
       while (resta > .001 && oi < origens.length) {
         final livre = origens[oi].valor - ocupado;
         final usa = math.min(livre, resta);
         final yO = origemY[oi] + hO * ocupado / total;
-        final hFaixaO = hO * usa / total, hFaixaD = hD * usa / total;
+        final hFaixaO = hO * usa / total, hFaixaD = hd * usa / d.valor;
         final x0 = xE, x1 = xE + (xD - barW - xE) * t;
         final cx = (x0 + x1) / 2;
         final path = Path()
