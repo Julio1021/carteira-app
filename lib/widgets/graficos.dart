@@ -20,6 +20,17 @@ class _Entrada extends StatelessWidget {
       );
 }
 
+/// Passo "redondo" para o eixo (1, 2, 2,5 ou 5 × potência de 10), ~3 marcas.
+double passoRedondo(double faixa) {
+  if (!(faixa > 0) || !faixa.isFinite) return 1;
+  final bruto = faixa / 3;
+  final mag = math.pow(10, (math.log(bruto) / math.ln10).floor()).toDouble();
+  for (final m in const [1.0, 2.0, 2.5, 5.0, 10.0]) {
+    if (m * mag >= bruto) return m * mag;
+  }
+  return 10 * mag;
+}
+
 TextStyle get _estiloEixo => TextStyle(color: G.apagado, fontSize: 9.5, fontWeight: FontWeight.w600);
 
 FlGridData _grade(double intervalo) => FlGridData(
@@ -164,7 +175,7 @@ class GraficoLinha extends StatelessWidget {
             minY: base,
             maxY: topo,
             clipData: const FlClipData.all(),
-            gridData: _grade((topo - base) / 3),
+            gridData: _grade(passoRedondo(topo - base)),
             borderData: FlBorderData(show: false),
             titlesData: FlTitlesData(
               topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -173,7 +184,7 @@ class GraficoLinha extends StatelessWidget {
                 sideTitles: SideTitles(
                   showTitles: true,
                   reservedSize: 40,
-                  interval: (topo - base) / 3 > 0 ? (topo - base) / 3 : null,
+                  interval: passoRedondo(topo - base),
                   getTitlesWidget: (v, meta) => (v == meta.min || v == meta.max)
                       ? const SizedBox.shrink()
                       : Padding(padding: const EdgeInsets.only(right: 6), child: Text(formatoY(v), style: _estiloEixo, textAlign: TextAlign.right, maxLines: 1, softWrap: false)),
@@ -317,7 +328,7 @@ class GraficoBarras extends StatelessWidget {
         builder: (t) => BarChart(
           BarChartData(
             maxY: topo,
-            gridData: _grade(topo / 3),
+            gridData: _grade(passoRedondo(topo)),
             borderData: FlBorderData(show: false),
             alignment: BarChartAlignment.spaceAround,
             titlesData: FlTitlesData(
@@ -327,7 +338,7 @@ class GraficoBarras extends StatelessWidget {
                 sideTitles: SideTitles(
                   showTitles: true,
                   reservedSize: 40,
-                  interval: topo / 3,
+                  interval: passoRedondo(topo),
                   getTitlesWidget: (v, meta) => v == meta.max ? const SizedBox.shrink() : Padding(padding: const EdgeInsets.only(right: 6), child: Text(formatoY(v), style: _estiloEixo, textAlign: TextAlign.right, maxLines: 1, softWrap: false)),
                 ),
               ),
