@@ -30,7 +30,7 @@ class TelaEmprestimos extends StatelessWidget {
                     textAlign: TextAlign.center, style: TextStyle(color: G.texto2, height: 1.4)),
               ),
             )
-          : ListView(padding: const EdgeInsets.fromLTRB(14, 4, 14, 100), children: [
+          : ListView(padding: const EdgeInsets.fromLTRB(12, 4, 12, 100), children: [
               for (final e in l) ...[_CartaoEmp(e), const SizedBox(height: 12)],
             ]),
     );

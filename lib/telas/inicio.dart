@@ -29,15 +29,15 @@ class TelaInicio extends StatelessWidget {
     final ult = r.lancamentos.take(5).toList();
     var o = 0;
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 6, 16, 130),
+      padding: const EdgeInsets.fromLTRB(12, 4, 12, 120),
       children: [
         if (repo.vazio) ...[Surge(ordem: o++, child: _BoasVindas()), const SizedBox(height: 16)],
         Surge(ordem: o++, child: HeroMes(r: r, onMes: onMes, onEntrou: () => irExtratoFiltro('entradas'), onSaiu: () => irExtratoFiltro('saidas'), onInvestiu: () => r.investimentos.isEmpty ? abrirFormLanc(context, investido: true) : irExtratoFiltro('investido'), onLimite: irLimites)),
-        const SizedBox(height: 20),
+        const SizedBox(height: 14),
         Surge(ordem: o++, child: _Atalhos(irExtrato: irExtrato, irLimites: irLimites)),
-        const SizedBox(height: 20),
+        const SizedBox(height: 14),
         Surge(ordem: o++, child: _ContasInicio(irPlanejar: irPlanejar)),
-        if (r.porCategoria.isNotEmpty) ...[Surge(ordem: o++, child: _OndeFoi(r: r, irLimites: irLimites)), const SizedBox(height: 16)],
+        if (r.porCategoria.isNotEmpty) ...[Surge(ordem: o++, child: _OndeFoi(r: r, irLimites: irLimites)), const SizedBox(height: 12)],
         Surge(ordem: o++, child: Cartao(
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             CabecalhoCartao('Últimos lançamentos', sub: mesLongo(ym), acao: 'Ver extrato', onAcao: irExtrato),
@@ -68,11 +68,11 @@ class HeroMes extends StatelessWidget {
     return Escuro(child: Container(
       decoration: BoxDecoration(
         gradient: GE.gradHero,
-        borderRadius: BorderRadius.circular(26),
+        borderRadius: BorderRadius.circular(22),
         border: Border.all(color: const Color(0x17FFFFFF)),
         boxShadow: [BoxShadow(color: G.sombra(0xCC), blurRadius: 50, offset: Offset(0, 28), spreadRadius: -30)],
       ),
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 16),
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
       child: Column(children: [
         SeletorMes(ym: r.ym, onMudar: onMes, escuro: true),
         AnimatedSwitcher(
@@ -104,7 +104,7 @@ class HeroMes extends StatelessWidget {
         Text(principal != null ? 'Em conta' : 'Sobra do mês', style: const TextStyle(color: GE.texto2, fontWeight: FontWeight.w600)),
         const SizedBox(height: 4),
         FittedBox(
-          child: ValorAnimado(principal ?? r.sobra, estilo: const TextStyle(fontSize: 38, fontWeight: FontWeight.w800, letterSpacing: -1.5, color: Colors.white)),
+          child: ValorAnimado(principal ?? r.sobra, estilo: const TextStyle(fontSize: 32, fontWeight: FontWeight.w800, letterSpacing: -1.2, color: Colors.white)),
         ),
         if (principal != null)
           Padding(
@@ -216,15 +216,15 @@ class _Atalhos extends StatelessWidget {
               escala: .9,
               child: Material(
                 color: destaque ? G.branco : (cor != null ? cor.withValues(alpha: G.claro ? .10 : .14) : G.v(0x10)),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18), side: BorderSide(color: destaque ? G.branco : (cor != null ? cor.withValues(alpha: .22) : G.borda))),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15), side: BorderSide(color: destaque ? G.branco : (cor != null ? cor.withValues(alpha: .22) : G.borda))),
                 child: InkWell(
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(15),
                   onTap: f,
-                  child: SizedBox(width: 54, height: 54, child: Icon(i, color: destaque ? G.tinta : (cor ?? G.texto), size: 22)),
+                  child: SizedBox(width: 46, height: 46, child: Icon(i, color: destaque ? G.tinta : (cor ?? G.texto), size: 20)),
                 ),
               ),
             ),
-            const SizedBox(height: 7),
+            const SizedBox(height: 5),
             Text(t, style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: G.texto2)),
           ]),
         );
@@ -321,7 +321,7 @@ class _ContasInicio extends StatelessWidget {
     final atr = ab.where((i) => i.st == 'atrasada').toList();
     final prox = ab.where((i) => i.st != 'atrasada').take(3).toList();
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Cartao(
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           CabecalhoCartao('Contas a pagar', sub: ab.isEmpty ? 'Tudo pago este mês' : 'Falta pagar ${brl(m.falta)} este mês', acao: 'Ver contas', onAcao: irPlanejar),

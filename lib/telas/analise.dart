@@ -155,6 +155,7 @@ class _EntrouSaiu extends StatelessWidget {
         Text('Toque num mês para ver os valores. Embaixo, quanto sobrou.', style: TextStyle(color: G.apagado, fontSize: 12.5)),
         const SizedBox(height: 14),
         GraficoBarras(
+          titulo: temInv ? 'Entrou × Saiu × Investiu' : 'Entrou × Saiu',
           rotulos: [for (final m in hist) abr(m.ym)],
           valores: [for (final m in hist) [m.entrou, m.saiu, if (temInv) (m.investiu > 0 ? m.investiu : 0.0)]],
           cores: [corEntrada, corSaida, if (temInv) corInvest],
@@ -223,6 +224,7 @@ class _RitmoCard extends StatelessWidget {
         Text(frase, style: TextStyle(color: G.texto2, fontSize: 12.5)),
         const SizedBox(height: 14),
         GraficoLinha(
+          titulo: 'Ritmo dos gastos',
           series: [rit.atual, rit.anterior, if (temMedia) rit.media],
           cores: [corSaida, corAnterior, if (temMedia) G.lavanda],
           tracejada: [false, true, true],
@@ -233,7 +235,7 @@ class _RitmoCard extends StatelessWidget {
           formatoY: curto,
           linhaH: rit.limite > 0 ? rit.limite : null,
           nomeLinhaH: rit.limite > 0 ? 'limite' : null,
-          altura: 210,
+          altura: 240,
         ),
         const SizedBox(height: 10),
         Wrap(spacing: 14, runSpacing: 6, children: [

@@ -217,7 +217,7 @@ class _TelaExtratoState extends State<TelaExtrato> {
         )
       else
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 130),
+          padding: const EdgeInsets.fromLTRB(12, 0, 12, 120),
           sliver: SliverList.builder(
             itemCount: grupos.length,
             itemBuilder: (c, i) {

@@ -163,7 +163,7 @@ class _TelaImportarExtratoState extends State<TelaImportarExtrato> {
     final ents = p.entradas.where((x) => x.cat != 'ignorar').toList();
     final candidatos = candidatosDono(o.tx);
     return Stack(children: [
-      ListView(padding: const EdgeInsets.fromLTRB(14, 4, 14, 110), children: [
+      ListView(padding: const EdgeInsets.fromLTRB(12, 4, 12, 110), children: [
         Cartao(
           gradiente: G.gradHero,
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

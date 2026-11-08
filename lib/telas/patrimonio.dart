@@ -81,7 +81,7 @@ class _Resumo extends StatelessWidget {
   Widget build(BuildContext context) {
     final repo = RepoScope.of(context);
     if (c.vazia) {
-      return ListView(padding: const EdgeInsets.fromLTRB(16, 6, 16, 130), children: emSequencia([
+      return ListView(padding: const EdgeInsets.fromLTRB(12, 4, 12, 120), children: emSequencia([
         Cartao(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             const Text('Comece pelos seus investimentos', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
@@ -103,7 +103,7 @@ class _Resumo extends StatelessWidget {
     final hojeYm = ymDe(hojeIso());
     final ultMeses = c.meses.where((m) => m.ym.compareTo(ymAdd(hojeYm, -11)) >= 0).toList();
     final amostra = _amostrar(c.dias, 90);
-    return ListView(padding: const EdgeInsets.fromLTRB(14, 0, 14, 130), children: [
+    return ListView(padding: const EdgeInsets.fromLTRB(12, 0, 12, 120), children: [
       Escuro(child: Container(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
         decoration: BoxDecoration(
@@ -189,6 +189,7 @@ class _Resumo extends StatelessWidget {
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             const CabecalhoCartao('Evolução'),
             GraficoLinha(
+              titulo: 'Evolução do patrimônio',
               series: [amostra.map((d) => d.total).toList(), amostra.map((d) => d.investido).toList()],
               cores: [G.pos, Color(0xFF9AA0BC)],
               tracejada: const [false, true],
@@ -461,7 +462,7 @@ class _LancarState extends State<_Lancar> {
         ),
       );
     }
-    return ListView(padding: const EdgeInsets.fromLTRB(14, 0, 14, 130), children: [
+    return ListView(padding: const EdgeInsets.fromLTRB(12, 0, 12, 120), children: [
       Cartao(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           const Text('Lançar valores do dia', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
@@ -547,7 +548,7 @@ class _Ativos extends StatelessWidget {
   Widget build(BuildContext context) {
     final repo = RepoScope.of(context);
     final ocultos = repo.doTipo('ativo').where((d) => d['oculto'] == true).map(Ativo.new).toList();
-    return ListView(padding: const EdgeInsets.fromLTRB(14, 0, 14, 130), children: [
+    return ListView(padding: const EdgeInsets.fromLTRB(12, 0, 12, 120), children: [
       Row(children: [
         Expanded(child: Text('${c.posicoes.length} ativo(s) · ${brl(c.total)}', style: TextStyle(color: G.texto2, fontWeight: FontWeight.w600))),
         FilledButton.icon(
@@ -797,7 +798,7 @@ class _RelatoriosState extends State<_Relatorios> {
     final meses = c.meses.where((m) => m.ym.startsWith(ano)).toList().reversed.toList();
     final amostra = [for (var i = 0; i < proj.length; i += (proj.length / 60).ceil().clamp(1, 1000).toInt()) proj[i], proj.last];
 
-    return ListView(padding: const EdgeInsets.fromLTRB(14, 0, 14, 130), children: [
+    return ListView(padding: const EdgeInsets.fromLTRB(12, 0, 12, 120), children: [
       if (!c.vazia) ...[
         Row(children: [
           const Expanded(child: Text('Relatório do ano', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800))),
@@ -867,6 +868,7 @@ class _RelatoriosState extends State<_Relatorios> {
           ),
           const SizedBox(height: 14),
           GraficoLinha(
+            titulo: 'Projeção',
             series: [amostra.map((p) => p.saldo).toList(), amostra.map((p) => p.investido).toList()],
             cores: [G.pos, Color(0xFF9AA0BC)],
             tracejada: const [false, true],

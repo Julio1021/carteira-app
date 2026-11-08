@@ -37,7 +37,7 @@ class TelaCartoes extends StatelessWidget {
                 child: Text('Cadastre seus cartões para ver a fatura atual, o limite disponível e as parcelas dos próximos meses.', textAlign: TextAlign.center, style: TextStyle(color: G.texto2)),
               ),
             )
-          : ListView(padding: const EdgeInsets.fromLTRB(14, 4, 14, 100), children: [
+          : ListView(padding: const EdgeInsets.fromLTRB(12, 4, 12, 100), children: [
               for (final c in ccs) ...[_ResumoCartaoWidget(c), const SizedBox(height: 12)],
             ]),
     );
@@ -129,7 +129,7 @@ class _TelaCartaoState extends State<TelaCartao> {
         icon: const Icon(Icons.add_rounded),
         label: const Text('Nova compra', style: TextStyle(fontWeight: FontWeight.w700)),
       ),
-      body: ListView(padding: const EdgeInsets.fromLTRB(14, 4, 14, 100), children: [
+      body: ListView(padding: const EdgeInsets.fromLTRB(12, 4, 12, 100), children: [
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(children: [

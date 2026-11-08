@@ -5,6 +5,8 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'dados/demo.dart';
 import 'dados/repo.dart';
+import 'dados/analise.dart';
+import 'widgets/graficos.dart';
 import 'tema.dart';
 import 'widgets/movimento.dart';
 import 'telas/abertura.dart';
@@ -159,6 +161,21 @@ class _CascaState extends State<Casca> {
           if (tela == 'entrada') abrirFormLanc(context, entrada: true);
           if (tela == 'menu') abrirMenuLancar(context);
           if (tela == 'invest') abrirFormLanc(context, investido: true);
+          if (tela == 'grafico') {
+            final h = historicoMeses(RepoScope.ler(context), ym, 12);
+            abrirGraficoCheio(
+              context,
+              'Entrou × Saiu × Investiu',
+              (alt) => GraficoBarras(
+                rotulos: [for (final m in h) mesLongo(m.ym).substring(0, 3).toLowerCase()],
+                valores: [for (final m in h) [m.entrou, m.saiu, m.investiu > 0 ? m.investiu : 0.0]],
+                cores: [G.pos, G.saida, G.lavanda],
+                nomes: const ['Entrou', 'Saiu', 'Investiu'],
+                formatoY: curto,
+                altura: alt,
+              ),
+            );
+          }
           if (tela == 'limites') _abrirLimites();
           if (tela == 'ajustes') Navigator.of(context).pushNamed('/ajustes');
           if (tela == 'busca') Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TelaBusca(inicial: 'mercado')));
@@ -237,27 +254,28 @@ class _Cabecalho extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(14, 8, 14, 8),
+      padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
       child: Row(children: [
-        ClipRRect(borderRadius: BorderRadius.circular(13), child: Image.asset('assets/icone.png', width: 42, height: 42, errorBuilder: (_, __, ___) => const SizedBox(width: 42, height: 42))),
+        ClipRRect(borderRadius: BorderRadius.circular(11), child: Image.asset('assets/icone.png', width: 38, height: 38, errorBuilder: (_, __, ___) => const SizedBox(width: 38, height: 38))),
         Expanded(
           child: Column(children: [
-            Text('DIÁRIO DA CARTEIRA', style: TextStyle(fontSize: 10, letterSpacing: 1.2, color: G.apagado, fontWeight: FontWeight.w600)),
-            Text(titulo, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800)),
+            Text(titulo, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, letterSpacing: -.2)),
           ]),
         ),
         BotaoAvisos(verCategoria: verCategoria),
-        const SizedBox(width: 8),
+        const SizedBox(width: 6),
         IconButton(
           tooltip: 'Ajustes',
           onPressed: () => Navigator.of(context).pushNamed('/ajustes'),
           style: IconButton.styleFrom(
             backgroundColor: G.v(0x10),
             side: BorderSide(color: G.borda),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            fixedSize: const Size(42, 42),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            fixedSize: const Size(38, 38),
+            minimumSize: const Size(38, 38),
+            padding: EdgeInsets.zero,
           ),
-          icon: const Icon(Icons.settings_outlined),
+          icon: const Icon(Icons.settings_outlined, size: 21),
         ),
       ]),
     );
@@ -286,8 +304,8 @@ class _MenuBaixo extends StatelessWidget {
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 260),
                   curve: Curves.easeOutBack,
-                  width: on ? 52 : 34,
-                  height: 30,
+                  width: on ? 48 : 32,
+                  height: 28,
                   decoration: BoxDecoration(color: on ? G.lavandaFundo : Colors.transparent, borderRadius: BorderRadius.circular(15)),
                   child: AnimatedSwitcher(
                     duration: const Duration(milliseconds: 200),
@@ -313,10 +331,10 @@ class _MenuBaixo extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
         child: SizedBox(
-          height: 78,
+          height: 70,
           child: Stack(clipBehavior: Clip.none, alignment: Alignment.bottomCenter, children: [
             Container(
-              height: 68,
+              height: 60,
               decoration: BoxDecoration(
                 color: G.navFundo,
                 borderRadius: BorderRadius.circular(28),
@@ -326,13 +344,13 @@ class _MenuBaixo extends StatelessWidget {
               child: Row(children: [
                 item(0, Icons.home_outlined, Icons.home_rounded, 'Início'),
                 item(1, Icons.receipt_long_outlined, Icons.receipt_long_rounded, 'Extrato'),
-                const SizedBox(width: 74),
+                const SizedBox(width: 68),
                 item(2, Icons.event_note_outlined, Icons.event_note_rounded, 'Planejar'),
                 item(3, Icons.show_chart_rounded, Icons.show_chart_rounded, 'Patrimônio'),
               ]),
             ),
             Positioned(
-              top: -14,
+              top: -12,
               child: Toque(escala: .88, child: Container(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
@@ -347,7 +365,7 @@ class _MenuBaixo extends StatelessWidget {
                       HapticFeedback.lightImpact();
                       onMais();
                     },
-                    child: SizedBox(width: 62, height: 62, child: Icon(Icons.add_rounded, color: G.tinta, size: 32, semanticLabel: 'Lançar')),
+                    child: SizedBox(width: 56, height: 56, child: Icon(Icons.add_rounded, color: G.tinta, size: 30, semanticLabel: 'Lançar')),
                   ),
                 ),
               )),

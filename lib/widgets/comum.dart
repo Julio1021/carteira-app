@@ -21,7 +21,7 @@ class Cartao extends StatelessWidget {
   final Gradient? gradiente;
   final double raio;
   final VoidCallback? onTap;
-  const Cartao({super.key, required this.child, this.padding = const EdgeInsets.all(16), this.gradiente, this.raio = 22, this.onTap});
+  const Cartao({super.key, required this.child, this.padding = const EdgeInsets.all(14), this.gradiente, this.raio = 18, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -31,11 +31,11 @@ class Cartao extends StatelessWidget {
         gradient: gradiente ?? G.gradCartao,
         borderRadius: r,
         border: Border.all(color: G.borda),
-        boxShadow: [BoxShadow(color: G.sombra(0x66), blurRadius: 30, offset: Offset(0, 14), spreadRadius: -18)],
+        boxShadow: [BoxShadow(color: G.sombra(0x55), blurRadius: 20, offset: Offset(0, 8), spreadRadius: -14)],
       ),
       child: Material(
         type: MaterialType.transparency,
-        child: InkWell(borderRadius: r, onTap: onTap, child: Padding(padding: padding, child: child)),
+        child: InkWell(borderRadius: r, onTap: onTap, child: Padding(padding: padding, child: _DentroDeCartao(child: child))),
       ),
     );
     return onTap == null ? caixa : Toque(escala: .985, child: caixa);
@@ -52,18 +52,18 @@ class CabecalhoCartao extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 10),
       child: Row(children: [
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(titulo, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, letterSpacing: -.2)),
+            Text(titulo, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, letterSpacing: -.2)),
             if (sub != null) Padding(padding: const EdgeInsets.only(top: 2), child: Text(sub!, style: TextStyle(color: G.apagado, fontSize: 12.5))),
           ]),
         ),
         if (acao != null)
           OutlinedButton(
             onPressed: onAcao,
-            style: OutlinedButton.styleFrom(minimumSize: const Size(10, 36), padding: const EdgeInsets.symmetric(horizontal: 12)),
+            style: OutlinedButton.styleFrom(minimumSize: const Size(10, 32), padding: const EdgeInsets.symmetric(horizontal: 10), visualDensity: VisualDensity.compact),
             child: Row(mainAxisSize: MainAxisSize.min, children: [Text(acao!, style: const TextStyle(fontSize: 13)), const SizedBox(width: 2), const Icon(Icons.chevron_right_rounded, size: 18)]),
           ),
       ]),
@@ -75,7 +75,7 @@ class CabecalhoCartao extends StatelessWidget {
 class IconeCategoria extends StatelessWidget {
   final Categoria cat;
   final double tam;
-  const IconeCategoria(this.cat, {super.key, this.tam = 42});
+  const IconeCategoria(this.cat, {super.key, this.tam = 36});
   @override
   Widget build(BuildContext context) {
     final c = cat.cor;
@@ -89,7 +89,7 @@ class IconeCategoria extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: [Color.lerp(c, Colors.white, .08)!, Color.lerp(c, Colors.black, .22)!],
         ),
-        boxShadow: [BoxShadow(color: c.withValues(alpha: .45), blurRadius: 14, offset: const Offset(0, 6), spreadRadius: -8)],
+        boxShadow: [BoxShadow(color: c.withValues(alpha: .35), blurRadius: 10, offset: const Offset(0, 4), spreadRadius: -6)],
       ),
       child: Icon(cat.icone, color: Colors.white, size: tam * .5),
     );
@@ -112,7 +112,7 @@ class LinhaLanc extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+        padding: EdgeInsets.symmetric(horizontal: _DentroDeCartao.dentro(context) ? 2 : 12, vertical: 9),
         child: Row(children: [
           IconeCategoria(cat),
           const SizedBox(width: 13),
@@ -145,15 +145,19 @@ class CaixaLista extends StatelessWidget {
   const CaixaLista(this.filhos, {super.key});
   @override
   Widget build(BuildContext context) {
+    // Dentro de um cartão vira lista simples (sem caixa dentro de caixa).
+    final plana = _DentroDeCartao.dentro(context);
+    final col = Column(children: [
+      for (var i = 0; i < filhos.length; i++) ...[
+        if (i > 0) Divider(indent: plana ? 0 : 12, endIndent: plana ? 0 : 12, height: 1),
+        filhos[i],
+      ],
+    ]);
+    if (plana) return col;
     return Container(
-      decoration: BoxDecoration(color: G.v(0x07), borderRadius: BorderRadius.circular(20), border: Border.all(color: G.borda)),
+      decoration: BoxDecoration(color: G.v(0x07), borderRadius: BorderRadius.circular(16), border: Border.all(color: G.borda)),
       clipBehavior: Clip.antiAlias,
-      child: Column(children: [
-        for (var i = 0; i < filhos.length; i++) ...[
-          if (i > 0) const Divider(indent: 14, endIndent: 14),
-          filhos[i],
-        ],
-      ]),
+      child: col,
     );
   }
 }
@@ -248,4 +252,16 @@ class Escuro extends StatelessWidget {
       ),
     );
   }
+}
+
+
+/// true quando o widget está dentro de um [Cartao].
+bool dentroDeCartao(BuildContext c) => _DentroDeCartao.dentro(c);
+
+/// Marca o conteúdo de um [Cartao] (listas lá dentro ficam sem caixa própria).
+class _DentroDeCartao extends InheritedWidget {
+  const _DentroDeCartao({required super.child});
+  static bool dentro(BuildContext c) => c.dependOnInheritedWidgetOfExactType<_DentroDeCartao>() != null;
+  @override
+  bool updateShouldNotify(covariant InheritedWidget old) => false;
 }

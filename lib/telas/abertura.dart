@@ -95,7 +95,7 @@ class _AberturaState extends State<Abertura> with SingleTickerProviderStateMixin
     final mostrarValor = aberturaValor.value && total > 0;
     final mq = MediaQuery.of(context);
     // onde está o ícone do cabeçalho
-    final alvo = Rect.fromLTWH(14, mq.padding.top + 8, 42, 42);
+    final alvo = Rect.fromLTWH(12, mq.padding.top + 6, 38, 38);
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: _pular,

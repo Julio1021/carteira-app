@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../tema.dart';
 import '../util/fmt.dart';
+import 'comum.dart';
 
 /// Faz os gráficos "crescerem" ao aparecer.
 class _Entrada extends StatelessWidget {
@@ -19,13 +20,73 @@ class _Entrada extends StatelessWidget {
       );
 }
 
-TextStyle get _estiloEixo => TextStyle(color: G.apagado, fontSize: 10, fontWeight: FontWeight.w600);
+TextStyle get _estiloEixo => TextStyle(color: G.apagado, fontSize: 9.5, fontWeight: FontWeight.w600);
 
-FlGridData _grade() => FlGridData(
+FlGridData _grade(double intervalo) => FlGridData(
       show: true,
       drawVerticalLine: false,
-      getDrawingHorizontalLine: (_) => FlLine(color: G.v(0x12), strokeWidth: 1),
+      horizontalInterval: intervalo > 0 && intervalo.isFinite ? intervalo : null,
+      getDrawingHorizontalLine: (_) => FlLine(color: G.v(0x10), strokeWidth: 1, dashArray: [3, 4]),
     );
+
+/// Dá ao gráfico a largura toda do cartão (passa por cima do recuo interno) e
+/// coloca o botão de tela cheia.
+class _Moldura extends StatelessWidget {
+  final double altura;
+  final Widget grafico;
+  final VoidCallback? onExpandir;
+  const _Moldura({required this.altura, required this.grafico, this.onExpandir});
+  @override
+  Widget build(BuildContext context) {
+    final s = dentroDeCartao(context) ? 10.0 : 0.0;
+    return LayoutBuilder(builder: (context, k) {
+      final w = k.maxWidth.isFinite ? k.maxWidth : 320.0;
+      return SizedBox(
+        height: altura,
+        width: w,
+        child: OverflowBox(
+          minWidth: w + 2 * s,
+          maxWidth: w + 2 * s,
+          child: Stack(children: [
+            Positioned.fill(child: grafico),
+            if (onExpandir != null)
+              Positioned(
+                top: 0,
+                right: s,
+                child: Material(
+                  color: G.v(0x0C),
+                  shape: const CircleBorder(),
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: onExpandir,
+                    child: Padding(padding: const EdgeInsets.all(6), child: Icon(Icons.open_in_full_rounded, size: 15, color: G.apagado, semanticLabel: 'Tela cheia')),
+                  ),
+                ),
+              ),
+          ]),
+        ),
+      );
+    });
+  }
+}
+
+/// Abre um gráfico ocupando a tela inteira (deitando o celular, fica mais largo).
+void abrirGraficoCheio(BuildContext context, String titulo, Widget Function(double altura) construir) {
+  Navigator.of(context).push(MaterialPageRoute(
+    fullscreenDialog: true,
+    builder: (c) => Scaffold(
+      appBar: AppBar(title: Text(titulo, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 17))),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(8, 4, 16, 16),
+          child: LayoutBuilder(builder: (c, k) => construir(k.maxHeight)),
+        ),
+      ),
+    ),
+  ));
+}
+
+
 
 /// Gráfico de linhas com toque mostrando os valores.
 class GraficoLinha extends StatelessWidget {
@@ -41,6 +102,7 @@ class GraficoLinha extends StatelessWidget {
   final double? linhaH; // linha horizontal tracejada (ex.: limite)
   final String? nomeLinhaH;
   final int? pontosX; // total de pontos no eixo x (para séries mais curtas, como o mês em andamento)
+  final String? titulo; // com título, ganha o botão de tela cheia
   const GraficoLinha({
     super.key,
     required this.series,
@@ -50,12 +112,28 @@ class GraficoLinha extends StatelessWidget {
     this.nomes = const [],
     this.rotulosX = const [],
     this.rotuloToque,
-    this.altura = 200,
+    this.altura = 230,
     this.preencherPrimeira = true,
     this.linhaH,
     this.nomeLinhaH,
     this.pontosX,
+    this.titulo,
   });
+
+  GraficoLinha _com(double h) => GraficoLinha(
+        series: series,
+        cores: cores,
+        formatoY: formatoY,
+        tracejada: tracejada,
+        nomes: nomes,
+        rotulosX: rotulosX,
+        rotuloToque: rotuloToque,
+        altura: h,
+        preencherPrimeira: preencherPrimeira,
+        linhaH: linhaH,
+        nomeLinhaH: nomeLinhaH,
+        pontosX: pontosX,
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -74,17 +152,19 @@ class GraficoLinha extends StatelessWidget {
       final x = rotulosX.length == 1 ? 0 : (i * (n - 1) / (rotulosX.length - 1)).round();
       posRotulos[x] = rotulosX[i];
     }
-    return SizedBox(
-      height: altura,
-      child: _Entrada(
+    final topo = mx + pad, base = mn - (mn == 0 ? 0 : pad);
+    return _Moldura(
+      altura: altura,
+      onExpandir: titulo == null ? null : () => abrirGraficoCheio(context, titulo!, _com),
+      grafico: _Entrada(
         builder: (t) => LineChart(
           LineChartData(
             minX: 0,
             maxX: math.max(1, n - 1).toDouble(),
-            minY: mn - (mn == 0 ? 0 : pad),
-            maxY: mx + pad,
+            minY: base,
+            maxY: topo,
             clipData: const FlClipData.all(),
-            gridData: _grade(),
+            gridData: _grade((topo - base) / 3),
             borderData: FlBorderData(show: false),
             titlesData: FlTitlesData(
               topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -92,7 +172,7 @@ class GraficoLinha extends StatelessWidget {
               leftTitles: AxisTitles(
                 sideTitles: SideTitles(
                   showTitles: true,
-                  reservedSize: 46,
+                  reservedSize: 34,
                   getTitlesWidget: (v, meta) => (v == meta.min || v == meta.max)
                       ? const SizedBox.shrink()
                       : Padding(padding: const EdgeInsets.only(right: 6), child: Text(formatoY(v), style: _estiloEixo, textAlign: TextAlign.right)),
@@ -129,6 +209,14 @@ class GraficoLinha extends StatelessWidget {
                   ]),
             lineTouchData: LineTouchData(
               handleBuiltInTouches: true,
+              touchSpotThreshold: 40,
+              getTouchedSpotIndicator: (bar, idx) => [
+                for (final _ in idx)
+                  TouchedSpotIndicatorData(
+                    FlLine(color: G.v(0x55), strokeWidth: 1.2, dashArray: [4, 4]),
+                    FlDotData(getDotPainter: (_, __, b, ___) => FlDotCirclePainter(radius: 5, color: b.color ?? G.lavanda, strokeWidth: 2.5, strokeColor: G.fundo)),
+                  ),
+              ],
               touchTooltipData: LineTouchTooltipData(
                 getTooltipColor: (_) => G.dica,
                 tooltipBorderRadius: BorderRadius.circular(12),
@@ -197,22 +285,38 @@ class GraficoBarras extends StatelessWidget {
     this.nomes = const [],
     this.selecionado,
     this.onToque,
-    this.altura = 220,
+    this.altura = 240,
     this.rodape,
     this.coresRodape,
+    this.titulo,
   });
+  final String? titulo;
+
+  GraficoBarras _com(double h) => GraficoBarras(
+        rotulos: rotulos,
+        valores: valores,
+        cores: cores,
+        formatoY: formatoY,
+        nomes: nomes,
+        altura: h,
+        rodape: rodape,
+        coresRodape: coresRodape,
+      );
 
   @override
   Widget build(BuildContext context) {
     final mx = valores.expand((g) => g).fold<double>(0, math.max);
-    final largura = valores.isEmpty ? 10.0 : (valores.length <= 6 ? 13.0 : 9.0);
-    return SizedBox(
-      height: altura,
-      child: _Entrada(
+    final largura = valores.isEmpty ? 10.0 : (valores.length <= 6 ? 14.0 : 8.0);
+    final topo = mx <= 0 ? 1.0 : mx * 1.12;
+    final poucosRotulos = rotulos.length > 8 && altura < 400;
+    return _Moldura(
+      altura: altura,
+      onExpandir: titulo == null ? null : () => abrirGraficoCheio(context, titulo!, _com),
+      grafico: _Entrada(
         builder: (t) => BarChart(
           BarChartData(
-            maxY: mx <= 0 ? 1 : mx * 1.12,
-            gridData: _grade(),
+            maxY: topo,
+            gridData: _grade(topo / 3),
             borderData: FlBorderData(show: false),
             alignment: BarChartAlignment.spaceAround,
             titlesData: FlTitlesData(
@@ -221,7 +325,7 @@ class GraficoBarras extends StatelessWidget {
               leftTitles: AxisTitles(
                 sideTitles: SideTitles(
                   showTitles: true,
-                  reservedSize: 42,
+                  reservedSize: 34,
                   getTitlesWidget: (v, meta) => v == meta.max ? const SizedBox.shrink() : Padding(padding: const EdgeInsets.only(right: 6), child: Text(formatoY(v), style: _estiloEixo, textAlign: TextAlign.right)),
                 ),
               ),
@@ -233,6 +337,7 @@ class GraficoBarras extends StatelessWidget {
                     final i = v.toInt();
                     if (i < 0 || i >= rotulos.length) return const SizedBox.shrink();
                     final sel = i == selecionado;
+                    if (poucosRotulos && !sel && i != rotulos.length - 1 && (rotulos.length - 1 - i) % 2 == 1) return const SizedBox.shrink();
                     return Padding(
                       padding: const EdgeInsets.only(top: 6),
                       child: Column(mainAxisSize: MainAxisSize.min, children: [

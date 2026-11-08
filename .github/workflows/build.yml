@@ -103,6 +103,7 @@ jobs:
           tirar c6-ajustes "&tema=claro&tela=ajustes"
           tirar c7-lancar "&tema=claro&tela=lancar"
           tirar i1-investido "&tela=invest"
+          tirar g1-grafico-cheio "&aba=1&analise=1&tela=grafico"
           tirar a1-abertura "&abertura=0.2"
           tirar a2-abertura "&abertura=0.32"
           tirar a2b-abertura "&abertura=0.55"

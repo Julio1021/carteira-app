@@ -24,7 +24,7 @@ class TelaPlanejar extends StatelessWidget {
     final emAberto = emps.where((e) => !dadosEmprestimo(repo, e).quitado).toList();
     final meta = repo.metaSobra;
     final r = ResumoMes.de(repo, ymDe(hojeIso()));
-    return ListView(padding: const EdgeInsets.fromLTRB(16, 6, 16, 130), children: emSequencia([
+    return ListView(padding: const EdgeInsets.fromLTRB(12, 4, 12, 120), children: emSequencia([
       const CartaoRecebimentos(),
       const SizedBox(height: 14),
       const CartaoContas(),
