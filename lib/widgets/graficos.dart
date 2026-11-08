@@ -172,10 +172,11 @@ class GraficoLinha extends StatelessWidget {
               leftTitles: AxisTitles(
                 sideTitles: SideTitles(
                   showTitles: true,
-                  reservedSize: 34,
+                  reservedSize: 40,
+                  interval: (topo - base) / 3 > 0 ? (topo - base) / 3 : null,
                   getTitlesWidget: (v, meta) => (v == meta.min || v == meta.max)
                       ? const SizedBox.shrink()
-                      : Padding(padding: const EdgeInsets.only(right: 6), child: Text(formatoY(v), style: _estiloEixo, textAlign: TextAlign.right)),
+                      : Padding(padding: const EdgeInsets.only(right: 6), child: Text(formatoY(v), style: _estiloEixo, textAlign: TextAlign.right, maxLines: 1, softWrap: false)),
                 ),
               ),
               bottomTitles: AxisTitles(
@@ -325,8 +326,9 @@ class GraficoBarras extends StatelessWidget {
               leftTitles: AxisTitles(
                 sideTitles: SideTitles(
                   showTitles: true,
-                  reservedSize: 34,
-                  getTitlesWidget: (v, meta) => v == meta.max ? const SizedBox.shrink() : Padding(padding: const EdgeInsets.only(right: 6), child: Text(formatoY(v), style: _estiloEixo, textAlign: TextAlign.right)),
+                  reservedSize: 40,
+                  interval: topo / 3,
+                  getTitlesWidget: (v, meta) => v == meta.max ? const SizedBox.shrink() : Padding(padding: const EdgeInsets.only(right: 6), child: Text(formatoY(v), style: _estiloEixo, textAlign: TextAlign.right, maxLines: 1, softWrap: false)),
                 ),
               ),
               bottomTitles: AxisTitles(
