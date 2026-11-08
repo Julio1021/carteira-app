@@ -118,7 +118,7 @@ class _BlocoAtrasadas extends StatelessWidget {
     }
     final nomes = por.entries.map((e) => e.value > 1 ? '${e.key} ×${e.value}' : e.key).join(', ');
     return Container(
-      decoration: BoxDecoration(color: const Color(0x12FF6B81), borderRadius: BorderRadius.circular(18), border: Border.all(color: const Color(0x47FF6B81))),
+      decoration: BoxDecoration(color: G.alerta.withValues(alpha: G.claro ? .10 : .12), borderRadius: BorderRadius.circular(18), border: Border.all(color: G.alerta.withValues(alpha: .35))),
       clipBehavior: Clip.antiAlias,
       child: Column(children: [
         InkWell(
@@ -129,14 +129,16 @@ class _BlocoAtrasadas extends StatelessWidget {
               Container(
                 width: 38,
                 height: 38,
-                decoration: BoxDecoration(color: G.neg, borderRadius: BorderRadius.circular(12)),
-                child: const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 20),
+                decoration: BoxDecoration(color: G.alerta.withValues(alpha: .22), borderRadius: BorderRadius.circular(12)),
+                child: Icon(Icons.schedule_rounded, color: G.alerta, size: 20),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('${lista.length} atrasada${lista.length > 1 ? 's' : ''} · ${brl(lista.fold<double>(0, (a, i) => a + i.valor))}',
-                      style: TextStyle(fontWeight: FontWeight.w700, color: G.negTexto)),
+                  Text.rich(TextSpan(children: [
+                    TextSpan(text: '${lista.length} atrasada${lista.length > 1 ? 's' : ''} · '),
+                    TextSpan(text: brl(lista.fold<double>(0, (a, i) => a + i.valor)), style: TextStyle(color: G.negTexto)),
+                  ]), style: const TextStyle(fontWeight: FontWeight.w700)),
                   Text(nomes, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: G.apagado, fontSize: 12)),
                 ]),
               ),
