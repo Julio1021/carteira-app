@@ -63,14 +63,14 @@ class HeroMes extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final uso = r.usoLimite;
-    final corLim = uso == null ? GE.branco : (uso > 1 ? GE.neg : (uso > .85 ? GE.alerta : GE.branco));
+    final corLim = uso == null ? GE.branco : (uso > 1 ? GE.neg : (uso > .85 ? GH.alerta : GE.branco));
     final principal = r.emConta;
     return Escuro(child: Container(
       decoration: BoxDecoration(
-        gradient: GE.gradHero,
+        gradient: GH.gradHero,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: const Color(0x17FFFFFF)),
-        boxShadow: [BoxShadow(color: G.sombra(0xCC), blurRadius: 50, offset: Offset(0, 28), spreadRadius: -30)],
+        boxShadow: [BoxShadow(color: GH.sombra, blurRadius: 50, offset: Offset(0, 28), spreadRadius: -30)],
       ),
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
       child: Column(children: [
@@ -101,7 +101,7 @@ class HeroMes extends StatelessWidget {
     }
     return Column(children: [
         const SizedBox(height: 14),
-        Text(principal != null ? 'Em conta' : 'Sobra do mês', style: const TextStyle(color: GE.texto2, fontWeight: FontWeight.w600)),
+        Text(principal != null ? 'Em conta' : 'Sobra do mês', style: TextStyle(color: GH.texto2, fontWeight: FontWeight.w600)),
         const SizedBox(height: 4),
         FittedBox(
           child: ValorAnimado(principal ?? r.sobra, estilo: const TextStyle(fontSize: 32, fontWeight: FontWeight.w800, letterSpacing: -1.2, color: Colors.white)),
@@ -109,13 +109,13 @@ class HeroMes extends StatelessWidget {
         if (principal != null)
           Padding(
             padding: const EdgeInsets.only(top: 4),
-            child: Text('Sobra do mês: ${brl(r.sobra)}', style: const TextStyle(color: GE.texto2, fontSize: 13)),
+            child: Text('Sobra do mês: ${brl(r.sobra)}', style: TextStyle(color: GH.texto2, fontSize: 13)),
           ),
         const SizedBox(height: 16),
         Row(children: [
-          Expanded(child: _Bloco(rotulo: 'Entrou', valor: r.entrou, claro: true, icone: Icons.south_west_rounded, corIcone: GE.posEscuro, onTap: onEntrou)),
+          Expanded(child: _Bloco(rotulo: 'Entrou', valor: r.entrou, claro: true, icone: Icons.south_west_rounded, corIcone: GH.posIcone, onTap: onEntrou)),
           const SizedBox(width: 10),
-          Expanded(child: _Bloco(rotulo: 'Saiu', valor: r.saiu, claro: false, icone: Icons.north_east_rounded, corIcone: GE.negEscuro, onTap: onSaiu)),
+          Expanded(child: _Bloco(rotulo: 'Saiu', valor: r.saiu, claro: false, icone: Icons.north_east_rounded, corIcone: GH.negIcone, onTap: onSaiu)),
         ]),
         const SizedBox(height: 10),
         _Investiu(r: r, onTap: onInvestiu),
@@ -126,13 +126,13 @@ class HeroMes extends StatelessWidget {
             borderRadius: BorderRadius.circular(10),
             child: Column(children: [
               Row(children: [
-                const Text('Limite de gastos', style: TextStyle(color: GE.texto2, fontSize: 13)),
+                Text('Limite de gastos', style: TextStyle(color: GH.texto2, fontSize: 13)),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text.rich(
                     TextSpan(children: [
                       TextSpan(text: brl(r.gastoComLimite), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-                      TextSpan(text: ' de ${brl(r.limiteTotal)}', style: const TextStyle(color: GE.texto2, fontSize: 12)),
+                      TextSpan(text: ' de ${brl(r.limiteTotal)}', style: TextStyle(color: GH.texto2, fontSize: 12)),
                     ]),
                     textAlign: TextAlign.right,
                     maxLines: 1,
@@ -146,9 +146,9 @@ class HeroMes extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Row(children: [
-                    Icon(restante <= 0 ? Icons.block_rounded : Icons.today_rounded, size: 15, color: restante <= 0 ? GE.alerta : GE.texto2),
+                    Icon(restante <= 0 ? Icons.block_rounded : Icons.today_rounded, size: 15, color: restante <= 0 ? GH.alerta : GH.texto2),
                     const SizedBox(width: 6),
-                    Expanded(child: Text(porDia, style: TextStyle(color: restante <= 0 ? GE.alerta : GE.texto2, fontSize: 12.5, fontWeight: FontWeight.w600))),
+                    Expanded(child: Text(porDia, style: TextStyle(color: restante <= 0 ? GH.alerta : GH.texto2, fontSize: 12.5, fontWeight: FontWeight.w600))),
                   ]),
                 ),
             ]),
@@ -171,10 +171,11 @@ class _Bloco extends StatelessWidget {
     final r = BorderRadius.circular(20);
     return Toque(child: DecoratedBox(
       decoration: BoxDecoration(
-        color: claro ? GE.branco : null,
-        gradient: claro ? null : GE.gradLavanda,
+        color: GH.vidro ? GH.vidroFundo : (claro ? GE.branco : null),
+        gradient: GH.vidro || claro ? null : GE.gradLavanda,
         borderRadius: r,
-        boxShadow: const [BoxShadow(color: Color(0xE6000000), blurRadius: 26, offset: Offset(0, 14), spreadRadius: -18)],
+        border: GH.vidro ? Border.all(color: GH.vidroBorda) : null,
+        boxShadow: GH.vidro ? null : const [BoxShadow(color: Color(0xE6000000), blurRadius: 26, offset: Offset(0, 14), spreadRadius: -18)],
       ),
       child: Material(
         type: MaterialType.transparency,
@@ -187,14 +188,14 @@ class _Bloco extends StatelessWidget {
               Container(
                 width: 34,
                 height: 34,
-                decoration: BoxDecoration(color: const Color(0x1612131C), borderRadius: BorderRadius.circular(12)),
+                decoration: BoxDecoration(color: GH.vidro ? Colors.white : const Color(0x1612131C), borderRadius: BorderRadius.circular(12)),
                 child: Icon(icone, size: 18, color: corIcone),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(rotulo, style: const TextStyle(color: Color(0x9E12131C), fontWeight: FontWeight.w600, fontSize: 12.5)),
-                  FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: ValorAnimado(valor, estilo: const TextStyle(color: GE.tinta, fontWeight: FontWeight.w800, fontSize: 16))),
+                  Text(rotulo, style: TextStyle(color: GH.vidro ? GH.texto2 : const Color(0x9E12131C), fontWeight: FontWeight.w600, fontSize: 12.5)),
+                  FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: ValorAnimado(valor, estilo: TextStyle(color: GH.vidro ? Colors.white : GE.tinta, fontWeight: FontWeight.w800, fontSize: 16))),
                 ]),
               ),
             ]),
@@ -399,15 +400,15 @@ class _Investiu extends StatelessWidget {
             Container(
               width: 32,
               height: 32,
-              decoration: BoxDecoration(color: const Color(0x33B9BFF6), borderRadius: BorderRadius.circular(11)),
-              child: const Icon(Icons.savings_rounded, size: 18, color: GE.lavanda),
+              decoration: BoxDecoration(color: GH.chipInvest, borderRadius: BorderRadius.circular(11)),
+              child: Icon(Icons.savings_rounded, size: 18, color: GH.lavanda),
             ),
             const SizedBox(width: 10),
             Expanded(
               flex: 3,
               child: Text.rich(
                 TextSpan(children: [
-                  TextSpan(text: resgatou ? 'Resgatou  ' : 'Investiu  ', style: const TextStyle(color: GE.texto2, fontWeight: FontWeight.w600, fontSize: 13)),
+                  TextSpan(text: resgatou ? 'Resgatou  ' : 'Investiu  ', style: TextStyle(color: GH.texto2, fontWeight: FontWeight.w600, fontSize: 13)),
                   TextSpan(text: brl(r.investiu.abs()), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15.5)),
                 ]),
                 maxLines: 1,
@@ -422,10 +423,10 @@ class _Investiu extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.right,
-                style: const TextStyle(color: GE.texto2, fontSize: 12, fontWeight: FontWeight.w600),
+                style: TextStyle(color: GH.texto2, fontSize: 12, fontWeight: FontWeight.w600),
               ),
             ),
-            const Icon(Icons.chevron_right_rounded, size: 18, color: GE.apagado),
+            Icon(Icons.chevron_right_rounded, size: 18, color: GH.apagado),
           ]),
         ),
       ),

@@ -40,7 +40,7 @@ Future<void> main() async {
 }
 
 /// Liga/desliga o tema claro a partir da escolha em Ajustes e do tema do celular.
-bool resolverClaro(String modo, Brightness celular) => modo == 'claro' || (modo == 'auto' && celular == Brightness.light);
+bool resolverClaro(String modo, Brightness celular) => modo == 'claro' || modo == 'linho' || (modo == 'auto' && celular == Brightness.light);
 
 void _barrasDoSistema() {
   final icones = G.claro ? Brightness.dark : Brightness.light;
@@ -67,6 +67,7 @@ class _AppCarteiraState extends State<AppCarteira> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     aparencia.addListener(_aplicar);
     G.claro = resolverClaro(aparencia.value, WidgetsBinding.instance.platformDispatcher.platformBrightness);
+    G.linho = aparencia.value == 'linho';
     _barrasDoSistema();
   }
 
@@ -82,8 +83,10 @@ class _AppCarteiraState extends State<AppCarteira> with WidgetsBindingObserver {
 
   void _aplicar() {
     final claro = resolverClaro(aparencia.value, WidgetsBinding.instance.platformDispatcher.platformBrightness);
-    if (claro == G.claro || !mounted) return;
+    final linho = aparencia.value == 'linho';
+    if ((claro == G.claro && linho == G.linho) || !mounted) return;
     G.claro = claro;
+    G.linho = linho;
     _barrasDoSistema();
     setState(() {});
     // As cores vêm de G (estático): pede para todas as telas abertas se redesenharem.

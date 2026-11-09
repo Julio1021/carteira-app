@@ -32,7 +32,7 @@ class GE {
   );
 }
 
-/// Aparência escolhida em Ajustes: 'auto' (segue o celular), 'claro' ou 'escuro'.
+/// Aparência escolhida em Ajustes: 'auto' (segue o celular), 'claro', 'escuro' ou 'linho' (Linho & Safira).
 final aparencia = ValueNotifier<String>('auto');
 
 Future<void> carregarAparencia() async {
@@ -53,62 +53,100 @@ Future<void> definirAparencia(String v) async {
 /// Cores do tema atual. [claro] = true usa a paleta "Pérola".
 class G {
   static bool claro = false;
-  static Color _c(int claroHex, Color escuro) => claro ? Color(claroHex) : escuro;
+  /// Tema "Linho & Safira" (claro, igual ao do site). Só vale com [claro] = true.
+  static bool linho = false;
+  static bool get _l => claro && linho;
+  static Color _c(int claroHex, Color escuro, [int? linhoHex]) => claro ? Color(_l && linhoHex != null ? linhoHex : claroHex) : escuro;
 
-  static Color get fundo => _c(0xFFF4F5F9, GE.fundo);
-  static Color get fundo2 => _c(0xFFFFFFFF, GE.fundo2);
+  static Color get fundo => _c(0xFFF4F5F9, GE.fundo, 0xFFF3EFE7);
+  static Color get fundo2 => _c(0xFFFFFFFF, GE.fundo2, 0xFFFFFFFF);
   /// Cor "invertida" de destaque (fundo de chip/botão selecionado).
-  static Color get branco => _c(0xFF12131C, GE.branco);
+  static Color get branco => _c(0xFF12131C, GE.branco, 0xFF2448C8);
   /// Texto sobre [branco].
-  static Color get tinta => _c(0xFFFFFFFF, GE.tinta);
-  static Color get texto => _c(0xFF12131C, GE.texto);
-  static Color get texto2 => _c(0xFF4A4E63, GE.texto2);
-  static Color get apagado => _c(0xFF7A7E93, GE.apagado);
-  static Color get lavanda => _c(0xFF4F57D6, GE.lavanda);
-  static Color get pos => _c(0xFF12935A, GE.pos);
-  static Color get neg => _c(0xFFE0445E, GE.neg);
-  static Color get alerta => _c(0xFFB7791F, GE.alerta);
-  static Color get borda => _c(0x1C12131C, GE.borda);
+  static Color get tinta => _c(0xFFFFFFFF, GE.tinta, 0xFFFFFFFF);
+  static Color get texto => _c(0xFF12131C, GE.texto, 0xFF161C2D);
+  static Color get texto2 => _c(0xFF4A4E63, GE.texto2, 0xFF454C5E);
+  static Color get apagado => _c(0xFF7A7E93, GE.apagado, 0xFF6B7183);
+  static Color get lavanda => _c(0xFF4F57D6, GE.lavanda, 0xFF2448C8);
+  static Color get pos => _c(0xFF12935A, GE.pos, 0xFF11764A);
+  static Color get neg => _c(0xFFE0445E, GE.neg, 0xFFC23B2A);
+  static Color get alerta => _c(0xFFB7791F, GE.alerta, 0xFFB07A1F);
+  static Color get borda => _c(0x1C12131C, GE.borda, 0xFFE6E0D5);
   static Color get vidro => v(0x10);
   static Color get vidro2 => v(0x18);
   static Color get posEscuro => GE.posEscuro;
   static Color get negEscuro => GE.negEscuro;
   /// Vermelho para texto (mais suave no escuro).
-  static Color get negTexto => _c(0xFFD63A55, const Color(0xFFFF8DA0));
-  static Color get lavandaIcone => _c(0xFF4F57D6, const Color(0xFFC9CDFB));
-  static Color get lavandaFundo => _c(0x1A4F57D6, const Color(0x29B9BFF6));
-  static Color get saida => _c(0xFFE0445E, const Color(0xFFFF7A8C));
-  static Color get navApagado => _c(0xFF9A9DB0, const Color(0xFF80849B));
-  static Color get navFundo => _c(0xF5FFFFFF, const Color(0xEB1E1F2C));
-  static Color get dica => _c(0xF212131C, const Color(0xF2232434));
+  static Color get negTexto => _c(0xFFD63A55, const Color(0xFFFF8DA0), 0xFFC23B2A);
+  static Color get lavandaIcone => _c(0xFF4F57D6, const Color(0xFFC9CDFB), 0xFF2448C8);
+  static Color get lavandaFundo => _c(0x1A4F57D6, const Color(0x29B9BFF6), 0xFFE8EDFB);
+  static Color get saida => _c(0xFFE0445E, const Color(0xFFFF7A8C), 0xFFC23B2A);
+  static Color get navApagado => _c(0xFF9A9DB0, const Color(0xFF80849B), 0xFF6B7183);
+  static Color get navFundo => _c(0xF5FFFFFF, const Color(0xEB1E1F2C), 0xF0FFFFFF);
+  static Color get dica => _c(0xF212131C, const Color(0xF2232434), 0xF2161C2D);
+  /// Fundo das abas (Lançamentos | Análise etc.) e dos campos.
+  static Color get abasFundo => _c(0x0F12131C, const Color(0x10FFFFFF), 0xFFEFEAE0);
+  static Color get campo => _c(0x0912131C, const Color(0x0DFFFFFF), 0xFFFFFFFF);
 
   /// Película translúcida: branca no escuro, tinta no claro.
-  static Color v(int alfa) => claro ? Color((((alfa * .75).round()) << 24) | 0x12131C) : Color((alfa << 24) | 0xFFFFFF);
+  static Color v(int alfa) => claro ? Color((((alfa * .75).round()) << 24) | (_l ? 0x161C2D : 0x12131C)) : Color((alfa << 24) | 0xFFFFFF);
   /// Sombra: preta no escuro, azulada e bem mais leve no claro.
-  static Color sombra(int alfa) => claro ? Color((((alfa * .32).round()) << 24) | 0x1E223C) : Color(alfa << 24);
+  static Color sombra(int alfa) => claro ? Color((((alfa * (_l ? .26 : .32)).round()) << 24) | (_l ? 0x161C2D : 0x1E223C)) : Color(alfa << 24);
 
   static LinearGradient get gradCartao => claro
       ? const LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0xFFFFFFFF), Color(0xFFFDFDFF)])
       : const LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0x12FFFFFF), Color(0x09FFFFFF)]);
-  /// Cartões de destaque das telas (resumos). No claro ficam brancos com um toque lavanda.
+  /// Cartões de destaque das telas (resumos). No claro ficam brancos com um toque de cor.
   static LinearGradient get gradHero => claro
-      ? const LinearGradient(begin: Alignment(-1, -1), end: Alignment(1, 1), colors: [Color(0xFFFFFFFF), Color(0xFFEEF0FB)])
+      ? (_l
+          ? const LinearGradient(begin: Alignment(-1, -1), end: Alignment(1, 1), colors: [Color(0xFFFFFFFF), Color(0xFFF8F5EF)])
+          : const LinearGradient(begin: Alignment(-1, -1), end: Alignment(1, 1), colors: [Color(0xFFFFFFFF), Color(0xFFEEF0FB)]))
       : GE.gradHero;
   static LinearGradient get gradLavanda => GE.gradLavanda;
 
   static const coresSerieEscuro = [Color(0xFFB9BFF6), Color(0xFF4FD98C), Color(0xFFFF8A7A), Color(0xFF6EC1FF), Color(0xFFF5C26B), Color(0xFFF28DC0), Color(0xFF5ED6C8), Color(0xFF9AA0BC)];
   static const coresSerieClaro = [Color(0xFF4F57D6), Color(0xFF12935A), Color(0xFFE8664F), Color(0xFF2C8FD9), Color(0xFFD69A2D), Color(0xFFD35A9E), Color(0xFF1FA595), Color(0xFF8A8FA8)];
-  static List<Color> get coresSerie => claro ? coresSerieClaro : coresSerieEscuro;
+  /// Cores dos gráficos do tema Linho & Safira (as mesmas do site).
+  static const coresSerieLinho = [Color(0xFF2448C8), Color(0xFFD98A1E), Color(0xFF11885A), Color(0xFFC8553D), Color(0xFF7C4DCC), Color(0xFF1A8FA8), Color(0xFFD14D86), Color(0xFF7A7F8C)];
+  static List<Color> get coresSerie => claro ? (_l ? coresSerieLinho : coresSerieClaro) : coresSerieEscuro;
+}
+
+/// Cores do cartão principal (Início e Patrimônio): grafite no Escuro e no
+/// Pérola; azul safira em degradê no Linho & Safira, como no site.
+class GH {
+  static bool get safira => G.claro && G.linho;
+  static const gradSafira = LinearGradient(
+    begin: Alignment(-1, -1),
+    end: Alignment(1, 1),
+    colors: [Color(0xFF1F3FB5), Color(0xFF2A52D6), Color(0xFF3B6BE8)],
+    stops: [0, .55, 1],
+  );
+  static LinearGradient get gradHero => safira ? gradSafira : GE.gradHero;
+  static Color get texto => safira ? const Color(0xFFFFFFFF) : GE.texto;
+  static Color get texto2 => safira ? const Color(0xFFE4EBFF) : GE.texto2;
+  static Color get apagado => safira ? const Color(0xC7E4EBFF) : GE.apagado;
+  static Color get alerta => safira ? const Color(0xFFFFD58A) : GE.alerta;
+  static Color get lavanda => safira ? const Color(0xFF2448C8) : GE.lavanda;
+  static Color get chipInvest => safira ? const Color(0xFFFFFFFF) : const Color(0x33B9BFF6);
+  static Color get sombra => safira ? const Color(0x8C1F3FB5) : G.sombra(0xCC);
+  /// Blocos Entrou/Saiu: vidro branco translúcido no Safira.
+  static bool get vidro => safira;
+  static const vidroFundo = Color(0x21FFFFFF);
+  static const vidroBorda = Color(0x38FFFFFF);
+  static Color get posIcone => safira ? const Color(0xFF11764A) : GE.posEscuro;
+  static Color get negIcone => safira ? const Color(0xFFC23B2A) : GE.negEscuro;
 }
 
 /// Monta o tema do app para o modo pedido sem mudar o modo atual.
-ThemeData temaDe(bool claro) {
-  final antes = G.claro;
+ThemeData temaDe(bool claro, {bool linho = false}) {
+  final antes = G.claro, antesL = G.linho;
   G.claro = claro;
+  G.linho = linho;
   try {
     return temaGrafite();
   } finally {
     G.claro = antes;
+    G.linho = antesL;
   }
 }
 
@@ -146,7 +184,7 @@ ThemeData temaGrafite() {
     dividerTheme: DividerThemeData(color: G.borda, thickness: 1, space: 1),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: G.v(0x0D),
+      fillColor: G.campo,
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: G.borda)),
       enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: G.borda)),
@@ -166,7 +204,7 @@ ThemeData temaGrafite() {
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
         foregroundColor: G.texto,
-        backgroundColor: G.v(0x0F),
+        backgroundColor: G.claro && G.linho ? Colors.white : G.v(0x0F),
         side: BorderSide(color: G.borda),
         minimumSize: const Size(40, 44),
         textStyle: const TextStyle(fontWeight: FontWeight.w600),

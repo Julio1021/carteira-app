@@ -109,14 +109,14 @@ class _Resumo extends StatelessWidget {
       Escuro(child: Container(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
         decoration: BoxDecoration(
-          gradient: GE.gradHero,
+          gradient: GH.gradHero,
           borderRadius: BorderRadius.circular(26),
           border: Border.all(color: const Color(0x17FFFFFF)),
-          boxShadow: [BoxShadow(color: G.sombra(0xCC), blurRadius: 50, offset: Offset(0, 28), spreadRadius: -30)],
+          boxShadow: [BoxShadow(color: GH.sombra, blurRadius: 50, offset: Offset(0, 28), spreadRadius: -30)],
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
-            const Expanded(child: Text('Investido', style: TextStyle(color: GE.texto2, fontWeight: FontWeight.w600))),
+            Expanded(child: Text('Investido', style: TextStyle(color: GH.texto2, fontWeight: FontWeight.w600))),
             FilledButton(
               onPressed: () => ir(1),
               style: FilledButton.styleFrom(minimumSize: const Size(10, 34), padding: const EdgeInsets.symmetric(horizontal: 14), textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
@@ -132,7 +132,7 @@ class _Resumo extends StatelessWidget {
               child: Text('${brl(c.ganhoUltimo, sinal: true)} · ${pct(c.rUltimo, sinal: true)}',
                   style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: c.ganhoUltimo >= 0 ? GE.pos : GE.neg)),
             ),
-            Text('no último lançamento, em ${dataBr(ult.data)}', style: const TextStyle(color: GE.texto2, fontSize: 12.5)),
+            Text('no último lançamento, em ${dataBr(ult.data)}', style: TextStyle(color: GH.texto2, fontSize: 12.5)),
           ]),
           const SizedBox(height: 14),
           Row(children: [
@@ -144,9 +144,9 @@ class _Resumo extends StatelessWidget {
           Barra(pctInv, cor: GE.branco, trilho: const Color(0x1FFFFFFF)),
           const SizedBox(height: 6),
           Row(children: [
-            Text('${pct(pctInv)} investido', style: const TextStyle(color: GE.texto2, fontSize: 12)),
+            Text('${pct(pctInv)} investido', style: TextStyle(color: GH.texto2, fontSize: 12)),
             const Spacer(),
-            Text('${pct(1 - pctInv)} em conta', style: const TextStyle(color: GE.texto2, fontSize: 12)),
+            Text('${pct(1 - pctInv)} em conta', style: TextStyle(color: GH.texto2, fontSize: 12)),
           ]),
         ]),
       )),
@@ -292,14 +292,19 @@ class _Bloco extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(color: claro ? GE.branco : null, gradient: claro ? null : GE.gradLavanda, borderRadius: BorderRadius.circular(20)),
+        decoration: BoxDecoration(
+          color: GH.vidro ? GH.vidroFundo : (claro ? GE.branco : null),
+          gradient: GH.vidro || claro ? null : GE.gradLavanda,
+          border: GH.vidro ? Border.all(color: GH.vidroBorda) : null,
+          borderRadius: BorderRadius.circular(20),
+        ),
         child: Row(children: [
-          Container(width: 30, height: 30, decoration: BoxDecoration(color: const Color(0x1612131C), borderRadius: BorderRadius.circular(10)), child: Icon(icone, size: 16, color: GE.tinta)),
+          Container(width: 30, height: 30, decoration: BoxDecoration(color: GH.vidro ? Colors.white : const Color(0x1612131C), borderRadius: BorderRadius.circular(10)), child: Icon(icone, size: 16, color: GH.vidro ? GH.lavanda : GE.tinta)),
           const SizedBox(width: 9),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(rotulo, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0x9E12131C), fontWeight: FontWeight.w600, fontSize: 12)),
-              FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(brl(valor), style: const TextStyle(color: GE.tinta, fontWeight: FontWeight.w800, fontSize: 15))),
+              Text(rotulo, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: GH.vidro ? GH.texto2 : const Color(0x9E12131C), fontWeight: FontWeight.w600, fontSize: 12)),
+              FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(brl(valor), style: TextStyle(color: GH.vidro ? Colors.white : GE.tinta, fontWeight: FontWeight.w800, fontSize: 15))),
             ]),
           ),
         ]),

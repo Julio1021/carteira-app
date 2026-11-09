@@ -104,6 +104,13 @@ jobs:
           tirar c7-lancar "&tema=claro&tela=lancar"
           tirar i1-investido "&tela=invest"
           tirar g1-grafico-cheio "&aba=1&analise=1&tela=grafico"
+          tirar l1-inicio "&tema=linho" 1900
+          tirar l2-extrato "&tema=linho&aba=1"
+          tirar l3-analise "&tema=linho&aba=1&analise=1" 3600
+          tirar l4-planejar "&tema=linho&aba=2" 2200
+          tirar l5-patrimonio "&tema=linho&aba=3" 2400
+          tirar l6-ajustes "&tema=linho&tela=ajustes"
+          tirar l7-lancar "&tema=linho&tela=lancar"
           tirar a1-abertura "&abertura=0.2"
           tirar a2-abertura "&abertura=0.32"
           tirar a2b-abertura "&abertura=0.55"

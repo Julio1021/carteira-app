@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 
 import '../tema.dart';
 import 'abertura.dart';
+import '../widgets/movimento.dart';
 import '../widgets/comum.dart';
 import 'importar.dart';
 
@@ -142,53 +143,72 @@ class _Aparencia extends StatelessWidget {
     return ValueListenableBuilder<String>(
       valueListenable: aparencia,
       builder: (context, modo, _) {
-        Widget op(String v, IconData i, String t) {
+        Widget op(String v, String t, List<Color> amostra) {
           final on = modo == v;
           return Expanded(
-            child: Material(
-              color: on ? G.branco : Colors.transparent,
-              borderRadius: BorderRadius.circular(13),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(13),
-                onTap: () => definirAparencia(v),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  child: Column(children: [
-                    Icon(i, size: 20, color: on ? G.tinta : G.texto2),
-                    const SizedBox(height: 4),
-                    Text(t, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: on ? G.tinta : G.texto2)),
-                  ]),
+            child: Toque(
+              escala: .95,
+              child: Material(
+                color: on ? G.lavandaFundo : Colors.transparent,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: BorderSide(color: on ? G.lavanda : G.borda, width: on ? 1.6 : 1)),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(14),
+                  onTap: () => definirAparencia(v),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                    child: Column(children: [
+                      // amostra de cores do tema
+                      SizedBox(
+                        height: 26,
+                        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                          for (var i = 0; i < amostra.length; i++)
+                            Align(
+                              widthFactor: .7,
+                              child: Container(
+                                width: 22,
+                                height: 22,
+                                decoration: BoxDecoration(color: amostra[i], shape: BoxShape.circle, border: Border.all(color: G.borda, width: 1.5)),
+                              ),
+                            ),
+                        ]),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(t, textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: on ? G.lavanda : G.texto2)),
+                    ]),
+                  ),
                 ),
               ),
             ),
           );
         }
 
-        return Container(
-          padding: const EdgeInsets.all(5),
-          decoration: BoxDecoration(color: G.v(0x07), borderRadius: BorderRadius.circular(18), border: Border.all(color: G.borda)),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            Row(children: [
-              op('auto', Icons.brightness_auto_rounded, 'Automático'),
-              const SizedBox(width: 4),
-              op('claro', Icons.light_mode_rounded, 'Claro'),
-              const SizedBox(width: 4),
-              op('escuro', Icons.dark_mode_rounded, 'Escuro'),
-            ]),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
-              child: Text(
-                modo == 'auto' ? 'Segue o tema do celular: claro de dia, escuro quando o celular estiver no modo escuro.' : (modo == 'claro' ? 'Tema claro (Pérola).' : 'Tema escuro (Grafite).'),
-                style: TextStyle(color: G.apagado, fontSize: 12),
-              ),
-            ),
+        final texto = switch (modo) {
+          'auto' => 'Segue o tema do celular: Pérola de dia, Grafite quando o celular estiver no modo escuro.',
+          'claro' => 'Pérola: fundo claro com o cartão principal grafite.',
+          'linho' => 'Linho & Safira: fundo cor de linho e cartão principal azul safira, igual ao site.',
+          _ => 'Grafite: tudo escuro, com detalhes em lavanda.',
+        };
+        return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Row(children: [
+            op('auto', 'Automático', const [Color(0xFFF4F5F9), Color(0xFF101119)]),
+            const SizedBox(width: 8),
+            op('claro', 'Pérola', const [Color(0xFFF4F5F9), Color(0xFF353950), Color(0xFF4F57D6)]),
           ]),
-        );
+          const SizedBox(height: 8),
+          Row(children: [
+            op('linho', 'Linho & Safira', const [Color(0xFFF3EFE7), Color(0xFF2448C8), Color(0xFFB07A1F)]),
+            const SizedBox(width: 8),
+            op('escuro', 'Grafite', const [Color(0xFF101119), Color(0xFF353950), Color(0xFFB9BFF6)]),
+          ]),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
+            child: Text(texto, style: TextStyle(color: G.apagado, fontSize: 12)),
+          ),
+        ]);
       },
     );
   }
 }
-
 
 class _AberturaAjuste extends StatelessWidget {
   const _AberturaAjuste();
