@@ -65,6 +65,18 @@ class Repo extends ChangeNotifier {
     await sp.setString(_kTomb, jsonEncode(tomb));
   }
 
+  /// Troca tudo pelo resultado de uma sincronização (sem mexer nas datas de alteração).
+  Future<void> aplicarSync(List<Doc> docs, Map<String, int> novoTomb) async {
+    _docs
+      ..clear()
+      ..addEntries(docs.where((d) => d['id'] is String).map((d) => MapEntry(d['id'] as String, Map<String, dynamic>.from(d))));
+    tomb
+      ..clear()
+      ..addAll(novoTomb);
+    await _salvar();
+    notifyListeners();
+  }
+
   // ---------- leitura ----------
   Iterable<Doc> doTipo(String kind) => _docs.values.where((d) => d['kind'] == kind);
   Doc? porId(String id) => _docs[id];

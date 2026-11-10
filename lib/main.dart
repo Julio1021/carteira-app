@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -7,6 +9,7 @@ import 'dados/demo.dart';
 import 'dados/repo.dart';
 import 'dados/analise.dart';
 import 'widgets/graficos.dart';
+import 'dados/drive.dart';
 import 'tema.dart';
 import 'widgets/movimento.dart';
 import 'telas/abertura.dart';
@@ -35,7 +38,11 @@ Future<void> main() async {
     await carregarAbertura();
   }
   final repo = demo ? Repo.memoria(dadosDemo()) : Repo();
-  if (!demo) await repo.carregar();
+  if (!demo) {
+    await repo.carregar();
+    syncDrive = SyncDrive(repo);
+    unawaited(syncDrive!.iniciar());
+  }
   runApp(AppCarteira(repo: repo));
 }
 
@@ -80,6 +87,11 @@ class _AppCarteiraState extends State<AppCarteira> with WidgetsBindingObserver {
 
   @override
   void didChangePlatformBrightness() => _aplicar();
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState s) {
+    if (s == AppLifecycleState.resumed) unawaited(syncDrive?.sincronizar());
+  }
 
   void _aplicar() {
     final claro = resolverClaro(aparencia.value, WidgetsBinding.instance.platformDispatcher.platformBrightness);

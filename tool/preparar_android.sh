@@ -61,8 +61,14 @@ fi
 # assinatura de release, quando os segredos existem (para a Play Store)
 GRADLE=android/app/build.gradle.kts
 [ -f "$GRADLE" ] || GRADLE=android/app/build.gradle
+# chave fixa guardada criptografada no repositório; a senha fica no segredo CHAVE_SENHA
+if [ -z "${KEYSTORE_BASE64:-}" ] && [ -n "${CHAVE_SENHA:-}" ] && [ -f android_chave/upload.jks.enc ]; then
+  openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in android_chave/upload.jks.enc -out android/app/upload.jks -pass env:CHAVE_SENHA
+  KEYSTORE_BASE64=arquivo
+  KEYSTORE_PASSWORD="$CHAVE_SENHA"; KEY_PASSWORD="$CHAVE_SENHA"; KEY_ALIAS=carteira
+fi
 if [ -n "${KEYSTORE_BASE64:-}" ]; then
-  echo "$KEYSTORE_BASE64" | base64 -d > android/app/upload.jks
+  [ "$KEYSTORE_BASE64" = arquivo ] || echo "$KEYSTORE_BASE64" | base64 -d > android/app/upload.jks
   cat > android/key.properties <<EOF
 storePassword=${KEYSTORE_PASSWORD}
 keyPassword=${KEY_PASSWORD}

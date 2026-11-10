@@ -4,10 +4,12 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../dados/drive.dart';
 import '../tema.dart';
 import 'abertura.dart';
 import '../widgets/movimento.dart';
 import '../widgets/comum.dart';
+import '../widgets/formulario.dart';
 import 'importar.dart';
 
 class TelaAjustes extends StatefulWidget {
@@ -107,6 +109,9 @@ class _TelaAjustesState extends State<TelaAjustes> {
         const _Aparencia(),
         const SizedBox(height: 12),
         const _AberturaAjuste(),
+        const SizedBox(height: 18),
+        Padding(padding: const EdgeInsets.fromLTRB(4, 0, 4, 8), child: Text('Sincronização', style: TextStyle(color: G.apagado, fontWeight: FontWeight.w600))),
+        const _CartaoDrive(),
         const SizedBox(height: 18),
         Padding(padding: EdgeInsets.fromLTRB(4, 0, 4, 8), child: Text('Seus dados', style: TextStyle(color: G.apagado, fontWeight: FontWeight.w600))),
         CaixaLista([
@@ -234,6 +239,101 @@ class _AberturaAjuste extends StatelessWidget {
             ),
         ]),
       ),
+    );
+  }
+}
+
+
+class _CartaoDrive extends StatelessWidget {
+  const _CartaoDrive();
+  @override
+  Widget build(BuildContext context) {
+    final sd = syncDrive;
+    if (sd == null) {
+      return Cartao(child: Text('A sincronização com o Google Drive fica disponível no app instalado.', style: TextStyle(color: G.apagado)));
+    }
+    return ListenableBuilder(
+      listenable: sd,
+      builder: (context, _) {
+        final esc = sd.escolha;
+        final (cor, icone, status) = switch (sd.estado) {
+          EstadoDrive.desligado => (G.apagado, Icons.cloud_off_rounded, 'Desligada'),
+          EstadoDrive.sincronizando => (G.lavanda, Icons.sync_rounded, 'Sincronizando…'),
+          EstadoDrive.pendente => (G.lavanda, Icons.cloud_upload_outlined, 'Salvando no Drive…'),
+          EstadoDrive.entrar => (G.alerta, Icons.login_rounded, 'Precisa entrar de novo com o Google'),
+          EstadoDrive.erro => (G.neg, Icons.cloud_off_rounded, sd.erro.isEmpty ? 'Erro ao sincronizar' : sd.erro),
+          EstadoDrive.pronto => (G.pos, Icons.cloud_done_rounded, 'Sincronizado ${sd.quando}'),
+        };
+        Future<void> rodar(Future<String?> Function() f) async {
+          final m = await f();
+          if (context.mounted && m != null) avisar(context, m);
+          if (context.mounted && m == null && sd.escolha == null && sd.ligado) avisar(context, 'Pronto: sincronizado com o seu Drive.');
+        }
+
+        return Cartao(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Row(children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(color: cor.withValues(alpha: .14), borderRadius: BorderRadius.circular(13)),
+                child: sd.estado == EstadoDrive.sincronizando
+                    ? Padding(padding: const EdgeInsets.all(11), child: CircularProgressIndicator(strokeWidth: 2.4, color: cor))
+                    : Icon(icone, color: cor),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  const Text('Google Drive', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15.5)),
+                  Text(status, style: TextStyle(color: cor, fontSize: 12.5, fontWeight: FontWeight.w600)),
+                  if (sd.email != null && sd.ligado) Text(sd.email!, style: TextStyle(color: G.apagado, fontSize: 12)),
+                ]),
+              ),
+            ]),
+            const SizedBox(height: 10),
+            Text(
+              'Guarda tudo numa pasta oculta do seu próprio Drive e mantém este celular e o site do GitHub iguais. Ninguém além de você tem acesso.',
+              style: TextStyle(color: G.texto2, fontSize: 12.5),
+            ),
+            const SizedBox(height: 12),
+            if (esc != null) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(color: G.lavandaFundo, borderRadius: BorderRadius.circular(14)),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                  Text('O Drive já tem ${esc.noDrive} registros e este celular tem ${esc.noCelular}. O que fazer?', style: const TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 10),
+                  FilledButton(onPressed: () => rodar(() => sd.sincronizar(primeira: true, modo: 'juntar')), child: const Text('Juntar os dois (recomendado)')),
+                  const SizedBox(height: 8),
+                  OutlinedButton(onPressed: () => rodar(() => sd.sincronizar(primeira: true, modo: 'drive')), child: const Text('Usar só o que está no Drive')),
+                  const SizedBox(height: 8),
+                  OutlinedButton(onPressed: () => rodar(() => sd.sincronizar(primeira: true, modo: 'aparelho')), child: const Text('Usar só o deste celular')),
+                ]),
+              ),
+            ] else if (!sd.ligado)
+              FilledButton.icon(onPressed: () => rodar(sd.conectar), icon: const Icon(Icons.cloud_sync_rounded), label: const Text('Conectar ao Google Drive'))
+            else
+              Row(children: [
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: sd.estado == EstadoDrive.sincronizando ? null : () => rodar(() => sd.sincronizar(interativo: true)),
+                    icon: const Icon(Icons.sync_rounded),
+                    label: const Text('Sincronizar agora'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                OutlinedButton(
+                  onPressed: () async {
+                    if (await confirmar(context, 'Desligar a sincronização?', 'Os dados continuam neste celular e no Drive; só param de se atualizar.', sim: 'Desligar', perigo: false)) {
+                      await sd.desconectar();
+                    }
+                  },
+                  child: const Text('Desligar'),
+                ),
+              ]),
+          ]),
+        );
+      },
     );
   }
 }

@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     env:
-      TEM_CHAVE: ${{ secrets.KEYSTORE_BASE64 != '' && 'sim' || 'nao' }}
+      TEM_CHAVE: ${{ (secrets.KEYSTORE_BASE64 != '' || secrets.CHAVE_SENHA != '') && 'sim' || 'nao' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -36,6 +36,7 @@ jobs:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          CHAVE_SENHA: ${{ secrets.CHAVE_SENHA }}
         run: bash tool/preparar_android.sh
 
       - name: Dependências
