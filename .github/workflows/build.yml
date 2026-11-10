@@ -95,10 +95,10 @@ jobs:
           tirar 16-avisos "&tela=avisos"
           tirar 17-busca "&tela=busca" 1400
           tirar 18-importar "&tela=importar"
-          tirar 19-analise "&aba=1&analise=1" 6000
+          tirar 19-analise "&aba=1&analise=1" 3900
           tirar c1-inicio "&tema=claro" 1900
           tirar c2-extrato "&tema=claro&aba=1"
-          tirar c3-analise "&tema=claro&aba=1&analise=1" 6000
+          tirar c3-analise "&tema=claro&aba=1&analise=1" 3900
           tirar c4-planejar "&tema=claro&aba=2" 2200
           tirar c5-patrimonio "&tema=claro&aba=3" 2400
           tirar c6-ajustes "&tema=claro&tela=ajustes"
@@ -112,8 +112,8 @@ jobs:
           tirar l5-patrimonio "&tema=linho&aba=3" 2400
           tirar l6-ajustes "&tema=linho&tela=ajustes"
           tirar l7-lancar "&tema=linho&tela=lancar"
-          tirar p1-analise-inv "&aba=3&sub=4" 4400
-          tirar p2-analise-inv-claro "&tema=linho&aba=3&sub=4" 4400
+          tirar p1-analise-inv "&aba=3&sub=4" 3900
+          tirar p2-analise-inv-claro "&tema=linho&aba=3&sub=4" 3900
           tirar a1-abertura "&abertura=0.2"
           tirar a2-abertura "&abertura=0.32"
           tirar a2b-abertura "&abertura=0.55"
