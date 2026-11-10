@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../dados/modelos.dart';
 import '../dados/patrimonio.dart';
 import '../dados/invest_pat.dart';
+import 'analise_inv.dart';
 import '../dados/categorias.dart';
 import '../dados/repo.dart';
 import '../dados/resumo.dart';
@@ -23,7 +24,9 @@ class TelaPatrimonio extends StatefulWidget {
 
 class _TelaPatrimonioState extends State<TelaPatrimonio> {
   late int sub = widget.subInicial;
-  static const nomes = ['Resumo', 'Lançar', 'Ativos', 'Relatórios'];
+  static const nomes = ['Resumo', 'Lançar', 'Ativos', 'Relatórios', 'Análise'];
+  // ordem em que aparecem (o índice continua o mesmo de antes)
+  static const ordem = [0, 4, 1, 2, 3];
 
   @override
   Widget build(BuildContext context) {
@@ -33,16 +36,17 @@ class _TelaPatrimonioState extends State<TelaPatrimonio> {
       0 => _Resumo(c: c, ir: (i) => setState(() => sub = i)),
       1 => _Lancar(c: c, aoSalvar: () => setState(() => sub = 0)),
       2 => _Ativos(c: c),
+      4 => AnaliseInvest(c: c),
       _ => _Relatorios(c: c),
     };
     return Column(children: [
       Padding(
         padding: const EdgeInsets.fromLTRB(14, 2, 14, 8),
         child: Row(children: [
-          for (var i = 0; i < nomes.length; i++)
+          for (final i in ordem)
             Expanded(
               child: Padding(
-                padding: EdgeInsets.only(right: i < nomes.length - 1 ? 6 : 0),
+                padding: EdgeInsets.only(right: i != ordem.last ? 5 : 0),
                 child: Material(
                   color: i == sub ? G.branco : G.v(0x0D),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(99), side: BorderSide(color: i == sub ? G.branco : G.borda)),
@@ -56,7 +60,7 @@ class _TelaPatrimonioState extends State<TelaPatrimonio> {
                       padding: const EdgeInsets.symmetric(vertical: 9),
                       child: FittedBox(
                         fit: BoxFit.scaleDown,
-                        child: Text(nomes[i], style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5, color: i == sub ? G.tinta : G.texto2)),
+                        child: Text(nomes[i], style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: i == sub ? G.tinta : G.texto2)),
                       ),
                     ),
                   ),

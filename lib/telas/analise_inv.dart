@@ -1,0 +1,462 @@
+// Aba "Análise" do Patrimônio.
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+import '../dados/analise_inv.dart';
+import '../dados/indices.dart';
+import '../dados/patrimonio.dart';
+import '../tema.dart';
+import '../util/fmt.dart';
+import '../widgets/comum.dart';
+import '../widgets/graficos.dart';
+import '../widgets/movimento.dart';
+
+String _abr(String ym) => mesesLongos[int.parse(ym.substring(5, 7)) - 1].substring(0, 3).toLowerCase();
+
+class AnaliseInvest extends StatefulWidget {
+  final Carteira c;
+  const AnaliseInvest({super.key, required this.c});
+  @override
+  State<AnaliseInvest> createState() => _AnaliseInvestState();
+}
+
+class _AnaliseInvestState extends State<AnaliseInvest> {
+  String periodo = '12m';
+  bool porClasse = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (!indicesAtuais.value.exemplo) carregarIndices();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = widget.c;
+    if (c.vazia) {
+      return ListView(padding: const EdgeInsets.fromLTRB(12, 4, 12, 120), children: [
+        Cartao(child: Text('Lance o saldo dos seus investimentos (aba Lançar) para ver a análise da evolução.', style: TextStyle(color: G.texto2))),
+      ]);
+    }
+    return ValueListenableBuilder<Indices>(
+      valueListenable: indicesAtuais,
+      builder: (context, idx, _) {
+        final repo = RepoScope.of(context);
+        final meses = mesesDoPeriodo(c, periodo);
+        final cmp = compararComIndices(c, idx, meses);
+        final ativos = desempenhoPorAtivo(c, idx, meses);
+        final rp = rendaPassiva(repo, c);
+        final (inst, cls) = diversificacao(c);
+        final dest = destaquesInvest(c, cmp);
+        return ListView(
+          padding: const EdgeInsets.fromLTRB(12, 4, 12, 120),
+          children: emSequencia([
+            _Periodo(valor: periodo, onMudar: (p) => setState(() => periodo = p), idx: idx),
+            const SizedBox(height: 12),
+            _CardIndices(cmp: cmp, idx: idx),
+            const SizedBox(height: 12),
+            if (ativos.isNotEmpty) ...[_CardAtivos(lista: ativos), const SizedBox(height: 12)],
+            if (rp != null) ...[_CardRenda(rp: rp), const SizedBox(height: 12)],
+            if (inst.isNotEmpty) ...[
+              _CardDiversificacao(fatias: porClasse ? cls : inst, porClasse: porClasse, onTrocar: (v) => setState(() => porClasse = v)),
+              const SizedBox(height: 12),
+            ],
+            if (dest.isNotEmpty) _CardDestaques(lista: dest),
+          ]),
+        );
+      },
+    );
+  }
+}
+
+class _Periodo extends StatelessWidget {
+  final String valor;
+  final ValueChanged<String> onMudar;
+  final Indices idx;
+  const _Periodo({required this.valor, required this.onMudar, required this.idx});
+  @override
+  Widget build(BuildContext context) {
+    final ult = idx.ultimo(idx.cdi);
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      Container(
+        padding: const EdgeInsets.all(3),
+        decoration: BoxDecoration(color: G.abasFundo, borderRadius: BorderRadius.circular(14)),
+        child: Row(children: [
+          for (final (v, t) in const [('12m', '12 meses'), ('ano', 'Este ano'), ('tudo', 'Desde o início')])
+            Expanded(
+              child: GestureDetector(
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  onMudar(v);
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 220),
+                  curve: Curves.easeOutCubic,
+                  padding: const EdgeInsets.symmetric(vertical: 9),
+                  decoration: BoxDecoration(color: valor == v ? G.branco : Colors.transparent, borderRadius: BorderRadius.circular(11)),
+                  child: Text(t, textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: valor == v ? G.tinta : G.texto2)),
+                ),
+              ),
+            ),
+        ]),
+      ),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(4, 6, 4, 0),
+        child: Text(
+          idx.exemplo
+              ? 'Índices de exemplo (demonstração).'
+              : (ult == null ? 'Buscando CDI, poupança e IPCA no Banco Central… (precisa de internet)' : 'Índices do Banco Central até ${mesLongo(ult).toLowerCase()}.'),
+          style: TextStyle(color: G.apagado, fontSize: 11.5),
+        ),
+      ),
+    ]);
+  }
+}
+
+class _Mini extends StatelessWidget {
+  final String rotulo;
+  final double? v;
+  final Color cor;
+  final bool destaque;
+  const _Mini(this.rotulo, this.v, this.cor, {this.destaque = false});
+  @override
+  Widget build(BuildContext context) => Expanded(
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+          decoration: BoxDecoration(color: destaque ? cor.withValues(alpha: .12) : G.v(0x08), borderRadius: BorderRadius.circular(12)),
+          child: Column(children: [
+            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Container(width: 8, height: 8, decoration: BoxDecoration(color: cor, shape: BoxShape.circle)),
+              const SizedBox(width: 5),
+              Flexible(child: Text(rotulo, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: G.apagado, fontSize: 11, fontWeight: FontWeight.w600))),
+            ]),
+            const SizedBox(height: 3),
+            FittedBox(child: Text(v == null ? '—' : pct(v!, sinal: true), style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: destaque ? cor : G.texto))),
+          ]),
+        ),
+      );
+}
+
+class _CardIndices extends StatelessWidget {
+  final Comparacao? cmp;
+  final Indices idx;
+  const _CardIndices({required this.cmp, required this.idx});
+  @override
+  Widget build(BuildContext context) {
+    final cCart = G.lavanda, cCdi = G.pos, cPoup = G.alerta, cIpca = G.saida;
+    final m = cmp;
+    if (m == null) {
+      return Cartao(
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          const CabecalhoCartao('Comparado com o CDI'),
+          Text(idx.temDados ? 'Ainda não há meses com rendimento e índice publicados neste período.' : 'Assim que o app conseguir buscar os índices na internet, a comparação aparece aqui.', style: TextStyle(color: G.texto2)),
+        ]),
+      );
+    }
+    final p = m.pctCdi;
+    final corP = p == null ? G.texto : (p >= 1 ? G.pos : (p >= .85 ? G.alerta : G.neg));
+    final rot = [for (final ym in ['', ...m.meses]) ym.isEmpty ? '' : _abr(ym)];
+    final series = <List<double>>[m.curvaCart, m.curvaCdi, if (m.curvaPoup.isNotEmpty) m.curvaPoup, if (m.curvaIpca.isNotEmpty) m.curvaIpca];
+    final cores = [cCart, cCdi, if (m.curvaPoup.isNotEmpty) cPoup, if (m.curvaIpca.isNotEmpty) cIpca];
+    final nomes = ['Sua carteira', 'CDI', if (m.curvaPoup.isNotEmpty) 'Poupança', if (m.curvaIpca.isNotEmpty) 'Inflação'];
+    return Cartao(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        CabecalhoCartao('Comparado com o CDI', sub: '${m.meses.length} ${m.meses.length == 1 ? 'mês' : 'meses'} · ${mesLongo(m.meses.first).toLowerCase()} a ${mesLongo(m.meses.last).toLowerCase()}'),
+        Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+          ValorAnimado(p ?? 0, formato: (v) => p == null ? '—' : '${(v * 100).round()}%', estilo: TextStyle(fontSize: 34, fontWeight: FontWeight.w800, letterSpacing: -1, color: corP)),
+          const SizedBox(width: 8),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 7),
+            child: Text('do CDI', style: TextStyle(color: G.texto2, fontWeight: FontWeight.w600)),
+          ),
+          const Spacer(),
+          if (m.real != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                Text('acima da inflação', style: TextStyle(color: G.apagado, fontSize: 11)),
+                Text('${pct(m.real!, sinal: true)} · ${brl(m.ganhoReal)}', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: m.real! >= 0 ? G.pos : G.neg)),
+              ]),
+            ),
+        ]),
+        const SizedBox(height: 10),
+        Row(children: [
+          _Mini('Carteira', m.carteira, cCart, destaque: true),
+          const SizedBox(width: 6),
+          _Mini('CDI', m.cdi, cCdi),
+          const SizedBox(width: 6),
+          _Mini('Poupança', m.poup, cPoup),
+          const SizedBox(width: 6),
+          _Mini('Inflação', m.ipca, cIpca),
+        ]),
+        const SizedBox(height: 14),
+        Text('R\$ 100 aplicados no começo do período viraram…', style: TextStyle(color: G.texto2, fontSize: 12.5, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 6),
+        GraficoLinha(
+          titulo: 'Sua carteira × CDI × poupança × inflação',
+          series: series,
+          cores: cores,
+          nomes: nomes,
+          tracejada: [false, false, true, true],
+          rotulosX: rot,
+          formatoY: (v) => 'R\$ ${v.toStringAsFixed(v >= 1000 ? 0 : 1).replaceAll('.', ',')}',
+          preencherPrimeira: true,
+          altura: 220,
+        ),
+        const SizedBox(height: 8),
+        Wrap(spacing: 14, runSpacing: 6, children: [for (var i = 0; i < nomes.length; i++) Legenda(cores[i], nomes[i])]),
+      ]),
+    );
+  }
+}
+
+class _Faisca extends StatelessWidget {
+  final List<double> v;
+  final Color cor;
+  const _Faisca(this.v, this.cor);
+  @override
+  Widget build(BuildContext context) => SizedBox(width: 54, height: 22, child: CustomPaint(painter: _PintorFaisca(v, cor)));
+}
+
+class _PintorFaisca extends CustomPainter {
+  final List<double> v;
+  final Color cor;
+  _PintorFaisca(this.v, this.cor);
+  @override
+  void paint(Canvas canvas, Size s) {
+    if (v.length < 2) return;
+    final mn = v.reduce((a, b) => a < b ? a : b), mx = v.reduce((a, b) => a > b ? a : b);
+    final d = mx - mn == 0 ? 1 : mx - mn;
+    final path = Path();
+    for (var i = 0; i < v.length; i++) {
+      final x = s.width * i / (v.length - 1), y = s.height - 2 - (s.height - 4) * (v[i] - mn) / d;
+      i == 0 ? path.moveTo(x, y) : path.lineTo(x, y);
+    }
+    canvas.drawPath(path, Paint()
+      ..color = cor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round);
+  }
+
+  @override
+  bool shouldRepaint(covariant _PintorFaisca o) => o.v != v;
+}
+
+class _CardAtivos extends StatelessWidget {
+  final List<DesempenhoAtivo> lista;
+  const _CardAtivos({required this.lista});
+  @override
+  Widget build(BuildContext context) {
+    final fracos = lista.where((d) => d.pctCdi != null && d.pctCdi! < .7 && d.saldo > 100).toList();
+    return Cartao(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        const CabecalhoCartao('Desempenho por ativo', sub: 'Rendimento no período, sem contar os aportes'),
+        CaixaLista([
+          for (var i = 0; i < lista.length; i++)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 2),
+              child: Row(children: [
+                SizedBox(width: 20, child: Text('${i + 1}', style: TextStyle(color: G.apagado, fontWeight: FontWeight.w700, fontSize: 12.5))),
+                Container(width: 10, height: 10, decoration: BoxDecoration(color: lista[i].a.cor(lista[i].indice), shape: BoxShape.circle)),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(lista[i].a.nome, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600)),
+                    Text('${brl(lista[i].saldo)}${lista[i].pctCdi != null ? ' · ${(lista[i].pctCdi! * 100).round()}% do CDI' : ''}', style: TextStyle(color: G.apagado, fontSize: 12)),
+                  ]),
+                ),
+                _Faisca(lista[i].curva, lista[i].a.cor(lista[i].indice)),
+                const SizedBox(width: 10),
+                SizedBox(
+                  width: 82,
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                    Text(pct(lista[i].rent, sinal: true), style: TextStyle(fontWeight: FontWeight.w800, color: lista[i].rent >= 0 ? G.pos : G.neg)),
+                    Text(brl(lista[i].ganho, sinal: true), style: TextStyle(color: G.apagado, fontSize: 11.5)),
+                  ]),
+                ),
+              ]),
+            ),
+        ]),
+        if (fracos.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(color: G.alerta.withValues(alpha: .12), borderRadius: BorderRadius.circular(12)),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Icon(Icons.lightbulb_outline_rounded, size: 18, color: G.alerta),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '${fracos.map((d) => d.a.nome).join(', ')} ${fracos.length > 1 ? 'renderam' : 'rendeu'} menos de 70% do CDI. Vale ver se o dinheiro não está parado rendendo pouco.',
+                  style: TextStyle(color: G.texto2, fontSize: 12.5),
+                ),
+              ),
+            ]),
+          ),
+        ],
+      ]),
+    );
+  }
+}
+
+class _CardRenda extends StatefulWidget {
+  final RendaPassiva rp;
+  const _CardRenda({required this.rp});
+  @override
+  State<_CardRenda> createState() => _CardRendaState();
+}
+
+class _CardRendaState extends State<_CardRenda> {
+  int? sel;
+  @override
+  Widget build(BuildContext context) {
+    final rp = widget.rp;
+    final s = sel;
+    return Cartao(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        CabecalhoCartao('Renda passiva', sub: 'Quanto seus investimentos rendem por mês · média de ${rp.meses.length} ${rp.meses.length == 1 ? 'mês' : 'meses'}'),
+        Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+          ValorAnimado(rp.media, estilo: TextStyle(fontSize: 30, fontWeight: FontWeight.w800, letterSpacing: -1, color: G.pos)),
+          Padding(padding: const EdgeInsets.only(bottom: 5, left: 6), child: Text('por mês', style: TextStyle(color: G.texto2, fontWeight: FontWeight.w600))),
+        ]),
+        const SizedBox(height: 6),
+        if (rp.pctSalario != null) Text('Equivale a ${(rp.pctSalario! * 100).toStringAsFixed(1).replaceAll('.', ',')}% da sua renda mensal.', style: TextStyle(color: G.texto2, fontSize: 13)),
+        if (rp.pagaConta != null) Text('Já paga sozinha a conta "${rp.pagaConta}" (${brl(rp.valorConta!)}). 🎉', style: TextStyle(color: G.texto2, fontSize: 13)),
+        const SizedBox(height: 12),
+        GraficoBarras(
+          titulo: 'Rendimento mês a mês',
+          rotulos: [for (final ym in rp.meses) _abr(ym)],
+          valores: [for (final g in rp.ganhos) [g < 0 ? 0.0 : g]],
+          cores: [G.pos],
+          nomes: const ['Rendeu'],
+          formatoY: curto,
+          altura: 190,
+          selecionado: s,
+          onToque: (i) => setState(() => sel = i == sel ? null : i),
+        ),
+        if (s != null && s < rp.meses.length)
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text('${mesLongo(rp.meses[s])}: ${brl(rp.ganhos[s], sinal: true)} de rendimento', style: const TextStyle(fontWeight: FontWeight.w600)),
+          ),
+      ]),
+    );
+  }
+}
+
+class _CardDiversificacao extends StatelessWidget {
+  final List<Fatia> fatias;
+  final bool porClasse;
+  final ValueChanged<bool> onTrocar;
+  const _CardDiversificacao({required this.fatias, required this.porClasse, required this.onTrocar});
+  @override
+  Widget build(BuildContext context) {
+    final tot = fatias.fold<double>(0, (t, f) => t + f.valor);
+    final cores = [for (var i = 0; i < fatias.length; i++) G.coresSerie[i % G.coresSerie.length]];
+    final maior = fatias.isEmpty ? null : fatias.first;
+    final conc = maior != null && tot > 0 && maior.valor / tot > .6 && fatias.length > 1;
+    return Cartao(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        CabecalhoCartao('Diversificação', sub: porClasse ? 'Por tipo de investimento' : 'Por instituição'),
+        Container(
+          padding: const EdgeInsets.all(3),
+          decoration: BoxDecoration(color: G.abasFundo, borderRadius: BorderRadius.circular(12)),
+          child: Row(children: [
+            for (final (v, t) in const [(false, 'Instituição'), (true, 'Tipo')])
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => onTrocar(v),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(vertical: 7),
+                    decoration: BoxDecoration(color: porClasse == v ? G.branco : Colors.transparent, borderRadius: BorderRadius.circular(9)),
+                    child: Text(t, textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: porClasse == v ? G.tinta : G.texto2)),
+                  ),
+                ),
+              ),
+          ]),
+        ),
+        const SizedBox(height: 12),
+        Row(children: [
+          Rosca(key: ValueKey(porClasse), valores: [for (final f in fatias) f.valor], cores: cores, centro: '${fatias.length}', sub: porClasse ? 'tipos' : 'instituições', tam: 132),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(children: [
+              for (var i = 0; i < fatias.length && i < 7; i++)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(children: [
+                    Container(width: 10, height: 10, decoration: BoxDecoration(color: cores[i], borderRadius: BorderRadius.circular(3))),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(fatias[i].nome, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13))),
+                    Text('${(fatias[i].valor / tot * 100).toStringAsFixed(0)}%', style: TextStyle(color: G.texto2, fontWeight: FontWeight.w700, fontSize: 13)),
+                  ]),
+                ),
+            ]),
+          ),
+        ]),
+        if (conc) ...[
+          const SizedBox(height: 10),
+          Text('${(maior.valor / tot * 100).round()}% está em ${maior.nome}. Espalhar entre mais lugares diminui o risco.', style: TextStyle(color: G.alerta, fontSize: 12.5, fontWeight: FontWeight.w600)),
+        ],
+        if (!porClasse && fatias.any((f) => f.nome == 'Outras'))
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text('Dica: em Ativos, preencha a instituição de cada investimento para esta divisão ficar exata.', style: TextStyle(color: G.apagado, fontSize: 11.5)),
+          ),
+      ]),
+    );
+  }
+}
+
+class _CardDestaques extends StatelessWidget {
+  final List<DestaqueInv> lista;
+  const _CardDestaques({required this.lista});
+  @override
+  Widget build(BuildContext context) {
+    IconData ic(String t) => switch (t) {
+          'cdi' => Icons.speed_rounded,
+          'melhor' => Icons.emoji_events_outlined,
+          'aporte' => Icons.savings_outlined,
+          'seq' => Icons.local_fire_department_outlined,
+          'marco' => Icons.flag_outlined,
+          _ => Icons.auto_awesome_rounded,
+        };
+    Color cor(int tom) => tom > 0 ? G.pos : (tom < 0 ? G.alerta : G.lavanda);
+    return Cartao(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        const CabecalhoCartao('Destaques'),
+        for (var i = 0; i < lista.length; i++) ...[
+          if (i > 0) const Divider(height: 1),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(color: cor(lista[i].tom).withValues(alpha: .14), borderRadius: BorderRadius.circular(10)),
+                child: Icon(ic(lista[i].tipo), size: 18, color: cor(lista[i].tom)),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text.rich(
+                    TextSpan(children: [
+                      TextSpan(text: lista[i].antes),
+                      TextSpan(text: lista[i].forte, style: TextStyle(fontWeight: FontWeight.w700, color: lista[i].tom == 0 ? G.texto : cor(lista[i].tom))),
+                      TextSpan(text: lista[i].depois),
+                    ]),
+                    style: TextStyle(color: G.texto2, fontSize: 14, height: 1.35),
+                  ),
+                ),
+              ),
+            ]),
+          ),
+        ],
+      ]),
+    );
+  }
+}

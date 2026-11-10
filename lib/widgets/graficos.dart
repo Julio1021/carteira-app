@@ -169,6 +169,8 @@ class GraficoLinha extends StatelessWidget {
       onExpandir: titulo == null ? null : () => abrirGraficoCheio(context, titulo!, _com),
       grafico: _Entrada(
         builder: (t) => LineChart(
+          duration: const Duration(milliseconds: 450),
+          curve: Curves.easeOutCubic,
           LineChartData(
             minX: 0,
             maxX: math.max(1, n - 1).toDouble(),
@@ -254,17 +256,25 @@ class GraficoLinha extends StatelessWidget {
                   barWidth: s == 0 ? 3 : 2,
                   isStrokeCapRound: true,
                   dashArray: s < tracejada.length && tracejada[s] ? [6, 5] : null,
+                  shadow: s == 0 ? Shadow(color: cores[0].withValues(alpha: .35), blurRadius: 8, offset: const Offset(0, 4)) : const Shadow(color: Colors.transparent),
                   dotData: FlDotData(
-                    show: true,
-                    checkToShowDot: (spot, bar) => s == 0 && spot.x == bar.spots.last.x && series[s].length < n,
-                    getDotPainter: (_, __, ___, ____) => FlDotCirclePainter(radius: 4.5, color: cores[s % cores.length], strokeWidth: 2.5, strokeColor: G.fundo),
+                    show: t > .98,
+                    // ponto no fim de cada linha (o da principal com um anel)
+                    checkToShowDot: (spot, bar) => spot.x == bar.spots.last.x,
+                    getDotPainter: (_, __, ___, ____) => FlDotCirclePainter(
+                      radius: s == 0 ? 5 : 3.2,
+                      color: cores[s % cores.length],
+                      strokeWidth: s == 0 ? 3 : 2,
+                      strokeColor: G.fundo2,
+                    ),
                   ),
                   belowBarData: BarAreaData(
                     show: s == 0 && preencherPrimeira,
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      colors: [cores[0].withValues(alpha: .32), cores[0].withValues(alpha: 0)],
+                      colors: [cores[0].withValues(alpha: .30), cores[0].withValues(alpha: .08), cores[0].withValues(alpha: 0)],
+                      stops: const [0, .6, 1],
                     ),
                   ),
                 ),
@@ -326,6 +336,8 @@ class GraficoBarras extends StatelessWidget {
       onExpandir: titulo == null ? null : () => abrirGraficoCheio(context, titulo!, _com),
       grafico: _Entrada(
         builder: (t) => BarChart(
+          duration: const Duration(milliseconds: 450),
+          curve: Curves.easeOutCubic,
           BarChartData(
             maxY: topo,
             gridData: _grade(passoRedondo(topo)),
@@ -388,8 +400,16 @@ class GraficoBarras extends StatelessWidget {
                       BarChartRodData(
                         toY: valores[g][s] * t,
                         width: largura,
-                        color: selecionado == null || selecionado == g ? cores[s % cores.length] : cores[s % cores.length].withValues(alpha: .38),
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(5)),
+                        gradient: LinearGradient(
+                          begin: Alignment.bottomCenter,
+                          end: Alignment.topCenter,
+                          colors: selecionado == null || selecionado == g
+                              ? [cores[s % cores.length].withValues(alpha: .75), cores[s % cores.length]]
+                              : [cores[s % cores.length].withValues(alpha: .22), cores[s % cores.length].withValues(alpha: .38)],
+                        ),
+                        borderRadius: BorderRadius.vertical(top: Radius.circular(largura / 2)),
+                        // trilho de fundo: mostra a escala até o topo
+                        backDrawRodData: BackgroundBarChartRodData(show: valores[g].length == 1, toY: topo, color: G.v(0x07)),
                       ),
                   ],
                 ),
@@ -451,10 +471,20 @@ class _RoscaState extends State<Rosca> {
             ),
           ),
         ),
-        Column(mainAxisSize: MainAxisSize.min, children: [
-          Text(widget.centro, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
-          if (widget.sub.isNotEmpty) Text(widget.sub, textAlign: TextAlign.center, style: TextStyle(color: G.apagado, fontSize: 11.5)),
-        ]),
+        // centro: o total, ou a fatia tocada (em %)
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 220),
+          transitionBuilder: (c, an) => FadeTransition(opacity: an, child: ScaleTransition(scale: Tween(begin: .85, end: 1.0).animate(an), child: c)),
+          child: toc != null && tot > 0 && toc! < widget.valores.length
+              ? Column(key: ValueKey(toc), mainAxisSize: MainAxisSize.min, children: [
+                  Text('${(widget.valores[toc!] / tot * 100).toStringAsFixed(0)}%', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: widget.cores[toc! % widget.cores.length])),
+                  Text('do total', style: TextStyle(color: G.apagado, fontSize: 11.5)),
+                ])
+              : Column(key: const ValueKey('c'), mainAxisSize: MainAxisSize.min, children: [
+                  Text(widget.centro, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+                  if (widget.sub.isNotEmpty) Text(widget.sub, textAlign: TextAlign.center, style: TextStyle(color: G.apagado, fontSize: 11.5)),
+                ]),
+        ),
       ]),
     );
   }

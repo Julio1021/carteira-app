@@ -10,6 +10,7 @@ import 'dados/repo.dart';
 import 'dados/analise.dart';
 import 'widgets/graficos.dart';
 import 'dados/drive.dart';
+import 'dados/indices.dart';
 import 'tema.dart';
 import 'widgets/movimento.dart';
 import 'telas/abertura.dart';
@@ -33,6 +34,7 @@ Future<void> main() async {
   final demo = kIsWeb && Uri.base.queryParameters['demo'] == '1';
   if (demo) {
     aparencia.value = Uri.base.queryParameters['tema'] ?? 'escuro';
+    indicesAtuais.value = indicesExemplo(ymDe(hojeIso()));
   } else {
     await carregarAparencia();
     await carregarAbertura();

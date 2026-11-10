@@ -112,6 +112,8 @@ jobs:
           tirar l5-patrimonio "&tema=linho&aba=3" 2400
           tirar l6-ajustes "&tema=linho&tela=ajustes"
           tirar l7-lancar "&tema=linho&tela=lancar"
+          tirar p1-analise-inv "&aba=3&sub=4" 4400
+          tirar p2-analise-inv-claro "&tema=linho&aba=3&sub=4" 4400
           tirar a1-abertura "&abertura=0.2"
           tirar a2-abertura "&abertura=0.32"
           tirar a2b-abertura "&abertura=0.55"
