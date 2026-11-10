@@ -199,7 +199,7 @@ class _CardIndices extends StatelessWidget {
           nomes: nomes,
           tracejada: [false, false, true, true],
           rotulosX: rot,
-          formatoY: (v) => 'R\$ ${v.toStringAsFixed(v >= 1000 ? 0 : 1).replaceAll('.', ',')}',
+          formatoY: (v) => 'R\$ ${v.round()}',
           preencherPrimeira: true,
           altura: 220,
         ),
