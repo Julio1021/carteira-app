@@ -256,7 +256,6 @@ class GraficoLinha extends StatelessWidget {
                   barWidth: s == 0 ? 3 : 2,
                   isStrokeCapRound: true,
                   dashArray: s < tracejada.length && tracejada[s] ? [6, 5] : null,
-                  shadow: s == 0 ? Shadow(color: cores[0].withValues(alpha: .35), blurRadius: 8, offset: const Offset(0, 4)) : const Shadow(color: Colors.transparent),
                   dotData: FlDotData(
                     show: t > .98,
                     // ponto no fim de cada linha (o da principal com um anel)
