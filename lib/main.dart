@@ -162,7 +162,7 @@ class _CascaState extends State<Casca> {
     if (kIsWeb && Uri.base.queryParameters['demo'] == '1') {
       final q = Uri.base.queryParameters;
       aba = (int.tryParse(q['aba'] ?? '') ?? 0).clamp(0, 3).toInt();
-      subPat = (int.tryParse(q['sub'] ?? '') ?? 0).clamp(0, 3).toInt();
+      subPat = (int.tryParse(q['sub'] ?? '') ?? 0).clamp(0, 4).toInt();
       analiseDemo = q['analise'] == '1';
       final ab = double.tryParse(q['abertura'] ?? '');
       if (ab != null) {
