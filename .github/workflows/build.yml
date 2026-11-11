@@ -82,6 +82,10 @@ jobs:
           tirar w1-inicio "&tema=claro" 900 1440 1
           tirar w2-extrato "&tema=claro&aba=1" 900 1440 1
           tirar w3-analise "&tema=claro&aba=1&analise=1" 1300 1440 1
+          tirar w3b-analise "&tema=claro&aba=1&analise=1" 900 1440 1
+          google-chrome --headless=new --no-sandbox --disable-gpu --window-size=1440,1300 --virtual-time-budget=15000 \
+            --enable-logging=stderr --v=0 --dump-dom "http://localhost:8080/carteira-app/?demo=1&tema=claro&aba=1&analise=1" \
+            2> ../../prints/w3-console.txt >/dev/null || true
           tirar w4-patrimonio "&tema=claro&aba=3" 1000 1440 1
           tirar w5-analise-inv "&tema=claro&aba=3&sub=4" 1100 1440 1
           tirar w6-planejar "&tema=claro&aba=2" 1000 1440 1
@@ -166,7 +170,7 @@ jobs:
 
       - name: Guardar prints na branch "saida"
         run: |
-          mkdir -p /tmp/saida && cp prints/*.png /tmp/saida/ 2>/dev/null || true
+          mkdir -p /tmp/saida && cp prints/*.png prints/*.txt /tmp/saida/ 2>/dev/null || true
           cd /tmp/saida
           git init -q -b saida
           git -c user.name="github-actions" -c user.email="actions@github.com" add -A
