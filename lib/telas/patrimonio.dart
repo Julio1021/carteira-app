@@ -12,6 +12,7 @@ import '../tema.dart';
 import '../util/fmt.dart';
 import '../widgets/comum.dart';
 import '../widgets/movimento.dart';
+import '../widgets/painel.dart';
 import '../widgets/formulario.dart';
 import '../widgets/graficos.dart';
 
@@ -24,9 +25,10 @@ class TelaPatrimonio extends StatefulWidget {
 
 class _TelaPatrimonioState extends State<TelaPatrimonio> {
   late int sub = widget.subInicial;
-  static const nomes = ['Resumo', 'Lançar', 'Ativos', 'Relatórios', 'Análise'];
-  // ordem em que aparecem (o índice continua o mesmo de antes)
-  static const ordem = [0, 4, 1, 2, 3];
+  // abas visíveis: Visão geral, Análise e Ativos. Lançar (1) e Relatórios (3)
+  // abrem pelos botões da Visão geral, com "Voltar".
+  static const abas = [0, 4, 2];
+  static const nomesAbas = ['Visão geral', 'Análise', 'Ativos'];
 
   @override
   Widget build(BuildContext context) {
@@ -39,35 +41,29 @@ class _TelaPatrimonioState extends State<TelaPatrimonio> {
       4 => AnaliseInvest(c: c),
       _ => _Relatorios(c: c),
     };
+    final naAba = abas.contains(sub);
     return Column(children: [
       Padding(
-        padding: const EdgeInsets.fromLTRB(14, 2, 14, 8),
-        child: Row(children: [
-          for (final i in ordem)
-            Expanded(
-              child: Padding(
-                padding: EdgeInsets.only(right: i != ordem.last ? 5 : 0),
-                child: Material(
-                  color: i == sub ? G.branco : G.v(0x0D),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(99), side: BorderSide(color: i == sub ? G.branco : G.borda)),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(99),
-                    onTap: () {
+        padding: const EdgeInsets.fromLTRB(12, 2, 12, 8),
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 220),
+          child: naAba
+              ? Segmentos(key: const ValueKey('abas'), nomes: nomesAbas, sel: abas.indexOf(sub), onSel: (i) => setState(() => sub = abas[i]))
+              : Row(key: const ValueKey('voltar'), children: [
+                  TextButton.icon(
+                    onPressed: () {
                       HapticFeedback.selectionClick();
-                      setState(() => sub = i);
+                      setState(() => sub = 0);
                     },
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 9),
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(nomes[i], style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: i == sub ? G.tinta : G.texto2)),
-                      ),
-                    ),
+                    icon: const Icon(Icons.chevron_left_rounded),
+                    label: const Text('Visão geral'),
+                    style: TextButton.styleFrom(foregroundColor: G.lavanda, textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14), padding: const EdgeInsets.only(right: 10)),
                   ),
-                ),
-              ),
-            ),
-        ]),
+                  const Spacer(),
+                  Text(sub == 1 ? 'Lançar saldos' : 'Relatórios', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
+                  const SizedBox(width: 6),
+                ]),
+        ),
       ),
       Expanded(child: corpo),
     ]);
@@ -157,14 +153,24 @@ class _Resumo extends StatelessWidget {
       const SizedBox(height: 16),
       Row(children: [
         _at(context, Icons.add_rounded, 'Lançar', () => ir(1), destaque: true),
-        _at(context, Icons.grid_view_rounded, 'Ativos', () => ir(2)),
-        _at(context, Icons.trending_up_rounded, 'Projetar', () => ir(3)),
+        _at(context, Icons.add_card_rounded, 'Novo ativo', () => abrirFolha(context, const FormAtivo())),
         _at(context, Icons.insert_chart_outlined_rounded, 'Relatórios', () => ir(3)),
+        _at(context, Icons.trending_up_rounded, 'Projetar', () => ir(3)),
       ]),
       const SizedBox(height: 16),
       _SemAtivo(),
       _Conferencia(c: c),
-      Cartao(
+      ChipsAssunto(
+        nomes: [
+          'Ativos',
+          'Origem',
+          if (amostra.length >= 2) 'Evolução',
+          if (ultMeses.isNotEmpty) 'Mês a mês',
+        ],
+        construir: (context, i) {
+          final ns = ['Ativos', 'Origem', if (amostra.length >= 2) 'Evolução', if (ultMeses.isNotEmpty) 'Mês a mês'];
+          return switch (ns[i]) {
+            'Ativos' => Cartao(
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           CabecalhoCartao('Seus ativos', sub: 'Saldo de cada investimento no total de ${brl(c.total)}', acao: 'Gerenciar', onAcao: () => ir(2)),
           Center(
@@ -179,8 +185,7 @@ class _Resumo extends StatelessWidget {
           for (final p in posicoes) _LinhaPos(p: p, total: c.total),
         ]),
       ),
-      const SizedBox(height: 14),
-      Cartao(
+            'Origem' => Cartao(
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           CabecalhoCartao('De onde vem seu patrimônio', sub: c.investido > 0 ? '${pct(c.rendeu / c.investido, sinal: true)} desde ${dataBr(c.dias.first.data)}' : null),
           Barra(c.total > 0 ? c.investido / c.total : 0, cor: const Color(0xFF9AA0BC), trilho: G.pos, altura: 10),
@@ -191,9 +196,7 @@ class _Resumo extends StatelessWidget {
           ]),
         ]),
       ),
-      if (amostra.length >= 2) ...[
-        const SizedBox(height: 14),
-        Cartao(
+            'Evolução' => Cartao(
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             const CabecalhoCartao('Evolução'),
             GraficoLinha(
@@ -214,10 +217,7 @@ class _Resumo extends StatelessWidget {
             ]),
           ]),
         ),
-      ],
-      if (ultMeses.isNotEmpty) ...[
-        const SizedBox(height: 14),
-        Cartao(
+            _ => Cartao(
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             CabecalhoCartao('Rentabilidade mês a mês', sub: 'ganho em % sobre o saldo, sem contar aportes', acao: 'Relatório', onAcao: () => ir(3)),
             Wrap(spacing: 6, runSpacing: 6, children: [
@@ -237,7 +237,9 @@ class _Resumo extends StatelessWidget {
             ]),
           ]),
         ),
-      ],
+          };
+        },
+      ),
     ]);
   }
 

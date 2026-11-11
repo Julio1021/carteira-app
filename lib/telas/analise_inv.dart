@@ -1,6 +1,5 @@
 // Aba "Análise" do Patrimônio.
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../dados/analise_inv.dart';
 import '../dados/indices.dart';
@@ -10,6 +9,7 @@ import '../util/fmt.dart';
 import '../widgets/comum.dart';
 import '../widgets/graficos.dart';
 import '../widgets/movimento.dart';
+import '../widgets/painel.dart';
 
 String _abr(String ym) => mesesLongos[int.parse(ym.substring(5, 7)) - 1].substring(0, 3).toLowerCase();
 
@@ -48,93 +48,63 @@ class _AnaliseInvestState extends State<AnaliseInvest> {
         final rp = rendaPassiva(repo, c);
         final (inst, cls) = diversificacao(c);
         final dest = destaquesInvest(c, cmp);
+        final porYm = {for (final m in c.meses) m.ym: m};
+        final rendeu = meses.fold<double>(0, (a, ym) => a + (porYm[ym]?.ganho ?? 0));
+        final p = cmp?.pctCdi;
+        final ult = idx.ultimo(idx.cdi);
+        final assuntos = <(String, Widget)>[
+          ('Comparação', _CardIndices(cmp: cmp, idx: idx)),
+          if (ativos.isNotEmpty) ('Por ativo', _CardAtivos(lista: ativos)),
+          if (rp != null) ('Renda passiva', _CardRenda(rp: rp)),
+          if (inst.isNotEmpty) ('Diversificação', _CardDiversificacao(fatias: porClasse ? cls : inst, porClasse: porClasse, onTrocar: (v) => setState(() => porClasse = v))),
+          if (dest.isNotEmpty) ('Destaques', _CardDestaques(lista: dest)),
+        ];
         return ListView(
           padding: const EdgeInsets.fromLTRB(12, 4, 12, 120),
           children: emSequencia([
-            _Periodo(valor: periodo, onMudar: (p) => setState(() => periodo = p), idx: idx),
-            const SizedBox(height: 12),
-            _CardIndices(cmp: cmp, idx: idx),
-            const SizedBox(height: 12),
-            if (ativos.isNotEmpty) ...[_CardAtivos(lista: ativos), const SizedBox(height: 12)],
-            if (rp != null) ...[_CardRenda(rp: rp), const SizedBox(height: 12)],
-            if (inst.isNotEmpty) ...[
-              _CardDiversificacao(fatias: porClasse ? cls : inst, porClasse: porClasse, onTrocar: (v) => setState(() => porClasse = v)),
-              const SizedBox(height: 12),
-            ],
-            if (dest.isNotEmpty) _CardDestaques(lista: dest),
+            TituloSecao(
+              'Seus números',
+              direita: BotaoPeriodo(
+                valor: periodo,
+                opcoes: const [('12m', '12 meses'), ('ano', 'Este ano'), ('tudo', 'Desde o início')],
+                onMudar: (v) => setState(() => periodo = v),
+              ),
+            ),
+            GradeKpi([
+              Kpi(
+                icone: Icons.speed_rounded,
+                rotulo: '% do CDI',
+                valor: p ?? 0,
+                formato: (v) => p == null ? '—' : '${(v * 100).round()}%',
+                sub: cmp == null ? 'sem índice ainda' : 'CDI ${pct(cmp.cdi ?? 0, sinal: true)}',
+                cor: p == null ? G.texto : (p >= 1 ? G.pos : (p >= .85 ? G.alerta : G.neg)),
+              ),
+              Kpi(icone: Icons.trending_up_rounded, rotulo: 'Rendeu', valor: rendeu, formato: (v) => brl(v, sinal: true), sub: cmp == null ? 'no período' : '${pct(cmp.carteira, sinal: true)} no período', cor: rendeu >= 0 ? G.pos : G.neg),
+              Kpi(icone: Icons.payments_outlined, rotulo: 'Renda passiva', valor: rp?.media ?? 0, formato: (v) => rp == null ? '—' : brl(v), sub: rp == null ? 'falta 1 mês fechado' : 'por mês, em média', cor: G.lavanda),
+              Kpi(
+                icone: Icons.shield_outlined,
+                rotulo: 'Acima da inflação',
+                valor: cmp?.real ?? 0,
+                formato: (v) => cmp?.real == null ? '—' : pct(v, sinal: true),
+                sub: cmp?.real == null ? 'sem IPCA ainda' : brl(cmp!.ganhoReal, sinal: true),
+                cor: (cmp?.real ?? 0) >= 0 ? G.pos : G.neg,
+              ),
+            ]),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(4, 8, 4, 14),
+              child: Text(
+                idx.exemplo
+                    ? 'Índices de exemplo (demonstração).'
+                    : (ult == null ? 'Buscando CDI, poupança e IPCA no Banco Central… (precisa de internet)' : 'Índices do Banco Central até ${mesLongo(ult).toLowerCase()}.'),
+                style: TextStyle(color: G.apagado, fontSize: 11.5),
+              ),
+            ),
+            ChipsAssunto(nomes: [for (final a in assuntos) a.$1], construir: (_, i) => assuntos[i].$2),
           ]),
         );
       },
     );
   }
-}
-
-class _Periodo extends StatelessWidget {
-  final String valor;
-  final ValueChanged<String> onMudar;
-  final Indices idx;
-  const _Periodo({required this.valor, required this.onMudar, required this.idx});
-  @override
-  Widget build(BuildContext context) {
-    final ult = idx.ultimo(idx.cdi);
-    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      Container(
-        padding: const EdgeInsets.all(3),
-        decoration: BoxDecoration(color: G.abasFundo, borderRadius: BorderRadius.circular(14)),
-        child: Row(children: [
-          for (final (v, t) in const [('12m', '12 meses'), ('ano', 'Este ano'), ('tudo', 'Desde o início')])
-            Expanded(
-              child: GestureDetector(
-                onTap: () {
-                  HapticFeedback.selectionClick();
-                  onMudar(v);
-                },
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 220),
-                  curve: Curves.easeOutCubic,
-                  padding: const EdgeInsets.symmetric(vertical: 9),
-                  decoration: BoxDecoration(color: valor == v ? G.branco : Colors.transparent, borderRadius: BorderRadius.circular(11)),
-                  child: Text(t, textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: valor == v ? G.tinta : G.texto2)),
-                ),
-              ),
-            ),
-        ]),
-      ),
-      Padding(
-        padding: const EdgeInsets.fromLTRB(4, 6, 4, 0),
-        child: Text(
-          idx.exemplo
-              ? 'Índices de exemplo (demonstração).'
-              : (ult == null ? 'Buscando CDI, poupança e IPCA no Banco Central… (precisa de internet)' : 'Índices do Banco Central até ${mesLongo(ult).toLowerCase()}.'),
-          style: TextStyle(color: G.apagado, fontSize: 11.5),
-        ),
-      ),
-    ]);
-  }
-}
-
-class _Mini extends StatelessWidget {
-  final String rotulo;
-  final double? v;
-  final Color cor;
-  final bool destaque;
-  const _Mini(this.rotulo, this.v, this.cor, {this.destaque = false});
-  @override
-  Widget build(BuildContext context) => Expanded(
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
-          decoration: BoxDecoration(color: destaque ? cor.withValues(alpha: .12) : G.v(0x08), borderRadius: BorderRadius.circular(12)),
-          child: Column(children: [
-            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Container(width: 8, height: 8, decoration: BoxDecoration(color: cor, shape: BoxShape.circle)),
-              const SizedBox(width: 5),
-              Flexible(child: Text(rotulo, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: G.apagado, fontSize: 11, fontWeight: FontWeight.w600))),
-            ]),
-            const SizedBox(height: 3),
-            FittedBox(child: Text(v == null ? '—' : pct(v!, sinal: true), style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: destaque ? cor : G.texto))),
-          ]),
-        ),
-      );
 }
 
 class _CardIndices extends StatelessWidget {
@@ -153,8 +123,6 @@ class _CardIndices extends StatelessWidget {
         ]),
       );
     }
-    final p = m.pctCdi;
-    final corP = p == null ? G.texto : (p >= 1 ? G.pos : (p >= .85 ? G.alerta : G.neg));
     final rot = [for (final ym in ['', ...m.meses]) ym.isEmpty ? '' : _abr(ym)];
     final series = <List<double>>[m.curvaCart, m.curvaCdi, if (m.curvaPoup.isNotEmpty) m.curvaPoup, if (m.curvaIpca.isNotEmpty) m.curvaIpca];
     final cores = [cCart, cCdi, if (m.curvaPoup.isNotEmpty) cPoup, if (m.curvaIpca.isNotEmpty) cIpca];
@@ -162,34 +130,6 @@ class _CardIndices extends StatelessWidget {
     return Cartao(
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         CabecalhoCartao('Comparado com o CDI', sub: '${m.meses.length} ${m.meses.length == 1 ? 'mês' : 'meses'} · ${mesLongo(m.meses.first).toLowerCase()} a ${mesLongo(m.meses.last).toLowerCase()}'),
-        Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-          ValorAnimado(p ?? 0, formato: (v) => p == null ? '—' : '${(v * 100).round()}%', estilo: TextStyle(fontSize: 34, fontWeight: FontWeight.w800, letterSpacing: -1, color: corP)),
-          const SizedBox(width: 8),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 7),
-            child: Text('do CDI', style: TextStyle(color: G.texto2, fontWeight: FontWeight.w600)),
-          ),
-          const Spacer(),
-          if (m.real != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                Text('acima da inflação', style: TextStyle(color: G.apagado, fontSize: 11)),
-                Text('${pct(m.real!, sinal: true)} · ${brl(m.ganhoReal)}', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: m.real! >= 0 ? G.pos : G.neg)),
-              ]),
-            ),
-        ]),
-        const SizedBox(height: 10),
-        Row(children: [
-          _Mini('Carteira', m.carteira, cCart, destaque: true),
-          const SizedBox(width: 6),
-          _Mini('CDI', m.cdi, cCdi),
-          const SizedBox(width: 6),
-          _Mini('Poupança', m.poup, cPoup),
-          const SizedBox(width: 6),
-          _Mini('Inflação', m.ipca, cIpca),
-        ]),
-        const SizedBox(height: 14),
         Text('R\$ 100 aplicados no começo do período viraram…', style: TextStyle(color: G.texto2, fontSize: 12.5, fontWeight: FontWeight.w600)),
         const SizedBox(height: 6),
         GraficoLinha(
@@ -204,44 +144,30 @@ class _CardIndices extends StatelessWidget {
           altura: 220,
         ),
         const SizedBox(height: 8),
-        Wrap(spacing: 14, runSpacing: 6, children: [for (var i = 0; i < nomes.length; i++) Legenda(cores[i], nomes[i])]),
+        const SizedBox(height: 4),
+        Builder(builder: (_) {
+          final vals = [m.carteira, m.cdi, if (m.curvaPoup.isNotEmpty) m.poup, if (m.curvaIpca.isNotEmpty) m.ipca];
+          Widget item(int i) => Row(children: [
+                Container(width: 9, height: 9, decoration: BoxDecoration(color: cores[i], borderRadius: BorderRadius.circular(3))),
+                const SizedBox(width: 7),
+                Expanded(child: Text(nomes[i], maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: G.texto2, fontSize: 12.5))),
+                Text(vals[i] == null ? '—' : pct(vals[i]!, sinal: true), style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: i == 0 ? cores[0] : G.texto)),
+              ]);
+          return Column(children: [
+            for (var i = 0; i < nomes.length; i += 2)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Row(children: [
+                  Expanded(child: item(i)),
+                  const SizedBox(width: 16),
+                  Expanded(child: i + 1 < nomes.length ? item(i + 1) : const SizedBox()),
+                ]),
+              ),
+          ]);
+        }),
       ]),
     );
   }
-}
-
-class _Faisca extends StatelessWidget {
-  final List<double> v;
-  final Color cor;
-  const _Faisca(this.v, this.cor);
-  @override
-  Widget build(BuildContext context) => SizedBox(width: 54, height: 22, child: CustomPaint(painter: _PintorFaisca(v, cor)));
-}
-
-class _PintorFaisca extends CustomPainter {
-  final List<double> v;
-  final Color cor;
-  _PintorFaisca(this.v, this.cor);
-  @override
-  void paint(Canvas canvas, Size s) {
-    if (v.length < 2) return;
-    final mn = v.reduce((a, b) => a < b ? a : b), mx = v.reduce((a, b) => a > b ? a : b);
-    final d = mx - mn == 0 ? 1 : mx - mn;
-    final path = Path();
-    for (var i = 0; i < v.length; i++) {
-      final x = s.width * i / (v.length - 1), y = s.height - 2 - (s.height - 4) * (v[i] - mn) / d;
-      i == 0 ? path.moveTo(x, y) : path.lineTo(x, y);
-    }
-    canvas.drawPath(path, Paint()
-      ..color = cor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round);
-  }
-
-  @override
-  bool shouldRepaint(covariant _PintorFaisca o) => o.v != v;
 }
 
 class _CardAtivos extends StatelessWidget {
@@ -264,18 +190,24 @@ class _CardAtivos extends StatelessWidget {
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text(lista[i].a.nome, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600)),
-                    Text('${brl(lista[i].saldo)}${lista[i].pctCdi != null ? ' · ${(lista[i].pctCdi! * 100).round()}% do CDI' : ''}', style: TextStyle(color: G.apagado, fontSize: 12)),
+                    Text('${brl(lista[i].saldo)} · ${brl(lista[i].ganho, sinal: true)}', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: G.apagado, fontSize: 12)),
                   ]),
                 ),
-                _Faisca(lista[i].curva, lista[i].a.cor(lista[i].indice)),
-                const SizedBox(width: 10),
-                SizedBox(
-                  width: 82,
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                    Text(pct(lista[i].rent, sinal: true), style: TextStyle(fontWeight: FontWeight.w800, color: lista[i].rent >= 0 ? G.pos : G.neg)),
-                    Text(brl(lista[i].ganho, sinal: true), style: TextStyle(color: G.apagado, fontSize: 11.5)),
-                  ]),
-                ),
+                const SizedBox(width: 8),
+                Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                  Text(pct(lista[i].rent, sinal: true), style: TextStyle(fontWeight: FontWeight.w800, color: lista[i].rent >= 0 ? G.pos : G.neg)),
+                  if (lista[i].pctCdi != null)
+                    Builder(builder: (_) {
+                      final q = lista[i].pctCdi!;
+                      final cor = q >= 1 ? G.pos : (q >= .7 ? G.alerta : G.neg);
+                      return Container(
+                        margin: const EdgeInsets.only(top: 2),
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                        decoration: BoxDecoration(color: cor.withValues(alpha: .14), borderRadius: BorderRadius.circular(99)),
+                        child: Text('${(q * 100).round()}% CDI', style: TextStyle(color: cor, fontSize: 10.5, fontWeight: FontWeight.w700)),
+                      );
+                    }),
+                ]),
               ]),
             ),
         ]),

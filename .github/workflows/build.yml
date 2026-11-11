@@ -77,7 +77,7 @@ jobs:
               --virtual-time-budget=15000 \
               --screenshot="../../prints/$1.png" "http://localhost:8080/?demo=1$2" || true
           }
-          tirar 1-inicio "" 1700
+          tirar 1-inicio "" 1500
           tirar 2-extrato "&aba=1"
           tirar 3-menu-mais "&tela=menu"
           tirar 4-novo-gasto "&tela=lancar"
@@ -88,32 +88,32 @@ jobs:
           tirar 9-cartoes "&tela=cartoes"
           tirar 10-cartao "&tela=cartao" 1300
           tirar 11-emprestimos "&tela=emprestimos"
-          tirar 12-patrimonio "&aba=3" 2400
+          tirar 12-patrimonio "&aba=3" 1900
           tirar 13-lancar "&aba=3&sub=1" 1500
           tirar 14-ativos "&aba=3&sub=2"
           tirar 15-relatorios "&aba=3&sub=3" 2600
           tirar 16-avisos "&tela=avisos"
           tirar 17-busca "&tela=busca" 1400
           tirar 18-importar "&tela=importar"
-          tirar 19-analise "&aba=1&analise=1" 3900
-          tirar c1-inicio "&tema=claro" 1900
+          tirar 19-analise "&aba=1&analise=1" 2100
+          tirar c1-inicio "&tema=claro" 1500
           tirar c2-extrato "&tema=claro&aba=1"
-          tirar c3-analise "&tema=claro&aba=1&analise=1" 3900
+          tirar c3-analise "&tema=claro&aba=1&analise=1" 2100
           tirar c4-planejar "&tema=claro&aba=2" 2200
-          tirar c5-patrimonio "&tema=claro&aba=3" 2400
+          tirar c5-patrimonio "&tema=claro&aba=3" 1900
           tirar c6-ajustes "&tema=claro&tela=ajustes"
           tirar c7-lancar "&tema=claro&tela=lancar"
           tirar i1-investido "&tela=invest"
           tirar g1-grafico-cheio "&aba=1&analise=1&tela=grafico"
-          tirar l1-inicio "&tema=linho" 1900
+          tirar l1-inicio "&tema=linho" 1500
           tirar l2-extrato "&tema=linho&aba=1"
-          tirar l3-analise "&tema=linho&aba=1&analise=1" 3600
+          tirar l3-analise "&tema=linho&aba=1&analise=1" 2100
           tirar l4-planejar "&tema=linho&aba=2" 2200
-          tirar l5-patrimonio "&tema=linho&aba=3" 2400
+          tirar l5-patrimonio "&tema=linho&aba=3" 1900
           tirar l6-ajustes "&tema=linho&tela=ajustes"
           tirar l7-lancar "&tema=linho&tela=lancar"
-          tirar p1-analise-inv "&aba=3&sub=4" 3900
-          tirar p2-analise-inv-claro "&tema=linho&aba=3&sub=4" 3900
+          tirar p1-analise-inv "&aba=3&sub=4" 1900
+          tirar p2-analise-inv-claro "&tema=linho&aba=3&sub=4" 1900
           tirar a1-abertura "&abertura=0.2"
           tirar a2-abertura "&abertura=0.32"
           tirar a2b-abertura "&abertura=0.55"

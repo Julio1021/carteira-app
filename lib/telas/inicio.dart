@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../dados/categorias.dart';
 import '../dados/planejar.dart';
 import '../widgets/formulario.dart';
-import 'busca.dart';
 import 'contas.dart';
 import 'importar.dart';
 import '../dados/resumo.dart';
@@ -11,9 +10,10 @@ import '../tema.dart';
 import '../util/fmt.dart';
 import '../widgets/comum.dart';
 import '../widgets/movimento.dart';
+import '../widgets/painel.dart';
 import 'lancar.dart';
 
-class TelaInicio extends StatelessWidget {
+class TelaInicio extends StatefulWidget {
   final String ym;
   final ValueChanged<String> onMes;
   final VoidCallback irExtrato;
@@ -21,34 +21,115 @@ class TelaInicio extends StatelessWidget {
   final void Function(String filtro) irExtratoFiltro;
   final VoidCallback irPlanejar;
   const TelaInicio({super.key, required this.ym, required this.onMes, required this.irExtrato, required this.irLimites, required this.irExtratoFiltro, required this.irPlanejar});
+  @override
+  State<TelaInicio> createState() => _TelaInicioState();
+}
+
+class _TelaInicioState extends State<TelaInicio> {
+  int aba = 0;
 
   @override
   Widget build(BuildContext context) {
+    final w = widget;
     final repo = RepoScope.of(context);
-    final r = ResumoMes.de(repo, ym);
-    final ult = r.lancamentos.take(5).toList();
+    final r = ResumoMes.de(repo, w.ym);
+    final temContas = repo.doTipo('pagar').isNotEmpty;
+    final contas = temContas ? mesContas(repo, ymDe(hojeIso())) : null;
+    final atrasadas = contas?.abertas.where((i) => i.st == 'atrasada').length ?? 0;
+    final nomes = ['Lançamentos', if (temContas) 'Contas', 'Gastos'];
+    final sel = aba.clamp(0, nomes.length - 1);
+    final nome = nomes[sel];
     var o = 0;
     return ListView(
       padding: const EdgeInsets.fromLTRB(12, 4, 12, 120),
       children: [
         if (repo.vazio) ...[Surge(ordem: o++, child: _BoasVindas()), const SizedBox(height: 16)],
-        Surge(ordem: o++, child: HeroMes(r: r, onMes: onMes, onEntrou: () => irExtratoFiltro('entradas'), onSaiu: () => irExtratoFiltro('saidas'), onInvestiu: () => r.investimentos.isEmpty ? abrirFormLanc(context, investido: true) : irExtratoFiltro('investido'), onLimite: irLimites)),
-        const SizedBox(height: 14),
-        Surge(ordem: o++, child: _Atalhos(irExtrato: irExtrato, irLimites: irLimites)),
-        const SizedBox(height: 14),
-        Surge(ordem: o++, child: _ContasInicio(irPlanejar: irPlanejar)),
-        if (r.porCategoria.isNotEmpty) ...[Surge(ordem: o++, child: _OndeFoi(r: r, irLimites: irLimites)), const SizedBox(height: 12)],
-        Surge(ordem: o++, child: Cartao(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            CabecalhoCartao('Últimos lançamentos', sub: mesLongo(ym), acao: 'Ver extrato', onAcao: irExtrato),
-            if (ult.isEmpty)
-              Padding(padding: EdgeInsets.symmetric(vertical: 10), child: Text('Nada lançado neste mês. Toque no + para começar.', style: TextStyle(color: G.apagado)))
-            else
-              CaixaLista([for (final l in ult) LinhaLanc(l, onTap: () => abrirFormLanc(context, doc: l.doc))]),
-          ]),
-        )),
+        Surge(ordem: o++, child: HeroMes(r: r, onMes: w.onMes, onEntrou: () => w.irExtratoFiltro('entradas'), onSaiu: () => w.irExtratoFiltro('saidas'), onLimite: w.irLimites)),
+        const SizedBox(height: 10),
+        Surge(ordem: o++, child: _Numeros(r: r, onInvestiu: () => r.investimentos.isEmpty ? abrirFormLanc(context, investido: true) : w.irExtratoFiltro('investido'), onLimite: w.irLimites)),
+        const SizedBox(height: 16),
+        Surge(ordem: o++, child: _Atalhos(irExtrato: w.irExtrato, irLimites: w.irLimites)),
+        const SizedBox(height: 18),
+        Surge(
+          ordem: o++,
+          child: Segmentos(
+            nomes: [for (final n in nomes) n == 'Contas' && (contas?.abertas.isNotEmpty ?? false) ? 'Contas ${contas!.abertas.length}' : n],
+            marcas: [for (final n in nomes) n == 'Contas' && atrasadas > 0 ? '!' : null],
+            sel: sel,
+            onSel: (i) => setState(() => aba = i),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Surge(
+          ordem: o++,
+          child: AnimatedSwitcher(
+            duration: Duration(milliseconds: semAnimacao(context) ? 0 : 240),
+            layoutBuilder: (atual, antigos) => Stack(alignment: Alignment.topCenter, children: [...antigos, if (atual != null) atual]),
+            child: KeyedSubtree(
+              key: ValueKey(nome),
+              child: switch (nome) {
+                'Contas' => _ContasInicio(irPlanejar: w.irPlanejar),
+                'Gastos' => _OndeFoi(r: r, irLimites: w.irLimites),
+                _ => _Ultimos(r: r, irExtrato: w.irExtrato),
+              },
+            ),
+          ),
+        ),
       ],
     );
+  }
+}
+
+class _Ultimos extends StatelessWidget {
+  final ResumoMes r;
+  final VoidCallback irExtrato;
+  const _Ultimos({required this.r, required this.irExtrato});
+  @override
+  Widget build(BuildContext context) {
+    final ult = r.lancamentos.take(5).toList();
+    return Cartao(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        CabecalhoCartao('Últimos lançamentos', sub: mesLongo(r.ym), acao: 'Ver extrato', onAcao: irExtrato),
+        if (ult.isEmpty)
+          Padding(padding: EdgeInsets.symmetric(vertical: 10), child: Text('Nada lançado neste mês. Toque no + para começar.', style: TextStyle(color: G.apagado)))
+        else
+          CaixaLista([for (final l in ult) LinhaLanc(l, onTap: () => abrirFormLanc(context, doc: l.doc))]),
+      ]),
+    );
+  }
+}
+
+/// Dois quadradinhos abaixo do cartão principal: investiu e quanto dá por dia.
+class _Numeros extends StatelessWidget {
+  final ResumoMes r;
+  final VoidCallback onInvestiu, onLimite;
+  const _Numeros({required this.r, required this.onInvestiu, required this.onLimite});
+  @override
+  Widget build(BuildContext context) {
+    final hoje = hojeIso();
+    final mesAtual = ymDe(hoje) == r.ym;
+    final pct = r.pctInvestido;
+    final resgatou = r.investiu < 0;
+    final inv = Kpi(
+      icone: Icons.savings_rounded,
+      rotulo: resgatou ? 'Resgatou' : 'Investiu',
+      valor: r.investiu.abs(),
+      formato: brl,
+      sub: r.investimentos.isEmpty ? 'toque para registrar' : (pct != null && !resgatou ? '${(pct * 100).round()}% da renda' : 'no mês'),
+      cor: G.lavanda,
+      onTap: onInvestiu,
+    );
+    Kpi segundo;
+    if (r.limiteTotal > 0 && mesAtual) {
+      final restante = r.limiteTotal - r.gastoComLimite;
+      final dias = diasNoMes(r.ym) - int.parse(hoje.substring(8, 10)) + 1;
+      segundo = restante <= 0
+          ? Kpi(icone: Icons.block_rounded, rotulo: 'Pode gastar/dia', texto: 'R\$ 0', sub: 'limite já usado', cor: G.neg, onTap: onLimite)
+          : Kpi(icone: Icons.today_rounded, rotulo: 'Pode gastar/dia', valor: restante / dias, formato: brl, sub: '$dias dia${dias == 1 ? '' : 's'} até o fim', cor: G.pos, onTap: onLimite);
+    } else {
+      segundo = Kpi(icone: Icons.account_balance_wallet_outlined, rotulo: 'Sobra do mês', valor: r.sobra, formato: brl, sub: 'entrou − saiu', cor: r.sobra < 0 ? G.neg : G.pos);
+    }
+    return GradeKpi([inv, segundo]);
   }
 }
 
@@ -91,14 +172,6 @@ class HeroMes extends StatelessWidget {
   }
 
   Widget _corpo(BuildContext context, double? principal, double? uso, Color corLim) {
-    final hoje = hojeIso();
-    final mesAtual = ymDe(hoje) == r.ym;
-    final restante = r.limiteTotal - r.gastoComLimite;
-    final diasRest = mesAtual ? diasNoMes(r.ym) - int.parse(hoje.substring(8, 10)) + 1 : 0;
-    String? porDia;
-    if (r.limiteTotal > 0 && mesAtual) {
-      porDia = restante <= 0 ? 'Limite do mês já foi usado' : 'Dá para gastar ${brl(restante / diasRest)} por dia até o fim do mês';
-    }
     return Column(children: [
         const SizedBox(height: 14),
         Text(principal != null ? 'Em conta' : 'Sobra do mês', style: TextStyle(color: GH.texto2, fontWeight: FontWeight.w600)),
@@ -117,8 +190,6 @@ class HeroMes extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(child: _Bloco(rotulo: 'Saiu', valor: r.saiu, claro: false, icone: Icons.north_east_rounded, corIcone: GH.negIcone, onTap: onSaiu)),
         ]),
-        const SizedBox(height: 10),
-        _Investiu(r: r, onTap: onInvestiu),
         if (r.limiteTotal > 0) ...[
           const SizedBox(height: 16),
           InkWell(
@@ -142,15 +213,6 @@ class HeroMes extends StatelessWidget {
               ]),
               const SizedBox(height: 8),
               Barra(uso ?? 0, cor: corLim, trilho: const Color(0x1FFFFFFF)),
-              if (porDia != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Row(children: [
-                    Icon(restante <= 0 ? Icons.block_rounded : Icons.today_rounded, size: 15, color: restante <= 0 ? GH.alerta : GH.texto2),
-                    const SizedBox(width: 6),
-                    Expanded(child: Text(porDia, style: TextStyle(color: restante <= 0 ? GH.alerta : GH.texto2, fontSize: 12.5, fontWeight: FontWeight.w600))),
-                  ]),
-                ),
             ]),
           ),
         ],
@@ -234,7 +296,6 @@ class _Atalhos extends StatelessWidget {
       at(Icons.add_rounded, 'Entrada', () => abrirFormLanc(context, entrada: true), cor: G.pos),
       at(Icons.savings_outlined, 'Investir', () => abrirFormLanc(context, investido: true), cor: G.lavanda),
       at(Icons.file_download_outlined, 'Importar', () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TelaImportarExtrato()))),
-      at(Icons.search_rounded, 'Buscar', () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TelaBusca()))),
     ]);
   }
 }
@@ -252,6 +313,7 @@ class _OndeFoi extends StatelessWidget {
     return Cartao(
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         CabecalhoCartao('Para onde foi o dinheiro', sub: '${itens.length} categoria${itens.length == 1 ? '' : 's'} no mês', acao: 'Limites', onAcao: irLimites),
+        if (itens.isEmpty) Padding(padding: EdgeInsets.symmetric(vertical: 10), child: Text('Nenhum gasto neste mês.', style: TextStyle(color: G.apagado))),
         for (final e in top)
           Builder(builder: (_) {
             final cat = catGasto(e.key);
@@ -322,7 +384,7 @@ class _ContasInicio extends StatelessWidget {
     final atr = ab.where((i) => i.st == 'atrasada').toList();
     final prox = ab.where((i) => i.st != 'atrasada').take(3).toList();
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.zero,
       child: Cartao(
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           CabecalhoCartao('Contas a pagar', sub: ab.isEmpty ? 'Tudo pago este mês' : 'Falta pagar ${brl(m.falta)} este mês', acao: 'Ver contas', onAcao: irPlanejar),
@@ -378,58 +440,3 @@ class _ContasInicio extends StatelessWidget {
 }
 
 
-/// Faixa "Investiu" no cartão principal: quanto foi para investimentos no mês.
-class _Investiu extends StatelessWidget {
-  final ResumoMes r;
-  final VoidCallback? onTap;
-  const _Investiu({required this.r, this.onTap});
-  @override
-  Widget build(BuildContext context) {
-    final vazio = r.investimentos.isEmpty;
-    final pct = r.pctInvestido;
-    final resgatou = r.investiu < 0;
-    return Material(
-      color: const Color(0x14FFFFFF),
-      borderRadius: BorderRadius.circular(18),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(10, 9, 12, 9),
-          child: Row(children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(color: GH.chipInvest, borderRadius: BorderRadius.circular(11)),
-              child: Icon(Icons.savings_rounded, size: 18, color: GH.lavanda),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              flex: 3,
-              child: Text.rich(
-                TextSpan(children: [
-                  TextSpan(text: resgatou ? 'Resgatou  ' : 'Investiu  ', style: TextStyle(color: GH.texto2, fontWeight: FontWeight.w600, fontSize: 13)),
-                  TextSpan(text: brl(r.investiu.abs()), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15.5)),
-                ]),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            const SizedBox(width: 6),
-            Expanded(
-              flex: 2,
-              child: Text(
-                vazio ? 'toque para registrar' : (pct != null && !resgatou ? '${(pct * 100).round()}% da renda' : ''),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.right,
-                style: TextStyle(color: GH.texto2, fontSize: 12, fontWeight: FontWeight.w600),
-              ),
-            ),
-            Icon(Icons.chevron_right_rounded, size: 18, color: GH.apagado),
-          ]),
-        ),
-      ),
-    );
-  }
-}

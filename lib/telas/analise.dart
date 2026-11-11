@@ -7,6 +7,7 @@ import '../dados/resumo.dart';
 import '../tema.dart';
 import '../util/fmt.dart';
 import '../widgets/comum.dart';
+import '../widgets/painel.dart';
 import '../widgets/graficos.dart';
 import 'analise_extras.dart';
 
@@ -36,19 +37,40 @@ class _AnaliseExtratoState extends State<AnaliseExtrato> {
     final rit = ritmoDoMes(repo, widget.ym);
     final comp = comparativoCategorias(repo, widget.ym);
     final mesNome = mesesLongos[int.parse(widget.ym.substring(5)) - 1].toLowerCase();
+    final ant = rit.anteriorMesmoDia, atual = rit.gastoAteHoje;
+    final varAnt = ant > 0 ? atual / ant - 1 : null;
+    final txa = r.entrou > 0 ? r.sobra / r.entrou : null;
+    final assuntos = <(String, Widget)>[
+      ('Resumo', Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        _Destaque(r: r, rit: rit, mesNome: mesNome),
+        const SizedBox(height: 12),
+        DestaquesMes(ym: widget.ym),
+        _RitmoCard(rit: rit, mesNome: mesNome),
+      ])),
+      ('Entrou × Saiu', _EntrouSaiu(hist: hist, ym: widget.ym, nMeses: nMeses, onN: (n) => setState(() => nMeses = n), onMes: widget.onMes)),
+      ('Fluxo', FluxoDinheiro(r: r)),
+      ('Calendário', CalendarioCalor(ym: widget.ym)),
+      ('Categorias', Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        _OndeFoi(r: r, verCategoria: widget.verCategoria),
+        const SizedBox(height: 12),
+        _Comparativo(comp: comp, verCategoria: widget.verCategoria, atual: widget.ym == ymDe(hojeIso())),
+      ])),
+    ];
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      _Destaque(r: r, rit: rit, mesNome: mesNome),
-      const SizedBox(height: 14),
-      DestaquesMes(ym: widget.ym),
-      _EntrouSaiu(hist: hist, ym: widget.ym, nMeses: nMeses, onN: (n) => setState(() => nMeses = n), onMes: widget.onMes),
-      const SizedBox(height: 14),
-      FluxoDinheiro(r: r),
-      _RitmoCard(rit: rit, mesNome: mesNome),
-      const SizedBox(height: 14),
-      CalendarioCalor(ym: widget.ym),
-      _OndeFoi(r: r, verCategoria: widget.verCategoria),
-      const SizedBox(height: 14),
-      _Comparativo(comp: comp, verCategoria: widget.verCategoria, atual: widget.ym == ymDe(hojeIso())),
+      GradeKpi([
+        Kpi(icone: Icons.south_west_rounded, rotulo: 'Entrou', valor: r.entrou, formato: brl, sub: mesNome, cor: corEntrada),
+        Kpi(icone: Icons.north_east_rounded, rotulo: 'Saiu', valor: r.saiu, formato: brl, sub: r.investiu > 0 ? 'investiu ${brl(r.investiu)}' : mesNome, cor: corSaida),
+        Kpi(icone: Icons.account_balance_wallet_outlined, rotulo: r.sobra >= 0 ? 'Sobrou' : 'Faltou', valor: r.sobra.abs(), formato: brl, sub: txa != null && r.sobra >= 0 ? '${(txa * 100).round()}% do que entrou' : '', cor: r.sobra >= 0 ? G.pos : G.neg),
+        Kpi(
+          icone: Icons.speed_rounded,
+          rotulo: rit.diaHoje > 0 ? 'Gasto até hoje' : 'Ritmo',
+          texto: varAnt == null ? '—' : '${varAnt >= 0 ? '+' : '−'}${(varAnt.abs() * 100).round()}%',
+          sub: 'vs. mês anterior',
+          cor: varAnt == null ? G.texto : (varAnt > .05 ? G.neg : G.pos),
+        ),
+      ]),
+      const SizedBox(height: 16),
+      ChipsAssunto(nomes: [for (final a in assuntos) a.$1], construir: (_, i) => assuntos[i].$2),
     ]);
   }
 }

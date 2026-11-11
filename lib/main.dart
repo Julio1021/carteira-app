@@ -279,6 +279,20 @@ class _Cabecalho extends StatelessWidget {
             Text(titulo, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, letterSpacing: -.2)),
           ]),
         ),
+        IconButton(
+          tooltip: 'Buscar',
+          onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TelaBusca())),
+          style: IconButton.styleFrom(
+            backgroundColor: G.v(0x10),
+            side: BorderSide(color: G.borda),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            fixedSize: const Size(38, 38),
+            minimumSize: const Size(38, 38),
+            padding: EdgeInsets.zero,
+          ),
+          icon: const Icon(Icons.search_rounded, size: 21),
+        ),
+        const SizedBox(width: 6),
         BotaoAvisos(verCategoria: verCategoria),
         const SizedBox(width: 6),
         IconButton(
