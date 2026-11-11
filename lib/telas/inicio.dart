@@ -10,6 +10,7 @@ import '../tema.dart';
 import '../util/fmt.dart';
 import '../widgets/comum.dart';
 import '../widgets/movimento.dart';
+import '../widgets/largo.dart';
 import '../widgets/painel.dart';
 import 'lancar.dart';
 
@@ -40,53 +41,88 @@ class _TelaInicioState extends State<TelaInicio> {
     final sel = aba.clamp(0, nomes.length - 1);
     final nome = nomes[sel];
     var o = 0;
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(12, 4, 12, 120),
-      children: [
-        if (repo.vazio) ...[Surge(ordem: o++, child: _BoasVindas()), const SizedBox(height: 16)],
-        Surge(ordem: o++, child: HeroMes(r: r, onMes: w.onMes, onEntrou: () => w.irExtratoFiltro('entradas'), onSaiu: () => w.irExtratoFiltro('saidas'), onLimite: w.irLimites)),
-        const SizedBox(height: 10),
-        Surge(ordem: o++, child: _Numeros(r: r, onInvestiu: () => r.investimentos.isEmpty ? abrirFormLanc(context, investido: true) : w.irExtratoFiltro('investido'), onLimite: w.irLimites)),
-        const SizedBox(height: 16),
-        Surge(ordem: o++, child: _Atalhos(irExtrato: w.irExtrato, irLimites: w.irLimites)),
-        const SizedBox(height: 18),
-        Surge(
-          ordem: o++,
-          child: Segmentos(
-            nomes: [for (final n in nomes) n == 'Contas' && (contas?.abertas.isNotEmpty ?? false) ? 'Contas ${contas!.abertas.length}' : n],
-            marcas: [for (final n in nomes) n == 'Contas' && atrasadas > 0 ? '!' : null],
-            sel: sel,
-            onSel: (i) => setState(() => aba = i),
-          ),
-        ),
-        const SizedBox(height: 10),
-        Surge(
-          ordem: o++,
-          child: AnimatedSwitcher(
-            duration: Duration(milliseconds: semAnimacao(context) ? 0 : 240),
-            layoutBuilder: (atual, antigos) => Stack(alignment: Alignment.topCenter, children: [...antigos, if (atual != null) atual]),
-            child: KeyedSubtree(
-              key: ValueKey(nome),
-              child: switch (nome) {
-                'Contas' => _ContasInicio(irPlanejar: w.irPlanejar),
-                'Gastos' => _OndeFoi(r: r, irLimites: w.irLimites),
-                _ => _Ultimos(r: r, irExtrato: w.irExtrato),
-              },
-            ),
-          ),
-        ),
-      ],
+    final boasVindas = repo.vazio ? Surge(ordem: o++, child: _BoasVindas()) : null;
+    final hero = Surge(ordem: o++, child: HeroMes(r: r, onMes: w.onMes, onEntrou: () => w.irExtratoFiltro('entradas'), onSaiu: () => w.irExtratoFiltro('saidas'), onLimite: w.irLimites));
+    final numeros = Surge(ordem: o++, child: _Numeros(r: r, onInvestiu: () => r.investimentos.isEmpty ? abrirFormLanc(context, investido: true) : w.irExtratoFiltro('investido'), onLimite: w.irLimites));
+    final atalhos = Surge(ordem: o++, child: _Atalhos(irExtrato: w.irExtrato, irLimites: w.irLimites));
+    final abas = Surge(
+      ordem: o++,
+      child: Segmentos(
+        nomes: [for (final n in nomes) n == 'Contas' && (contas?.abertas.isNotEmpty ?? false) ? 'Contas ${contas!.abertas.length}' : n],
+        marcas: [for (final n in nomes) n == 'Contas' && atrasadas > 0 ? '!' : null],
+        sel: sel,
+        onSel: (i) => setState(() => aba = i),
+      ),
     );
+    final conteudo = Surge(
+      ordem: o++,
+      child: AnimatedSwitcher(
+        duration: Duration(milliseconds: semAnimacao(context) ? 0 : 240),
+        layoutBuilder: (atual, antigos) => Stack(alignment: Alignment.topCenter, children: [...antigos, if (atual != null) atual]),
+        child: KeyedSubtree(
+          key: ValueKey(nome),
+          child: switch (nome) {
+            'Contas' => _ContasInicio(irPlanejar: w.irPlanejar),
+            'Gastos' => _OndeFoi(r: r, irLimites: w.irLimites),
+            _ => _Ultimos(r: r, irExtrato: w.irExtrato, quantos: telaLarga(context) ? 10 : 5),
+          },
+        ),
+      ),
+    );
+    return LayoutBuilder(builder: (context, cons) {
+      if (cons.maxWidth >= 860) {
+        // computador: resumo à esquerda, lançamentos/contas/gastos à direita
+        return ListView(
+          padding: const EdgeInsets.fromLTRB(28, 6, 28, 40),
+          children: [
+            Centralizar(
+              max: 1180,
+              child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                SizedBox(
+                  width: 420,
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                    if (boasVindas != null) ...[boasVindas, const SizedBox(height: 16)],
+                    hero,
+                    const SizedBox(height: 10),
+                    numeros,
+                    const SizedBox(height: 16),
+                    atalhos,
+                  ]),
+                ),
+                const SizedBox(width: 24),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [abas, const SizedBox(height: 12), conteudo])),
+              ]),
+            ),
+          ],
+        );
+      }
+      return ListView(
+        padding: const EdgeInsets.fromLTRB(12, 4, 12, 120),
+        children: [
+          if (boasVindas != null) ...[boasVindas, const SizedBox(height: 16)],
+          hero,
+          const SizedBox(height: 10),
+          numeros,
+          const SizedBox(height: 16),
+          atalhos,
+          const SizedBox(height: 18),
+          abas,
+          const SizedBox(height: 10),
+          conteudo,
+        ],
+      );
+    });
   }
 }
 
 class _Ultimos extends StatelessWidget {
   final ResumoMes r;
   final VoidCallback irExtrato;
-  const _Ultimos({required this.r, required this.irExtrato});
+  final int quantos;
+  const _Ultimos({required this.r, required this.irExtrato, this.quantos = 5});
   @override
   Widget build(BuildContext context) {
-    final ult = r.lancamentos.take(5).toList();
+    final ult = r.lancamentos.take(quantos).toList();
     return Cartao(
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         CabecalhoCartao('Últimos lançamentos', sub: mesLongo(r.ym), acao: 'Ver extrato', onAcao: irExtrato),

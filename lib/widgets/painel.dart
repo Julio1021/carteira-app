@@ -50,24 +50,28 @@ class KpiTile extends StatelessWidget {
   }
 }
 
-/// Quadradinhos de 2 em 2.
+/// Quadradinhos de 2 em 2 (de 4 em 4 quando há espaço, no computador).
 class GradeKpi extends StatelessWidget {
   final List<Kpi> itens;
   const GradeKpi(this.itens, {super.key});
   @override
   Widget build(BuildContext context) {
-    final linhas = <Widget>[];
-    for (var i = 0; i < itens.length; i += 2) {
-      if (i > 0) linhas.add(const SizedBox(height: 8));
-      linhas.add(IntrinsicHeight(
-        child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          Expanded(child: KpiTile(itens[i])),
-          const SizedBox(width: 8),
-          Expanded(child: i + 1 < itens.length ? KpiTile(itens[i + 1]) : const SizedBox()),
-        ]),
-      ));
-    }
-    return Column(children: linhas);
+    return LayoutBuilder(builder: (context, cons) {
+      final porLinha = cons.maxWidth >= 640 ? 4 : 2;
+      final linhas = <Widget>[];
+      for (var i = 0; i < itens.length; i += porLinha) {
+        if (i > 0) linhas.add(const SizedBox(height: 8));
+        linhas.add(IntrinsicHeight(
+          child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            for (var j = 0; j < porLinha; j++) ...[
+              if (j > 0) const SizedBox(width: 8),
+              Expanded(child: i + j < itens.length ? KpiTile(itens[i + j]) : const SizedBox()),
+            ],
+          ]),
+        ));
+      }
+      return Column(children: linhas);
+    });
   }
 }
 

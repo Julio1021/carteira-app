@@ -28,6 +28,7 @@ import 'telas/busca.dart';
 import 'telas/importar.dart';
 import 'util/fmt.dart';
 import 'widgets/comum.dart';
+import 'widgets/largo.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -118,7 +119,14 @@ class _AppCarteiraState extends State<AppCarteira> with WidgetsBindingObserver {
       child: MaterialApp(
         title: 'Diário da Carteira',
         debugShowCheckedModeBanner: false,
-        theme: temaGrafite(),
+        theme: temaGrafite().copyWith(pageTransitionsTheme: const PageTransitionsTheme(builders: {
+          TargetPlatform.android: _TransicaoEstreita(),
+          TargetPlatform.linux: _TransicaoEstreita(),
+          TargetPlatform.windows: _TransicaoEstreita(),
+          TargetPlatform.macOS: _TransicaoEstreita(),
+          TargetPlatform.iOS: _TransicaoEstreita(),
+          TargetPlatform.fuchsia: _TransicaoEstreita(),
+        })),
         locale: const Locale('pt', 'BR'),
         supportedLocales: const [Locale('pt', 'BR')],
         localizationsDelegates: const [
@@ -223,6 +231,33 @@ class _CascaState extends State<Casca> {
     });
   }
 
+  /// Atalhos do teclado (computador). Não atrapalham quem está digitando num campo.
+  KeyEventResult _tecla(FocusNode _, KeyEvent e) {
+    if (e is! KeyDownEvent) return KeyEventResult.ignored;
+    final k = HardwareKeyboard.instance;
+    if (k.isControlPressed && e.logicalKey == LogicalKeyboardKey.keyK) {
+      _buscar();
+      return KeyEventResult.handled;
+    }
+    if (k.isControlPressed || k.isAltPressed || k.isMetaPressed) return KeyEventResult.ignored;
+    final c = FocusManager.instance.primaryFocus?.context;
+    if (c != null && c.findAncestorWidgetOfExactType<EditableText>() != null) return KeyEventResult.ignored;
+    final acao = switch (e.logicalKey) {
+      LogicalKeyboardKey.keyN => () => abrirMenuLancar(context),
+      LogicalKeyboardKey.slash => _buscar,
+      LogicalKeyboardKey.digit1 => () => _irAba(0),
+      LogicalKeyboardKey.digit2 => () => _irAba(1),
+      LogicalKeyboardKey.digit3 => () => _irAba(2),
+      LogicalKeyboardKey.digit4 => () => _irAba(3),
+      _ => null,
+    };
+    if (acao == null) return KeyEventResult.ignored;
+    acao();
+    return KeyEventResult.handled;
+  }
+
+  void _buscar() => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TelaBusca()));
+
   void _abrirLimites() => Navigator.of(context).push(MaterialPageRoute(builder: (_) => TelaLimites(ym: ym)));
 
   @override
@@ -240,21 +275,34 @@ class _CascaState extends State<Casca> {
       TelaPlanejar(irLimites: _abrirLimites),
       TelaPatrimonio(key: ValueKey('pat$subPat'), subInicial: subPat),
     ];
+    final largo = telaLarga(context);
+    final telasVisiveis = largo
+        ? [telas[0], Centralizar(child: telas[1]), Centralizar(child: telas[2]), telas[3]]
+        : telas;
+    final corpo = Column(children: [
+      _Cabecalho(titulo: _titulos[aba], largo: largo, verCategoria: (c) => _irAba(1, filtro: 'saidas', cat: c)),
+      Expanded(child: _Abas(aba: aba, children: telasVisiveis)),
+    ]);
     return PopScope(
       canPop: aba == 0,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) _irAba(0);
       },
-      child: Scaffold(
-        extendBody: true,
-        body: SafeArea(
-          bottom: false,
-          child: Column(children: [
-            _Cabecalho(titulo: _titulos[aba], verCategoria: (c) => _irAba(1, filtro: 'saidas', cat: c)),
-            Expanded(child: _Abas(aba: aba, children: telas)),
-          ]),
-        ),
-        bottomNavigationBar: _MenuBaixo(aba: aba, onAba: _irAba, onMais: () => abrirMenuLancar(context)),
+      child: Focus(
+        autofocus: true,
+        onKeyEvent: _tecla,
+          child: largo
+              ? Scaffold(
+                  body: Row(children: [
+                    MenuLateral(aba: aba, onAba: _irAba, onNovo: () => abrirMenuLancar(context), onAjustes: () => Navigator.of(context).pushNamed('/ajustes')),
+                    Expanded(child: SafeArea(left: false, child: corpo)),
+                  ]),
+                )
+              : Scaffold(
+                  extendBody: true,
+                  body: SafeArea(bottom: false, child: corpo),
+                  bottomNavigationBar: _MenuBaixo(aba: aba, onAba: _irAba, onMais: () => abrirMenuLancar(context)),
+                ),
       ),
     ).envolverAbertura(
       abrindo,
@@ -266,10 +314,57 @@ class _CascaState extends State<Casca> {
 
 class _Cabecalho extends StatelessWidget {
   final String titulo;
+  final bool largo;
   final void Function(String cat) verCategoria;
-  const _Cabecalho({required this.titulo, required this.verCategoria});
+  const _Cabecalho({required this.titulo, required this.verCategoria, this.largo = false});
   @override
   Widget build(BuildContext context) {
+    final estilo = IconButton.styleFrom(
+      backgroundColor: G.v(0x10),
+      side: BorderSide(color: G.borda),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      fixedSize: const Size(38, 38),
+      minimumSize: const Size(38, 38),
+      padding: EdgeInsets.zero,
+    );
+    void buscar() => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TelaBusca()));
+    if (largo) {
+      // computador: título à esquerda, campo de busca e avisos à direita
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(28, 18, 24, 10),
+        child: Row(children: [
+          Expanded(child: Text(titulo, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, letterSpacing: -.5))),
+          SizedBox(
+            width: 300,
+            child: Material(
+              color: G.v(0x0C),
+              borderRadius: BorderRadius.circular(12),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: buscar,
+                child: Container(
+                  height: 40,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: G.borda)),
+                  child: Row(children: [
+                    Icon(Icons.search_rounded, size: 19, color: G.apagado),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text('Buscar lançamentos', style: TextStyle(color: G.apagado, fontSize: 13.5))),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                      decoration: BoxDecoration(borderRadius: BorderRadius.circular(5), border: Border.all(color: G.borda)),
+                      child: Text('/', style: TextStyle(color: G.apagado, fontSize: 11.5, fontWeight: FontWeight.w700)),
+                    ),
+                  ]),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          BotaoAvisos(verCategoria: verCategoria),
+        ]),
+      );
+    }
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
       child: Row(children: [
@@ -279,37 +374,30 @@ class _Cabecalho extends StatelessWidget {
             Text(titulo, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, letterSpacing: -.2)),
           ]),
         ),
-        IconButton(
-          tooltip: 'Buscar',
-          onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TelaBusca())),
-          style: IconButton.styleFrom(
-            backgroundColor: G.v(0x10),
-            side: BorderSide(color: G.borda),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            fixedSize: const Size(38, 38),
-            minimumSize: const Size(38, 38),
-            padding: EdgeInsets.zero,
-          ),
-          icon: const Icon(Icons.search_rounded, size: 21),
-        ),
+        IconButton(tooltip: 'Buscar', onPressed: buscar, style: estilo, icon: const Icon(Icons.search_rounded, size: 21)),
         const SizedBox(width: 6),
         BotaoAvisos(verCategoria: verCategoria),
         const SizedBox(width: 6),
         IconButton(
           tooltip: 'Ajustes',
           onPressed: () => Navigator.of(context).pushNamed('/ajustes'),
-          style: IconButton.styleFrom(
-            backgroundColor: G.v(0x10),
-            side: BorderSide(color: G.borda),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            fixedSize: const Size(38, 38),
-            minimumSize: const Size(38, 38),
-            padding: EdgeInsets.zero,
-          ),
+          style: estilo,
           icon: const Icon(Icons.settings_outlined, size: 21),
         ),
       ]),
     );
+  }
+}
+
+/// Transição padrão das telas, que no computador também deixa a tela aberta
+/// numa coluna central (a tela principal fica de fora).
+class _TransicaoEstreita extends PageTransitionsBuilder {
+  const _TransicaoEstreita();
+  static const _base = FadeForwardsPageTransitionsBuilder();
+  @override
+  Widget buildTransitions<T>(PageRoute<T> route, BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation, Widget child) {
+    final c = route.isFirst ? child : Estreito(child: child);
+    return _base.buildTransitions(route, context, animation, secondaryAnimation, c);
   }
 }
 

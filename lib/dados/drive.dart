@@ -90,7 +90,8 @@ class SyncDrive extends ChangeNotifier {
       email = sp.getString(_kEmail);
     } catch (_) {}
     try {
-      await GoogleSignIn.instance.initialize(serverClientId: driveClienteWeb);
+      // no navegador o cliente é o próprio; no Android ele vai como "servidor"
+      await GoogleSignIn.instance.initialize(clientId: kIsWeb ? driveClienteWeb : null, serverClientId: kIsWeb ? null : driveClienteWeb);
     } catch (e) {
       debugPrint('google_sign_in: $e');
     }
@@ -126,6 +127,7 @@ class SyncDrive extends ChangeNotifier {
 
   /// Pega um acesso ao Drive. Sem [interativo], só tenta em silêncio.
   Future<String?> _acesso({bool interativo = false}) async {
+    if (kIsWeb) return _acessoWeb(interativo: interativo);
     final gs = GoogleSignIn.instance;
     GoogleSignInClientAuthorization? a;
     try {
@@ -143,6 +145,54 @@ class SyncDrive extends ChangeNotifier {
     return _token;
   }
 
+  // No navegador o Google entrega um acesso que vale 1 hora e não renova sozinho.
+  // Ele fica guardado neste navegador até vencer; depois, um toque em
+  // "Sincronizar" pede outro (a janelinha do Google abre e fecha sozinha).
+  static const _kTok = 'drive.tok', _kTokAte = 'drive.tokAte';
+
+  Future<String?> _acessoWeb({bool interativo = false}) async {
+    final agora = DateTime.now().millisecondsSinceEpoch;
+    try {
+      final sp = await SharedPreferences.getInstance();
+      final t = sp.getString(_kTok), ate = sp.getInt(_kTokAte) ?? 0;
+      if (t != null && ate - agora > 60000) return _token = t;
+    } catch (_) {}
+    final gs = GoogleSignIn.instance;
+    GoogleSignInClientAuthorization? a;
+    try {
+      a = await gs.authorizationClient.authorizationForScopes(const [driveEscopo]);
+    } catch (_) {}
+    if (a == null && interativo) a = await gs.authorizationClient.authorizeScopes(const [driveEscopo]);
+    _token = a?.accessToken;
+    if (_token != null) {
+      try {
+        final sp = await SharedPreferences.getInstance();
+        await sp.setString(_kTok, _token!);
+        await sp.setInt(_kTokAte, agora + 55 * 60000);
+      } catch (_) {}
+      if (email == null) unawaited(_buscarEmail());
+    }
+    return _token;
+  }
+
+  Future<void> _buscarEmail() async {
+    try {
+      final r = await _api('GET', 'https://www.googleapis.com/drive/v3/about?fields=user(emailAddress)');
+      email = (jsonDecode(r.body)['user']?['emailAddress']) as String?;
+      await _guardar();
+      notifyListeners();
+    } catch (_) {}
+  }
+
+  Future<void> _esquecerTokenWeb() async {
+    if (!kIsWeb) return;
+    try {
+      final sp = await SharedPreferences.getInstance();
+      await sp.remove(_kTok);
+      await sp.remove(_kTokAte);
+    } catch (_) {}
+  }
+
   Future<http.Response> _api(String metodo, String url, {Map<String, String>? cab, Object? corpo}) async {
     final t = _token;
     if (t == null) throw const _SemAcesso();
@@ -158,6 +208,7 @@ class SyncDrive extends ChangeNotifier {
         await GoogleSignIn.instance.authorizationClient.clearAuthorizationToken(accessToken: t);
       } catch (_) {}
       _token = null;
+      await _esquecerTokenWeb();
       throw const _SemAcesso();
     }
     if (r.statusCode >= 400) throw _ErroHttp(r.statusCode);
@@ -212,6 +263,7 @@ class SyncDrive extends ChangeNotifier {
       await GoogleSignIn.instance.signOut();
     } catch (_) {}
     _token = null;
+    await _esquecerTokenWeb();
     await _guardar();
     notifyListeners();
   }
@@ -281,7 +333,7 @@ class SyncDrive extends ChangeNotifier {
       await _guardar();
     } on _SemAcesso {
       estado = EstadoDrive.entrar;
-      msg = 'Toque em "Sincronizar agora" para entrar de novo com o Google.';
+      msg = kIsWeb ? 'Toque em "Sincronizar" para continuar (o acesso do Google no navegador vale 1 hora).' : 'Toque em "Sincronizar agora" para entrar de novo com o Google.';
     } on _ErroHttp catch (e) {
       estado = EstadoDrive.erro;
       msg = e.status == 403 ? 'O Google recusou o acesso. Confira se o seu e-mail está nos usuários de teste do projeto.' : 'O Drive respondeu com erro ${e.status}. Tento de novo depois.';

@@ -188,7 +188,7 @@ class _Aparencia extends StatelessWidget {
         }
 
         final texto = switch (modo) {
-          'auto' => 'Segue o tema do celular: Pérola de dia, Grafite quando o celular estiver no modo escuro.',
+          'auto' => kIsWeb ? 'Segue o tema do computador: Pérola de dia, Grafite quando ele estiver no modo escuro.' : 'Segue o tema do celular: Pérola de dia, Grafite quando o celular estiver no modo escuro.',
           'claro' => 'Pérola: fundo claro com o cartão principal grafite.',
           'linho' => 'Linho & Safira: fundo cor de linho e cartão principal azul safira, igual ao site.',
           _ => 'Grafite: tudo escuro, com detalhes em lavanda.',
@@ -292,7 +292,7 @@ class _CartaoDrive extends StatelessWidget {
             ]),
             const SizedBox(height: 10),
             Text(
-              'Guarda tudo numa pasta oculta do seu próprio Drive e mantém este celular e o site do GitHub iguais. Ninguém além de você tem acesso.',
+              'Guarda tudo numa pasta oculta do seu próprio Drive e mantém celular, computador e site iguais. Ninguém além de você tem acesso.',
               style: TextStyle(color: G.texto2, fontSize: 12.5),
             ),
             const SizedBox(height: 12),
@@ -301,13 +301,13 @@ class _CartaoDrive extends StatelessWidget {
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(color: G.lavandaFundo, borderRadius: BorderRadius.circular(14)),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                  Text('O Drive já tem ${esc.noDrive} registros e este celular tem ${esc.noCelular}. O que fazer?', style: const TextStyle(fontWeight: FontWeight.w600)),
+                  Text('O Drive já tem ${esc.noDrive} registros e ${kIsWeb ? 'este navegador' : 'este celular'} tem ${esc.noCelular}. O que fazer?', style: const TextStyle(fontWeight: FontWeight.w600)),
                   const SizedBox(height: 10),
                   FilledButton(onPressed: () => rodar(() => sd.sincronizar(primeira: true, modo: 'juntar')), child: const Text('Juntar os dois (recomendado)')),
                   const SizedBox(height: 8),
                   OutlinedButton(onPressed: () => rodar(() => sd.sincronizar(primeira: true, modo: 'drive')), child: const Text('Usar só o que está no Drive')),
                   const SizedBox(height: 8),
-                  OutlinedButton(onPressed: () => rodar(() => sd.sincronizar(primeira: true, modo: 'aparelho')), child: const Text('Usar só o deste celular')),
+                  OutlinedButton(onPressed: () => rodar(() => sd.sincronizar(primeira: true, modo: 'aparelho')), child: Text(kIsWeb ? 'Usar só o deste navegador' : 'Usar só o deste celular')),
                 ]),
               ),
             ] else if (!sd.ligado)
@@ -324,7 +324,7 @@ class _CartaoDrive extends StatelessWidget {
                 const SizedBox(width: 8),
                 OutlinedButton(
                   onPressed: () async {
-                    if (await confirmar(context, 'Desligar a sincronização?', 'Os dados continuam neste celular e no Drive; só param de se atualizar.', sim: 'Desligar', perigo: false)) {
+                    if (await confirmar(context, 'Desligar a sincronização?', 'Os dados continuam aqui e no Drive; só param de se atualizar.', sim: 'Desligar', perigo: false)) {
                       await sd.desconectar();
                     }
                   },

@@ -62,21 +62,31 @@ jobs:
         if: ${{ env.TEM_CHAVE == 'sim' }}
         run: flutter build appbundle --release --build-number=${{ steps.ver.outputs.n }}
 
-      - name: Web (para os prints)
-        run: flutter build web --release
+      - name: Web (site no GitHub Pages e prints)
+        run: flutter build web --release --base-href /carteira-app/
 
       - name: Prints das telas
         run: |
+          mkdir -p /tmp/site && ln -sfn "$PWD/build/web" /tmp/site/carteira-app
+          (cd /tmp/site && python3 -m http.server 8080 >/dev/null 2>&1 &)
           cd build/web
-          python3 -m http.server 8080 >/dev/null 2>&1 &
           sleep 2
           mkdir -p ../../prints
           tirar() {
             google-chrome --headless=new --no-sandbox --disable-gpu --hide-scrollbars \
-              --window-size=390,${3:-844} --force-device-scale-factor=2 \
+              --window-size=${4:-390},${3:-844} --force-device-scale-factor=${5:-2} \
               --virtual-time-budget=15000 \
-              --screenshot="../../prints/$1.png" "http://localhost:8080/?demo=1$2" || true
+              --screenshot="../../prints/$1.png" "http://localhost:8080/carteira-app/?demo=1$2" || true
           }
+          # computador (tela larga)
+          tirar w1-inicio "&tema=claro" 900 1440 1
+          tirar w2-extrato "&tema=claro&aba=1" 900 1440 1
+          tirar w3-analise "&tema=claro&aba=1&analise=1" 1300 1440 1
+          tirar w4-patrimonio "&tema=claro&aba=3" 1000 1440 1
+          tirar w5-analise-inv "&tema=claro&aba=3&sub=4" 1100 1440 1
+          tirar w6-planejar "&tema=claro&aba=2" 1000 1440 1
+          tirar w7-lancar "&tema=claro&tela=lancar" 900 1440 1
+          tirar w8-inicio-linho "&tema=linho" 900 1440 1
           tirar 1-inicio "" 1500
           tirar 2-extrato "&aba=1"
           tirar 3-menu-mais "&tela=menu"
@@ -162,3 +172,13 @@ jobs:
           git -c user.name="github-actions" -c user.email="actions@github.com" add -A
           git -c user.name="github-actions" -c user.email="actions@github.com" commit -qm "Prints do build ${{ steps.ver.outputs.n }}"
           git push -qf "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" saida
+
+      - name: Publicar a versão web (GitHub Pages, branch gh-pages)
+        run: |
+          rm -rf /tmp/pages && cp -rL build/web /tmp/pages
+          touch /tmp/pages/.nojekyll
+          cd /tmp/pages
+          git init -q -b gh-pages
+          git -c user.name="github-actions" -c user.email="actions@github.com" add -A
+          git -c user.name="github-actions" -c user.email="actions@github.com" commit -qm "Site do build ${{ steps.ver.outputs.n }}"
+          git push -qf "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" gh-pages

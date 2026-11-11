@@ -12,6 +12,7 @@ import '../tema.dart';
 import '../util/fmt.dart';
 import '../widgets/comum.dart';
 import '../widgets/movimento.dart';
+import '../widgets/largo.dart';
 import '../widgets/painel.dart';
 import '../widgets/formulario.dart';
 import '../widgets/graficos.dart';
@@ -42,13 +43,21 @@ class _TelaPatrimonioState extends State<TelaPatrimonio> {
       _ => _Relatorios(c: c),
     };
     final naAba = abas.contains(sub);
+    final largo = telaLarga(context);
     return Column(children: [
       Padding(
-        padding: const EdgeInsets.fromLTRB(12, 2, 12, 8),
+        padding: largo ? const EdgeInsets.fromLTRB(28, 2, 28, 12) : const EdgeInsets.fromLTRB(12, 2, 12, 8),
         child: AnimatedSwitcher(
           duration: const Duration(milliseconds: 220),
           child: naAba
-              ? Segmentos(key: const ValueKey('abas'), nomes: nomesAbas, sel: abas.indexOf(sub), onSel: (i) => setState(() => sub = abas[i]))
+              ? Align(
+                  key: const ValueKey('abas'),
+                  alignment: Alignment.centerLeft,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: largo ? 460 : double.infinity),
+                    child: Segmentos(nomes: nomesAbas, sel: abas.indexOf(sub), onSel: (i) => setState(() => sub = abas[i])),
+                  ),
+                )
               : Row(key: const ValueKey('voltar'), children: [
                   TextButton.icon(
                     onPressed: () {
@@ -65,7 +74,7 @@ class _TelaPatrimonioState extends State<TelaPatrimonio> {
                 ]),
         ),
       ),
-      Expanded(child: corpo),
+      Expanded(child: largo && sub != 0 ? Centralizar(max: 900, child: corpo) : corpo),
     ]);
   }
 }
@@ -105,7 +114,7 @@ class _Resumo extends StatelessWidget {
     final hojeYm = ymDe(hojeIso());
     final ultMeses = c.meses.where((m) => m.ym.compareTo(ymAdd(hojeYm, -11)) >= 0).toList();
     final amostra = _amostrar(c.dias, 90);
-    return ListView(padding: const EdgeInsets.fromLTRB(12, 0, 12, 120), children: [
+    final esquerda = <Widget>[
       Escuro(child: Container(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
         decoration: BoxDecoration(
@@ -153,7 +162,8 @@ class _Resumo extends StatelessWidget {
       ]),
       const SizedBox(height: 16),
       _Pendencias(c: c),
-      ChipsAssunto(
+    ];
+    final chips = ChipsAssunto(
         nomes: [
           'Ativos',
           'Origem',
@@ -232,8 +242,23 @@ class _Resumo extends StatelessWidget {
         ),
           };
         },
-      ),
-    ]);
+      );
+    return LayoutBuilder(builder: (context, cons) {
+      if (cons.maxWidth >= 860) {
+        // computador: resumo à esquerda, um assunto por vez à direita
+        return ListView(padding: const EdgeInsets.fromLTRB(28, 4, 28, 40), children: [
+          Centralizar(
+            max: 1180,
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              SizedBox(width: 420, child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: esquerda)),
+              const SizedBox(width: 24),
+              Expanded(child: chips),
+            ]),
+          ),
+        ]);
+      }
+      return ListView(padding: const EdgeInsets.fromLTRB(12, 0, 12, 120), children: [...esquerda, chips]);
+    });
   }
 
   static List<LinhaDia> _amostrar(List<LinhaDia> d, int max) {
