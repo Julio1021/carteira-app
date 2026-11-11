@@ -50,13 +50,16 @@ class _TelaPatrimonioState extends State<TelaPatrimonio> {
         child: AnimatedSwitcher(
           duration: const Duration(milliseconds: 220),
           child: naAba
-              ? Align(
+              ? Centralizar(
                   key: const ValueKey('abas'),
+                  max: sub == 0 ? 1180 : (sub == 4 ? 1156 : 876),
+                  child: Align(
                   alignment: Alignment.centerLeft,
                   child: ConstrainedBox(
                     constraints: BoxConstraints(maxWidth: largo ? 460 : double.infinity),
                     child: Segmentos(nomes: nomesAbas, sel: abas.indexOf(sub), onSel: (i) => setState(() => sub = abas[i])),
                   ),
+                ),
                 )
               : Row(key: const ValueKey('voltar'), children: [
                   TextButton.icon(
@@ -74,7 +77,7 @@ class _TelaPatrimonioState extends State<TelaPatrimonio> {
                 ]),
         ),
       ),
-      Expanded(child: largo && sub != 0 ? Centralizar(max: 900, child: corpo) : corpo),
+      Expanded(child: largo && sub != 0 ? Centralizar(max: sub == 4 ? 1180 : 900, child: corpo) : corpo),
     ]);
   }
 }
@@ -176,16 +179,23 @@ class _Resumo extends StatelessWidget {
             'Ativos' => Cartao(
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           CabecalhoCartao('Seus ativos', sub: 'Saldo de cada investimento no total de ${brl(c.total)}', acao: 'Gerenciar', onAcao: () => ir(2)),
-          Center(
-            child: Rosca(
+          LayoutBuilder(builder: (context, cons) {
+            final larg = cons.maxWidth >= 520; // computador: rosca à esquerda, lista à direita
+            final rosca = Rosca(
               valores: [for (final p in posicoes) p.valor],
               cores: [for (final p in posicoes) p.cor],
               centro: '${posicoes.length}',
               sub: posicoes.length == 1 ? 'ativo' : 'ativos',
-            ),
-          ),
-          const SizedBox(height: 14),
-          for (final p in posicoes) _LinhaPos(p: p, total: c.total),
+              tam: larg ? 150 : 180,
+            );
+            final linhas = [for (final p in posicoes) _LinhaPos(p: p, total: c.total)];
+            if (!larg) return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [Center(child: rosca), const SizedBox(height: 14), ...linhas]);
+            return Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+              rosca,
+              const SizedBox(width: 22),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: linhas)),
+            ]);
+          }),
         ]),
       ),
             'Origem' => Cartao(
@@ -245,14 +255,19 @@ class _Resumo extends StatelessWidget {
       );
     return LayoutBuilder(builder: (context, cons) {
       if (cons.maxWidth >= 860) {
-        // computador: resumo à esquerda, um assunto por vez à direita
+        // computador: cartão principal + atalhos/pendências em cima; embaixo,
+        // todos os assuntos lado a lado (sem chips)
         return ListView(padding: const EdgeInsets.fromLTRB(28, 4, 28, 40), children: [
           Centralizar(
             max: 1180,
-            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              SizedBox(width: 420, child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: esquerda)),
-              const SizedBox(width: 24),
-              Expanded(child: chips),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Expanded(flex: 11, child: esquerda.first),
+                const SizedBox(width: 20),
+                Expanded(flex: 12, child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: esquerda.sublist(2))),
+              ]),
+              const SizedBox(height: 20),
+              chips,
             ]),
           ),
         ]);

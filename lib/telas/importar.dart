@@ -91,7 +91,7 @@ class _TelaImportarExtratoState extends State<TelaImportarExtrato> {
 
   Future<void> _trocarCat(ItemImport x, bool entrada) async {
     final cats = entrada ? categoriasEntrada : categoriasGasto;
-    final v = await showModalBottomSheet<String>(
+    final v = await folhaOuJanela<String>(
       context: context,
       isScrollControlled: true,
       builder: (c) => SafeArea(

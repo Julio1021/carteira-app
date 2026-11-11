@@ -4,6 +4,7 @@ import '../dados/avisos.dart';
 import '../tema.dart';
 import '../util/fmt.dart';
 import '../widgets/comum.dart';
+import '../widgets/formulario.dart';
 import 'busca.dart';
 
 /// Botão do sininho com o número de avisos novos.
@@ -50,7 +51,7 @@ class BotaoAvisos extends StatelessWidget {
 }
 
 Future<void> abrirAvisos(BuildContext context, void Function(String cat) verCategoria) {
-  return showModalBottomSheet(
+  return folhaOuJanela(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,

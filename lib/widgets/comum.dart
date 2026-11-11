@@ -100,7 +100,8 @@ class IconeCategoria extends StatelessWidget {
 class LinhaLanc extends StatelessWidget {
   final Lanc l;
   final VoidCallback? onTap;
-  const LinhaLanc(this.l, {super.key, this.onTap});
+  final bool selecionado;
+  const LinhaLanc(this.l, {super.key, this.onTap, this.selecionado = false});
   @override
   Widget build(BuildContext context) {
     final inv = l.i;
@@ -109,7 +110,9 @@ class LinhaLanc extends StatelessWidget {
         ? (inv.resgate ? 'Resgate · voltou para a conta' : 'Investido · não conta como gasto')
         : (l.ehEntrada ? cat.nome : '${cat.nome} · ${l.g!.pag}');
     final entreContas = l.ehEntrada && l.e!.entreContas;
-    return InkWell(
+    return Material(
+      color: selecionado ? G.lavandaFundo : Colors.transparent,
+      child: InkWell(
       onTap: onTap,
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: _DentroDeCartao.dentro(context) ? 2 : 12, vertical: 9),
@@ -135,6 +138,7 @@ class LinhaLanc extends StatelessWidget {
           ),
         ]),
       ),
+    ),
     );
   }
 }

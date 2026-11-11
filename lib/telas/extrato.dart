@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../dados/categorias.dart';
+import '../dados/modelos.dart';
 import '../dados/resumo.dart';
 import '../tema.dart';
 import '../util/fmt.dart';
@@ -26,6 +27,7 @@ class _TelaExtratoState extends State<TelaExtrato> {
   late String? cat = widget.catInicial;
   final buscaC = TextEditingController();
   late bool analise = widget.analiseInicial;
+  Doc? aberto; // lançamento aberto no painel da direita (computador)
 
   @override
   void didUpdateWidget(covariant TelaExtrato old) {
@@ -44,8 +46,47 @@ class _TelaExtratoState extends State<TelaExtrato> {
 
   @override
   Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (context, cons) {
+      final doisPaineis = cons.maxWidth >= 1000 && !analise;
+      final lista = _lista(context, doisPaineis);
+      if (!doisPaineis) return lista;
+      // computador: lista à esquerda, painel fixo à direita
+      return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Expanded(child: lista),
+        SizedBox(
+          width: 400,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(0, 6, 14, 20),
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 220),
+              layoutBuilder: (atual, antigos) => Stack(alignment: Alignment.topCenter, children: [...antigos, if (atual != null) atual]),
+              child: aberto == null
+                  ? _PainelMes(key: const ValueKey('mes'), ym: widget.ym, cat: cat, onCat: (c) => setState(() {
+                        filtro = 'saidas';
+                        cat = cat == c ? null : c;
+                      }))
+                  : Cartao(
+                      key: ValueKey(aberto!['id']),
+                      padding: const EdgeInsets.fromLTRB(0, 6, 0, 0),
+                      child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: IconButton(tooltip: 'Fechar', onPressed: () => setState(() => aberto = null), icon: Icon(Icons.close_rounded, color: G.apagado)),
+                        ),
+                        Flexible(child: FormLanc(tipo: tipoDoDoc(aberto!), doc: aberto, aoFechar: () => setState(() => aberto = null))),
+                      ]),
+                    ),
+            ),
+          ),
+        ),
+      ]);
+    });
+  }
+
+  Widget _lista(BuildContext context, bool doisPaineis) {
     final repo = RepoScope.of(context);
     final r = ResumoMes.de(repo, widget.ym);
+    void abrir(Lanc l) => doisPaineis ? setState(() => aberto = aberto?['id'] == l.doc['id'] ? null : l.doc) : abrirFormLanc(context, doc: l.doc);
     final q = buscaC.text.trim().toLowerCase();
     var lista = r.lancamentos.where((l) {
       if (filtro == 'saidas' && !l.ehGasto) return false;
@@ -155,13 +196,8 @@ class _TelaExtratoState extends State<TelaExtrato> {
               label: const Text('Buscar em todos os meses'),
             ),
           ),
-          ShaderMask(
-            blendMode: BlendMode.dstIn,
-            shaderCallback: (r) => const LinearGradient(colors: [Colors.white, Colors.white, Colors.transparent], stops: [0, .9, 1]).createShader(r),
-            child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.only(right: 28),
-            child: Row(children: [
+          Builder(builder: (context) {
+            final chips = <Widget>[
               for (final f in [['tudo', 'Tudo'], ['saidas', 'Saídas'], ['entradas', 'Entradas'], if (r.investimentos.isNotEmpty || filtro == 'investido') ['investido', 'Investido']])
                 Padding(
                   padding: const EdgeInsets.only(right: 8),
@@ -187,8 +223,15 @@ class _TelaExtratoState extends State<TelaExtrato> {
                       onSelected: (v) => setState(() => cat = v ? c : null),
                     ),
                   ),
-            ]),
-          )),
+            ];
+            // computador: os filtros quebram em linhas, sem rolar para o lado
+            if (doisPaineis) return Wrap(runSpacing: 6, children: chips);
+            return ShaderMask(
+              blendMode: BlendMode.dstIn,
+              shaderCallback: (r) => const LinearGradient(colors: [Colors.white, Colors.white, Colors.transparent], stops: [0, .9, 1]).createShader(r),
+              child: SingleChildScrollView(scrollDirection: Axis.horizontal, padding: const EdgeInsets.only(right: 28), child: Row(children: chips)),
+            );
+          }),
           const SizedBox(height: 12),
           if (q.isNotEmpty || cat != null || filtro != 'tudo')
             Padding(
@@ -237,7 +280,7 @@ class _TelaExtratoState extends State<TelaExtrato> {
                       Text(brl(tot, sinal: true), style: TextStyle(color: tot < 0 ? G.apagado : G.pos, fontWeight: FontWeight.w600, fontSize: 13)),
                     ]),
                   ),
-                  CaixaLista([for (final l in ls) LinhaLanc(l, onTap: () => abrirFormLanc(context, doc: l.doc))]),
+                  CaixaLista([for (final l in ls) LinhaLanc(l, selecionado: aberto?['id'] == l.doc['id'], onTap: () => abrir(l))]),
                 ]),
               ));
             },
@@ -259,5 +302,52 @@ class _Resumo extends StatelessWidget {
       const SizedBox(height: 2),
       FittedBox(fit: BoxFit.scaleDown, child: Text(brl(v), style: TextStyle(color: cor, fontWeight: FontWeight.w800, fontSize: 15))),
     ]);
+  }
+}
+
+/// Painel da direita no computador, quando nenhum lançamento está aberto.
+class _PainelMes extends StatelessWidget {
+  final String ym;
+  final String? cat;
+  final ValueChanged<String> onCat;
+  const _PainelMes({super.key, required this.ym, required this.cat, required this.onCat});
+  @override
+  Widget build(BuildContext context) {
+    final r = ResumoMes.de(RepoScope.of(context), ym);
+    final cats = r.porCategoria.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+    final tot = cats.fold<double>(0, (a, e) => a + e.value);
+    return Cartao(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
+        CabecalhoCartao('Para onde foi', sub: cats.isEmpty ? 'Nenhum gasto no mês' : '${cats.length} categoria${cats.length == 1 ? '' : 's'} · toque para filtrar'),
+        for (final e in cats.take(8))
+          InkWell(
+            borderRadius: BorderRadius.circular(10),
+            onTap: () => onCat(e.key),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 7),
+              decoration: BoxDecoration(color: cat == e.key ? G.lavandaFundo : null, borderRadius: BorderRadius.circular(10)),
+              child: Row(children: [
+                Icon(catGasto(e.key).icone, size: 18, color: catGasto(e.key).cor),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Row(children: [
+                      Expanded(child: Text(catGasto(e.key).nome, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5))),
+                      Text(brl(e.value), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5)),
+                    ]),
+                    const SizedBox(height: 5),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(3),
+                      child: LinearProgressIndicator(value: tot > 0 ? e.value / tot : 0, minHeight: 5, color: catGasto(e.key).cor, backgroundColor: G.v(0x12)),
+                    ),
+                  ]),
+                ),
+              ]),
+            ),
+          ),
+        const SizedBox(height: 8),
+        Text('Clique num lançamento para ver e editar aqui.', textAlign: TextAlign.center, style: TextStyle(color: G.apagado, fontSize: 12)),
+      ]),
+    );
   }
 }

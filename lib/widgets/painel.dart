@@ -90,7 +90,9 @@ class Segmentos extends StatelessWidget {
       child: Row(children: [
         for (var i = 0; i < nomes.length; i++)
           Expanded(
-            child: GestureDetector(
+            child: MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: () {
                 HapticFeedback.selectionClick();
@@ -113,6 +115,7 @@ class Segmentos extends StatelessWidget {
                   ],
                 ]),
               ),
+            ),
             ),
           ),
       ]),
@@ -218,6 +221,28 @@ class _ChipsAssuntoState extends State<ChipsAssunto> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (context, cons) {
+      if (cons.maxWidth >= 900) return _grade(context);
+      return _umPorVez(context);
+    });
+  }
+
+  /// Computador: todos os assuntos de uma vez, em duas colunas.
+  Widget _grade(BuildContext context) {
+    final col = [<Widget>[], <Widget>[]];
+    for (var i = 0; i < n; i++) {
+      final lado = col[i % 2];
+      if (lado.isNotEmpty) lado.add(const SizedBox(height: 16));
+      lado.add(widget.construir(context, i));
+    }
+    return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: col[0])),
+      const SizedBox(width: 16),
+      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: col[1])),
+    ]);
+  }
+
+  Widget _umPorVez(BuildContext context) {
     final a = alvo;
     // o chip e os pontinhos acompanham o deslize
     final mostrado = a != null && dx.abs() > (larg + _gap) / 2 ? a : sel;
@@ -234,6 +259,7 @@ class _ChipsAssuntoState extends State<ChipsAssunto> with SingleTickerProviderSt
                 escala: .93,
                 child: GestureDetector(
                   onTap: () => _irPara(i),
+                  behavior: HitTestBehavior.opaque,
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),

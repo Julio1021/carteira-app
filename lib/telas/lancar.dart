@@ -8,11 +8,13 @@ import '../dados/invest_pat.dart';
 import '../tema.dart';
 import '../util/fmt.dart';
 import '../widgets/comum.dart';
+import '../widgets/formulario.dart';
+import '../widgets/largo.dart';
 import '../widgets/movimento.dart';
 
 /// Menu do botão +: o que você quer registrar?
 Future<void> abrirMenuLancar(BuildContext context) async {
-  final escolha = await showModalBottomSheet<String>(
+  final escolha = await folhaOuJanela<String>(
     context: context,
     builder: (c) => SafeArea(
       child: Padding(
@@ -83,9 +85,11 @@ class _OpcaoMenu extends StatelessWidget {
 }
 
 /// Formulário de gasto, entrada ou investido. Passe [doc] para editar um existente.
+String tipoDoDoc(Doc doc) => doc['kind'] == 'invest' ? 'invest' : (doc['kind'] == 'entrada' ? 'entrada' : 'gasto');
+
 Future<void> abrirFormLanc(BuildContext context, {bool entrada = false, bool investido = false, Doc? doc}) {
-  final tipo = doc != null ? (doc['kind'] == 'invest' ? 'invest' : (doc['kind'] == 'entrada' ? 'entrada' : 'gasto')) : (investido ? 'invest' : (entrada ? 'entrada' : 'gasto'));
-  return showModalBottomSheet(
+  final tipo = doc != null ? tipoDoDoc(doc) : (investido ? 'invest' : (entrada ? 'entrada' : 'gasto'));
+  return folhaOuJanela(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
@@ -97,7 +101,9 @@ class FormLanc extends StatefulWidget {
   /// 'gasto', 'entrada' ou 'invest'
   final String tipo;
   final Doc? doc;
-  const FormLanc({super.key, required this.tipo, this.doc});
+  /// Quando o formulário está dentro de um painel (computador) e não numa folha.
+  final VoidCallback? aoFechar;
+  const FormLanc({super.key, required this.tipo, this.doc, this.aoFechar});
   @override
   State<FormLanc> createState() => _FormLancState();
 }
@@ -201,7 +207,20 @@ class _FormLancState extends State<FormLanc> {
     if (d != null) setState(() => data = isoDe(d));
   }
 
+  void _fechar() => widget.aoFechar != null ? widget.aoFechar!() : Navigator.pop(context);
+
+  bool _salvando = false;
   Future<void> _salvar() async {
+    if (_salvando) return;
+    _salvando = true;
+    try {
+      await _salvarDeVez();
+    } finally {
+      _salvando = false;
+    }
+  }
+
+  Future<void> _salvarDeVez() async {
     final v = lerValor(valorC.text);
     if (v == null || v <= 0) {
       setState(() => erro = 'Informe um valor maior que zero.');
@@ -274,7 +293,7 @@ class _FormLancState extends State<FormLanc> {
     HapticFeedback.lightImpact();
     if (!mounted) return;
     if (!editando) mostrarConfirmacao(context, cor: invest ? G.lavanda : G.pos, icone: invest ? Icons.savings_rounded : Icons.check_rounded);
-    Navigator.pop(context);
+    _fechar();
     avisar(context, '${editando ? 'Lançamento atualizado.' : (invest ? (resgate ? 'Resgate registrado.' : 'Investimento registrado.') : (entrada ? 'Entrada lançada.' : 'Gasto lançado.'))}${msgPat != null ? ' $msgPat' : ''}');
   }
 
@@ -295,7 +314,7 @@ class _FormLancState extends State<FormLanc> {
     cascataApagar(m, Map<String, dynamic>.from(widget.doc!));
     await m.gravar();
     if (!mounted) return;
-    Navigator.pop(context);
+    _fechar();
     avisar(context, 'Lançamento excluído.');
   }
 
@@ -308,7 +327,13 @@ class _FormLancState extends State<FormLanc> {
     final catAtual = entrada ? catE : cat;
     final sugs = editando ? const <Doc>[] : _sugestoes(descC.text);
     final h = hojeIso();
-    return Padding(
+    // Enter salva (no computador)
+    return CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.enter): _salvar,
+        const SingleActivator(LogicalKeyboardKey.numpadEnter): _salvar,
+      },
+      child: Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
@@ -480,8 +505,10 @@ class _FormLancState extends State<FormLanc> {
           ],
           const SizedBox(height: 18),
           FilledButton(onPressed: _salvar, child: Text(editando ? 'Salvar alterações' : (invest ? (resgate ? 'Registrar resgate' : 'Registrar investimento') : (entrada ? 'Lançar entrada' : 'Lançar gasto')))),
+          if (telaLarga(context)) Padding(padding: const EdgeInsets.only(top: 8), child: Text(widget.aoFechar == null ? 'Enter salva · Esc fecha' : 'Enter salva', textAlign: TextAlign.center, style: TextStyle(color: G.apagado, fontSize: 11.5))),
         ]),
       ),
+    ),
     );
   }
 }

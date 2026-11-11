@@ -277,7 +277,7 @@ class _CascaState extends State<Casca> {
     ];
     final largo = telaLarga(context);
     final telasVisiveis = largo
-        ? [telas[0], Centralizar(child: telas[1]), Centralizar(child: telas[2]), telas[3]]
+        ? [telas[0], Centralizar(max: 1180, child: telas[1]), Centralizar(child: telas[2]), telas[3]]
         : telas;
     final corpo = Column(children: [
       _Cabecalho(titulo: _titulos[aba], largo: largo, verCategoria: (c) => _irAba(1, filtro: 'saidas', cat: c)),

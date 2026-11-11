@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../tema.dart';
+import 'largo.dart';
 import '../util/fmt.dart';
 
 /// Peças pequenas reutilizadas nos formulários.
@@ -157,7 +158,40 @@ class CorpoFolha extends StatelessWidget {
 }
 
 Future<T?> abrirFolha<T>(BuildContext context, Widget filho) =>
-    showModalBottomSheet<T>(context: context, isScrollControlled: true, useSafeArea: true, builder: (_) => filho);
+    folhaOuJanela<T>(context: context, isScrollControlled: true, useSafeArea: true, builder: (_) => filho);
+
+/// No celular abre uma folha que sobe de baixo; no computador, uma janela no
+/// centro da tela (Esc fecha). Mesmos parâmetros do showModalBottomSheet.
+Future<T?> folhaOuJanela<T>({required BuildContext context, required WidgetBuilder builder, bool isScrollControlled = false, bool useSafeArea = false}) {
+  if (!telaLarga(context)) {
+    return showModalBottomSheet<T>(context: context, isScrollControlled: isScrollControlled, useSafeArea: useSafeArea, builder: builder);
+  }
+  return showDialog<T>(
+    context: context,
+    builder: (c) {
+      final alt = MediaQuery.sizeOf(c).height;
+      return Dialog(
+        insetPadding: const EdgeInsets.all(24),
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: 600, maxHeight: alt * .9),
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Align(
+              alignment: Alignment.centerRight,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(0, 8, 8, 0),
+                child: IconButton(tooltip: 'Fechar (Esc)', onPressed: () => Navigator.of(c).maybePop(), icon: Icon(Icons.close_rounded, color: G.apagado)),
+              ),
+            ),
+            // a janela tem altura máxima: o conteúdo rola dentro dela
+            Flexible(child: MediaQuery.removeViewInsets(context: c, removeBottom: true, child: builder(c))),
+          ]),
+        ),
+      );
+    },
+  );
+}
 
 Future<bool> confirmar(BuildContext context, String titulo, String texto, {String sim = 'Excluir', bool perigo = true}) async {
   final ok = await showDialog<bool>(

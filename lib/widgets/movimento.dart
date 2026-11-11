@@ -69,7 +69,10 @@ class _ToqueState extends State<Toque> {
 
   @override
   Widget build(BuildContext context) {
-    return Listener(
+    // no computador, mostra a "mãozinha" ao passar o mouse
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: Listener(
       onPointerDown: (_) => _set(true),
       onPointerUp: (_) => _set(false),
       onPointerCancel: (_) => _set(false),
@@ -79,6 +82,7 @@ class _ToqueState extends State<Toque> {
         curve: baixo ? Curves.easeOut : Curves.easeOutBack,
         child: widget.child,
       ),
+    ),
     );
   }
 }

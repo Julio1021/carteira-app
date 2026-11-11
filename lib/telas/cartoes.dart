@@ -238,7 +238,7 @@ class _TelaCartaoState extends State<TelaCartao> {
     final repo = RepoScope.ler(context);
     final g = it.g!;
     final parcelada = it.parcN != null && it.parcN! > 1;
-    final escolha = await showModalBottomSheet<String>(
+    final escolha = await folhaOuJanela<String>(
       context: context,
       builder: (c) => SafeArea(
         child: Column(mainAxisSize: MainAxisSize.min, children: [

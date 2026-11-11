@@ -71,7 +71,8 @@ class _TelaInicioState extends State<TelaInicio> {
     );
     return LayoutBuilder(builder: (context, cons) {
       if (cons.maxWidth >= 860) {
-        // computador: resumo à esquerda, lançamentos/contas/gastos à direita
+        // computador: à esquerda o mês (cartão, números, contas e gastos), à
+        // direita os lançamentos. Os atalhos saem: o menu já tem "Novo lançamento".
         return ListView(
           padding: const EdgeInsets.fromLTRB(28, 6, 28, 40),
           children: [
@@ -79,18 +80,19 @@ class _TelaInicioState extends State<TelaInicio> {
               max: 1180,
               child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 SizedBox(
-                  width: 420,
+                  width: 440,
                   child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                     if (boasVindas != null) ...[boasVindas, const SizedBox(height: 16)],
                     hero,
                     const SizedBox(height: 10),
                     numeros,
+                    if (temContas) ...[const SizedBox(height: 16), Surge(ordem: 3, child: _ContasInicio(irPlanejar: w.irPlanejar))],
                     const SizedBox(height: 16),
-                    atalhos,
+                    Surge(ordem: 4, child: _OndeFoi(r: r, irLimites: w.irLimites)),
                   ]),
                 ),
                 const SizedBox(width: 24),
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [abas, const SizedBox(height: 12), conteudo])),
+                Expanded(child: Surge(ordem: 2, child: _Ultimos(r: r, irExtrato: w.irExtrato, quantos: 14))),
               ]),
             ),
           ],
