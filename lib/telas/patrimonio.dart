@@ -132,22 +132,16 @@ class _Resumo extends StatelessWidget {
               child: Text('${brl(c.ganhoUltimo, sinal: true)} · ${pct(c.rUltimo, sinal: true)}',
                   style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: c.ganhoUltimo >= 0 ? GE.pos : GE.neg)),
             ),
-            Text('no último lançamento, em ${dataBr(ult.data)}', style: TextStyle(color: GH.texto2, fontSize: 12.5)),
+            Text(ult.data == hojeIso() ? 'no lançamento de hoje' : 'no lançamento de ${dataCurta(ult.data)}', style: TextStyle(color: GH.texto2, fontSize: 12.5)),
           ]),
           const SizedBox(height: 14),
           Row(children: [
             Expanded(child: _Bloco(rotulo: 'Patrimônio total', valor: patrimonio, claro: true, icone: Icons.account_balance_rounded)),
             const SizedBox(width: 10),
-            Expanded(child: _Bloco(rotulo: 'Em conta · ${pct(1 - pctInv, casas: 1)}', valor: emConta, claro: false, icone: Icons.credit_card_rounded)),
+            Expanded(child: _Bloco(rotulo: 'Em conta · ${pct(1 - pctInv, casas: 0)}', valor: emConta, claro: false, icone: Icons.credit_card_rounded)),
           ]),
           const SizedBox(height: 12),
           Barra(pctInv, cor: GE.branco, trilho: const Color(0x1FFFFFFF)),
-          const SizedBox(height: 6),
-          Row(children: [
-            Text('${pct(pctInv)} investido', style: TextStyle(color: GH.texto2, fontSize: 12)),
-            const Spacer(),
-            Text('${pct(1 - pctInv)} em conta', style: TextStyle(color: GH.texto2, fontSize: 12)),
-          ]),
         ]),
       )),
       const SizedBox(height: 16),
@@ -158,8 +152,7 @@ class _Resumo extends StatelessWidget {
         _at(context, Icons.trending_up_rounded, 'Projetar', () => ir(3)),
       ]),
       const SizedBox(height: 16),
-      _SemAtivo(),
-      _Conferencia(c: c),
+      _Pendencias(c: c),
       ChipsAssunto(
         nomes: [
           'Ativos',
@@ -946,36 +939,85 @@ class _Lin extends StatelessWidget {
 
 
 /// Aviso: investimentos registrados que ainda não foram para nenhum ativo.
-class _SemAtivo extends StatelessWidget {
+/// "Para conferir": junta, num cartão só, o que precisa de atenção.
+class _Pendencias extends StatelessWidget {
+  final Carteira c;
+  const _Pendencias({required this.c});
   @override
   Widget build(BuildContext context) {
     final repo = RepoScope.of(context);
-    final itens = investidosSemAtivo(repo);
-    if (itens.isEmpty || calcularCarteira(repo).ativos.isEmpty) return const SizedBox.shrink();
-    final tot = itens.fold<double>(0, (t, i) => t + i.liquido);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Cartao(
-        onTap: () => abrirFolha(context, const _FolhaSemAtivo()),
-        padding: const EdgeInsets.all(12),
-        child: Row(children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(color: G.lavandaFundo, borderRadius: BorderRadius.circular(12)),
-            child: Icon(Icons.savings_rounded, color: G.lavanda, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('${itens.length} investimento${itens.length > 1 ? 's' : ''} sem ativo · ${brl(tot)}', style: const TextStyle(fontWeight: FontWeight.w700)),
-              Text('Escolha onde cada um foi aplicado para entrar no Patrimônio.', style: TextStyle(color: G.apagado, fontSize: 12.5)),
+    final sem = c.ativos.isEmpty ? const <Investido>[] : investidosSemAtivo(repo);
+    final semTot = sem.fold<double>(0, (t, i) => t + i.liquido);
+    final conf = repo.investidos.isEmpty ? const <Conferencia>[] : conferenciaMeses(repo, c);
+    final dif = conf.where((m) => !m.bate).toList();
+    if (sem.isEmpty && dif.isEmpty) return const SizedBox.shrink();
+    Widget linha(IconData ic, String t, String v, VoidCallback f) => InkWell(
+          onTap: f,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+            child: Row(children: [
+              Icon(ic, size: 19, color: G.alerta),
+              const SizedBox(width: 10),
+              Expanded(child: Text(t, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600))),
+              Text(v, style: TextStyle(fontWeight: FontWeight.w700, color: G.texto2)),
+              Icon(Icons.chevron_right_rounded, color: G.apagado),
             ]),
           ),
-          Icon(Icons.chevron_right_rounded, color: G.apagado),
-        ]),
-      ),
+        );
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        TituloSecao('Para conferir'),
+        Cartao(
+          padding: EdgeInsets.zero,
+          child: Column(children: [
+            if (sem.isNotEmpty) linha(Icons.link_off_rounded, '${sem.length} investimento${sem.length > 1 ? 's' : ''} sem ativo', brl(semTot), () => abrirFolha(context, const _FolhaSemAtivo())),
+            if (sem.isNotEmpty && dif.isNotEmpty) Divider(height: 1, color: G.borda),
+            if (dif.isNotEmpty) linha(Icons.rule_rounded, '${dif.length} ${dif.length > 1 ? 'meses' : 'mês'} com aporte diferente', '', () => abrirFolha(context, _FolhaConferencia(c: c))),
+          ]),
+        ),
+      ]),
     );
+  }
+}
+
+/// Conferência: o que saiu da conta para investir × aportes lançados.
+class _FolhaConferencia extends StatelessWidget {
+  final Carteira c;
+  const _FolhaConferencia({required this.c});
+  @override
+  Widget build(BuildContext context) {
+    final repo = RepoScope.of(context);
+    final ms = conferenciaMeses(repo, c);
+    TextStyle cab = TextStyle(color: G.apagado, fontSize: 11.5, fontWeight: FontWeight.w600);
+    return CorpoFolha([
+      const TituloFolha('Conferência dos aportes'),
+      Text('Compara o que saiu da conta para investir com os aportes lançados no Patrimônio.', style: TextStyle(color: G.texto2, fontSize: 13)),
+      const SizedBox(height: 14),
+      Row(children: [
+        Expanded(flex: 3, child: Text('Mês', style: cab)),
+        Expanded(flex: 4, child: Text('Saiu p/ investir', textAlign: TextAlign.right, style: cab)),
+        Expanded(flex: 4, child: Text('Aportes', textAlign: TextAlign.right, style: cab)),
+        Expanded(flex: 4, child: Text('Diferença', textAlign: TextAlign.right, style: cab)),
+      ]),
+      const SizedBox(height: 4),
+      for (final m in ms)
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(border: Border(top: BorderSide(color: G.borda))),
+          child: Row(children: [
+            Expanded(flex: 3, child: Text(mesLongo(m.ym).split(' ').first, style: const TextStyle(fontWeight: FontWeight.w600))),
+            Expanded(flex: 4, child: Text(brl(m.saiuParaInvestir), textAlign: TextAlign.right)),
+            Expanded(flex: 4, child: Text(brl(m.aportes), textAlign: TextAlign.right)),
+            Expanded(
+              flex: 4,
+              child: Text(m.bate ? 'ok' : brl(m.diferenca, sinal: true), textAlign: TextAlign.right, style: TextStyle(fontWeight: FontWeight.w700, color: m.bate ? G.pos : G.alerta)),
+            ),
+          ]),
+        ),
+      const SizedBox(height: 12),
+      Dica('Diferença positiva: falta lançar um aporte. Negativa: falta registrar um Investido (ou veio de outra conta).', icone: Icons.info_outline_rounded, cor: G.lavanda),
+    ]);
   }
 }
 
@@ -1035,51 +1077,3 @@ class _FolhaSemAtivo extends StatelessWidget {
   }
 }
 
-/// Conferência: o que saiu da conta para investir × aportes lançados.
-class _Conferencia extends StatelessWidget {
-  final Carteira c;
-  const _Conferencia({required this.c});
-  @override
-  Widget build(BuildContext context) {
-    final repo = RepoScope.of(context);
-    if (repo.investidos.isEmpty) return const SizedBox.shrink();
-    final ms = conferenciaMeses(repo, c);
-    if (ms.isEmpty) return const SizedBox.shrink();
-    final problemas = ms.where((m) => !m.bate).length;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Cartao(
-        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          CabecalhoCartao('Conferência', sub: problemas == 0 ? 'O que saiu para investir bate com os aportes' : '$problemas mês${problemas > 1 ? 'es' : ''} com diferença'),
-          Row(children: [
-            const Expanded(flex: 3, child: SizedBox()),
-            Expanded(flex: 4, child: Text('Saiu p/ investir', textAlign: TextAlign.right, style: TextStyle(color: G.apagado, fontSize: 11.5))),
-            Expanded(flex: 4, child: Text('Aportes', textAlign: TextAlign.right, style: TextStyle(color: G.apagado, fontSize: 11.5))),
-            const SizedBox(width: 30),
-          ]),
-          const SizedBox(height: 4),
-          for (final m in ms)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                Row(children: [
-                  Expanded(flex: 3, child: Text(mesLongo(m.ym).split(' ').first, style: const TextStyle(fontWeight: FontWeight.w600))),
-                  Expanded(flex: 4, child: Text(brl(m.saiuParaInvestir), textAlign: TextAlign.right, style: const TextStyle(fontWeight: FontWeight.w600))),
-                  Expanded(flex: 4, child: Text(brl(m.aportes), textAlign: TextAlign.right, style: const TextStyle(fontWeight: FontWeight.w600))),
-                  SizedBox(width: 30, child: Icon(m.bate ? Icons.check_circle_rounded : Icons.error_outline_rounded, size: 18, color: m.bate ? G.pos : G.alerta)),
-                ]),
-                if (!m.bate)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 2),
-                    child: Text(
-                      m.diferenca > 0 ? 'Saíram ${brl(m.diferenca)} a mais do que os aportes lançados: talvez falte lançar um aporte.' : 'Os aportes passam em ${brl(-m.diferenca)} o que saiu da conta: talvez falte registrar um Investido (ou veio de outra conta).',
-                      style: TextStyle(color: G.alerta, fontSize: 12),
-                    ),
-                  ),
-              ]),
-            ),
-        ]),
-      ),
-    );
-  }
-}

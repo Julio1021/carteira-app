@@ -37,13 +37,16 @@ class _AnaliseExtratoState extends State<AnaliseExtrato> {
     final rit = ritmoDoMes(repo, widget.ym);
     final comp = comparativoCategorias(repo, widget.ym);
     final mesNome = mesesLongos[int.parse(widget.ym.substring(5)) - 1].toLowerCase();
-    final ant = rit.anteriorMesmoDia, atual = rit.gastoAteHoje;
-    final varAnt = ant > 0 ? atual / ant - 1 : null;
-    final txa = r.entrou > 0 ? r.sobra / r.entrou : null;
+    // números que o cabeçalho do mês ainda não mostra
+    final dias = rit.diaHoje > 0 ? rit.diaHoje : diasNoMes(widget.ym);
+    final totGastos = r.gastos.fold<double>(0, (a, g) => a + g.valor);
+    final maior = r.gastos.isEmpty ? null : r.gastos.reduce((a, b) => b.valor > a.valor ? b : a);
+    final cats = r.porCategoria.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+    final topCat = cats.isEmpty ? null : cats.first;
+    final base = rit.media.isNotEmpty ? rit.mediaMesmoDia : rit.anteriorMesmoDia;
+    final varRit = base > 0 ? rit.gastoAteHoje / base - 1 : null;
     final assuntos = <(String, Widget)>[
       ('Resumo', Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        _Destaque(r: r, rit: rit, mesNome: mesNome),
-        const SizedBox(height: 12),
         DestaquesMes(ym: widget.ym),
         _RitmoCard(rit: rit, mesNome: mesNome),
       ])),
@@ -58,15 +61,21 @@ class _AnaliseExtratoState extends State<AnaliseExtrato> {
     ];
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       GradeKpi([
-        Kpi(icone: Icons.south_west_rounded, rotulo: 'Entrou', valor: r.entrou, formato: brl, sub: mesNome, cor: corEntrada),
-        Kpi(icone: Icons.north_east_rounded, rotulo: 'Saiu', valor: r.saiu, formato: brl, sub: r.investiu > 0 ? 'investiu ${brl(r.investiu)}' : mesNome, cor: corSaida),
-        Kpi(icone: Icons.account_balance_wallet_outlined, rotulo: r.sobra >= 0 ? 'Sobrou' : 'Faltou', valor: r.sobra.abs(), formato: brl, sub: txa != null && r.sobra >= 0 ? '${(txa * 100).round()}% do que entrou' : '', cor: r.sobra >= 0 ? G.pos : G.neg),
+        Kpi(icone: Icons.calendar_today_rounded, rotulo: 'Gasto por dia', valor: totGastos / dias, formato: brl, sub: 'média de $dias dia${dias == 1 ? '' : 's'}', cor: corSaida),
         Kpi(
           icone: Icons.speed_rounded,
-          rotulo: rit.diaHoje > 0 ? 'Gasto até hoje' : 'Ritmo',
-          texto: varAnt == null ? '—' : '${varAnt >= 0 ? '+' : '−'}${(varAnt.abs() * 100).round()}%',
-          sub: 'vs. mês anterior',
-          cor: varAnt == null ? G.texto : (varAnt > .05 ? G.neg : G.pos),
+          rotulo: 'Ritmo',
+          texto: varRit == null ? '—' : '${varRit >= 0 ? '+' : '−'}${(varRit.abs() * 100).round()}%',
+          sub: rit.media.isNotEmpty ? 'vs. sua média' : 'vs. mês anterior',
+          cor: varRit == null ? G.texto : (varRit > .08 ? G.neg : (varRit < -.08 ? G.pos : G.texto)),
+        ),
+        Kpi(icone: Icons.arrow_upward_rounded, rotulo: 'Maior gasto', valor: maior?.valor ?? 0, formato: (v) => maior == null ? '—' : brl(v), sub: maior?.desc ?? 'nenhum gasto'),
+        Kpi(
+          icone: Icons.donut_small_rounded,
+          rotulo: 'Mais gastou em',
+          texto: topCat == null ? '—' : catGasto(topCat.key).nome,
+          sub: topCat == null ? '' : '${brl(topCat.value)} · ${r.saiu > 0 ? (topCat.value / r.saiu * 100).round() : 0}%',
+          onTap: topCat == null ? null : () => widget.verCategoria(topCat.key),
         ),
       ]),
       const SizedBox(height: 16),
@@ -75,73 +84,6 @@ class _AnaliseExtratoState extends State<AnaliseExtrato> {
   }
 }
 
-/// Frase de abertura, em linguagem simples.
-class _Destaque extends StatelessWidget {
-  final ResumoMes r;
-  final Ritmo rit;
-  final String mesNome;
-  const _Destaque({required this.r, required this.rit, required this.mesNome});
-  @override
-  Widget build(BuildContext context) {
-    final emAndamento = rit.diaHoje > 0;
-    final txaSobra = r.entrou > 0 ? r.sobra / r.entrou : null;
-    final ant = rit.anteriorMesmoDia, atual = rit.gastoAteHoje;
-    final varAnt = ant > 0 ? atual / ant - 1 : null;
-    return Cartao(
-      gradiente: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [G.lavandaFundo, G.v(0x0A)]),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Icon(Icons.auto_awesome_rounded, color: G.lavanda, size: 18),
-          const SizedBox(width: 8),
-          Text(emAndamento ? 'Resumo até hoje' : 'Resumo de $mesNome', style: TextStyle(color: G.lavanda, fontWeight: FontWeight.w700)),
-        ]),
-        const SizedBox(height: 10),
-        Text.rich(
-          TextSpan(style: TextStyle(fontSize: 15.5, height: 1.45, color: G.texto), children: [
-            TextSpan(text: emAndamento ? 'Até o dia ${rit.diaHoje}, entraram ' : 'Em $mesNome entraram '),
-            TextSpan(text: brl(r.entrou), style: TextStyle(fontWeight: FontWeight.w700, color: corEntrada)),
-            const TextSpan(text: ' e saíram '),
-            TextSpan(text: brl(r.saiu), style: TextStyle(fontWeight: FontWeight.w700, color: corSaida)),
-            const TextSpan(text: '. '),
-            if (r.entrou > 0) ...[
-              TextSpan(text: r.sobra >= 0 ? 'Sobraram ' : 'Faltaram '),
-              TextSpan(text: brl(r.sobra.abs()), style: const TextStyle(fontWeight: FontWeight.w700)),
-              if (txaSobra != null && r.sobra >= 0) TextSpan(text: ', ${(txaSobra * 100).round()}% do que entrou.'),
-              if (r.sobra < 0) const TextSpan(text: '.'),
-              if (r.investiu > 0) ...[
-                const TextSpan(text: ' Você investiu '),
-                TextSpan(text: brl(r.investiu), style: TextStyle(fontWeight: FontWeight.w700, color: corInvest)),
-                TextSpan(text: ' (${((r.pctInvestido ?? 0) * 100).round()}% do que entrou)'),
-                if (r.sobra >= 0) ...[
-                  TextSpan(text: r.sobraEmConta >= 0 ? ' e ficaram ' : ' e usou '),
-                  TextSpan(text: brl(r.sobraEmConta.abs()), style: const TextStyle(fontWeight: FontWeight.w700)),
-                  TextSpan(text: r.sobraEmConta >= 0 ? ' em conta.' : ' do que já tinha em conta.'),
-                ] else
-                  const TextSpan(text: '.'),
-              ],
-            ],
-            if (r.entrou <= 0 && r.investiu > 0) ...[
-              const TextSpan(text: 'Você investiu '),
-              TextSpan(text: brl(r.investiu), style: TextStyle(fontWeight: FontWeight.w700, color: corInvest)),
-              const TextSpan(text: '.'),
-            ],
-          ]),
-        ),
-        if (varAnt != null && emAndamento) ...[
-          const SizedBox(height: 8),
-          Text(
-            varAnt.abs() < .05
-                ? 'Você está gastando no mesmo ritmo do mês passado.'
-                : 'Você gastou ${(varAnt.abs() * 100).round()}% ${varAnt > 0 ? 'a mais' : 'a menos'} que no mesmo dia do mês passado (${brl(ant)}).',
-            style: TextStyle(color: varAnt > .05 ? G.negTexto : (varAnt < -.05 ? G.pos : G.texto2), fontWeight: FontWeight.w600, fontSize: 13),
-          ),
-        ],
-      ]),
-    );
-  }
-}
-
-/// 1. Entrou × Saiu mês a mês.
 class _EntrouSaiu extends StatelessWidget {
   final List<MesValores> hist;
   final String ym;
@@ -177,9 +119,7 @@ class _EntrouSaiu extends StatelessWidget {
             onSelectionChanged: (s) => onN(s.first),
           ),
         ]),
-        const SizedBox(height: 2),
-        Text('Toque num mês para ver os valores. Embaixo, quanto sobrou.', style: TextStyle(color: G.apagado, fontSize: 12.5)),
-        const SizedBox(height: 14),
+        const SizedBox(height: 12),
         GraficoBarras(
           titulo: temInv ? 'Entrou × Saiu × Investiu' : 'Entrou × Saiu',
           rotulos: [for (final m in hist) abr(m.ym)],
@@ -194,35 +134,15 @@ class _EntrouSaiu extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         Wrap(spacing: 16, runSpacing: 6, children: [Legenda(corEntrada, 'Entrou'), Legenda(corSaida, 'Saiu'), if (temInv) Legenda(corInvest, 'Investiu')]),
-        if (comDados.length >= 2) ...[
-          const SizedBox(height: 12),
-          Row(children: [
-            Expanded(child: _MiniInfo('Sobra média', brl(mediaSobra), mediaSobra >= 0 ? G.pos : corSaida)),
-            if (melhor != null) Expanded(child: _MiniInfo('Melhor mês', '${mesLongo(melhor.ym)} · ${brl(melhor.sobra)}', G.texto)),
+        if (comDados.length >= 2)
+          FaixaNumeros([
+            ('Sobra média', brl(mediaSobra), mediaSobra >= 0 ? G.pos : corSaida),
+            if (melhor != null) ('Melhor mês · ${abr(melhor.ym)}', brl(melhor.sobra), null),
+            if (pctMedio != null) ('Investe', '${(pctMedio * 100).round()}% da renda', corInvest),
           ]),
-        ],
-        if (pctMedio != null) ...[
-          const SizedBox(height: 12),
-          Row(children: [
-            Expanded(child: _MiniInfo('Investe em média', '${(pctMedio * 100).round()}% do que entra', corInvest)),
-            Expanded(child: _MiniInfo('Investido no período', brl(hist.fold<double>(0, (a, m) => a + m.investiu)), corInvest)),
-          ]),
-        ],
       ]),
     );
   }
-}
-
-class _MiniInfo extends StatelessWidget {
-  final String t, v;
-  final Color cor;
-  const _MiniInfo(this.t, this.v, this.cor);
-  @override
-  Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(t, style: TextStyle(color: G.apagado, fontSize: 12)),
-        const SizedBox(height: 2),
-        Text(v, style: TextStyle(fontWeight: FontWeight.w700, color: cor, fontSize: 13.5)),
-      ]);
 }
 
 /// 2. Ritmo dos gastos no mês.
@@ -241,7 +161,7 @@ class _RitmoCard extends StatelessWidget {
       final v = atual / med - 1;
       frase = v.abs() < .08 ? 'Você está no seu ritmo normal de gastos.' : 'Você está gastando ${(v.abs() * 100).round()}% ${v > 0 ? 'mais rápido' : 'mais devagar'} que a sua média.';
     } else {
-      frase = 'Cada ponto é quanto já tinha saído até aquele dia.';
+      frase = 'Quanto já tinha saído até cada dia do mês.';
     }
     return Cartao(
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -270,24 +190,12 @@ class _RitmoCard extends StatelessWidget {
           if (temMedia) Legenda(G.lavanda, 'sua média', tracejada: true),
           if (rit.limite > 0) Legenda(G.neg, 'limite', tracejada: true),
         ]),
-        if (projecao != null) ...[
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: G.v(0x0D), borderRadius: BorderRadius.circular(14)),
-            child: Row(children: [
-              Icon(Icons.timeline_rounded, color: G.lavanda, size: 20),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text.rich(TextSpan(style: TextStyle(fontSize: 13, color: G.texto2), children: [
-                  const TextSpan(text: 'Nesse ritmo, o mês fecha perto de '),
-                  TextSpan(text: brl(projecao), style: TextStyle(fontWeight: FontWeight.w700, color: rit.limite > 0 && projecao > rit.limite ? corSaida : G.texto)),
-                  if (rit.limite > 0) TextSpan(text: projecao > rit.limite ? ', acima do limite de ${brl(rit.limite)}.' : ', dentro do limite de ${brl(rit.limite)}.'),
-                ])),
-              ),
-            ]),
-          ),
-        ],
+        if (rit.diaHoje > 0)
+          FaixaNumeros([
+            ('Até hoje', brl(atual), corSaida),
+            if (projecao != null) ('Previsão do mês', brl(projecao), rit.limite > 0 && projecao > rit.limite ? G.neg : null),
+            if (rit.limite > 0) ('Limite', brl(rit.limite), null),
+          ]),
       ]),
     );
   }
@@ -319,8 +227,6 @@ class _OndeFoiState extends State<_OndeFoi> {
     return Cartao(
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         const Text('Para onde foi o dinheiro', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
-        const SizedBox(height: 2),
-        Text('Toque numa fatia ou numa categoria para ver os gastos dela.', style: TextStyle(color: G.apagado, fontSize: 12.5)),
         const SizedBox(height: 14),
         Center(
           child: Rosca(

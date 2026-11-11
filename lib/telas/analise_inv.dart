@@ -11,6 +11,7 @@ import '../widgets/graficos.dart';
 import '../widgets/movimento.dart';
 import '../widgets/painel.dart';
 
+String _mesAno(String ym) => '${_abr(ym)}/${ym.substring(2, 4)}';
 String _abr(String ym) => mesesLongos[int.parse(ym.substring(5, 7)) - 1].substring(0, 3).toLowerCase();
 
 class AnaliseInvest extends StatefulWidget {
@@ -51,7 +52,6 @@ class _AnaliseInvestState extends State<AnaliseInvest> {
         final porYm = {for (final m in c.meses) m.ym: m};
         final rendeu = meses.fold<double>(0, (a, ym) => a + (porYm[ym]?.ganho ?? 0));
         final p = cmp?.pctCdi;
-        final ult = idx.ultimo(idx.cdi);
         final assuntos = <(String, Widget)>[
           ('Comparação', _CardIndices(cmp: cmp, idx: idx)),
           if (ativos.isNotEmpty) ('Por ativo', _CardAtivos(lista: ativos)),
@@ -76,29 +76,21 @@ class _AnaliseInvestState extends State<AnaliseInvest> {
                 rotulo: '% do CDI',
                 valor: p ?? 0,
                 formato: (v) => p == null ? '—' : '${(v * 100).round()}%',
-                sub: cmp == null ? 'sem índice ainda' : 'CDI ${pct(cmp.cdi ?? 0, sinal: true)}',
+                sub: cmp == null ? 'sem índice ainda' : (p! >= 1 ? 'acima do CDI' : 'abaixo do CDI'),
                 cor: p == null ? G.texto : (p >= 1 ? G.pos : (p >= .85 ? G.alerta : G.neg)),
               ),
               Kpi(icone: Icons.trending_up_rounded, rotulo: 'Rendeu', valor: rendeu, formato: (v) => brl(v, sinal: true), sub: cmp == null ? 'no período' : '${pct(cmp.carteira, sinal: true)} no período', cor: rendeu >= 0 ? G.pos : G.neg),
-              Kpi(icone: Icons.payments_outlined, rotulo: 'Renda passiva', valor: rp?.media ?? 0, formato: (v) => rp == null ? '—' : brl(v), sub: rp == null ? 'falta 1 mês fechado' : 'por mês, em média', cor: G.lavanda),
+              Kpi(icone: Icons.payments_outlined, rotulo: 'Renda passiva', valor: rp?.media ?? 0, formato: (v) => rp == null ? '—' : brl(v), sub: rp == null ? 'falta 1 mês fechado' : 'média por mês', cor: G.lavanda),
               Kpi(
                 icone: Icons.shield_outlined,
                 rotulo: 'Acima da inflação',
                 valor: cmp?.real ?? 0,
                 formato: (v) => cmp?.real == null ? '—' : pct(v, sinal: true),
-                sub: cmp?.real == null ? 'sem IPCA ainda' : brl(cmp!.ganhoReal, sinal: true),
+                sub: cmp?.real == null ? 'sem IPCA ainda' : 'ganho real',
                 cor: (cmp?.real ?? 0) >= 0 ? G.pos : G.neg,
               ),
             ]),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(4, 8, 4, 14),
-              child: Text(
-                idx.exemplo
-                    ? 'Índices de exemplo (demonstração).'
-                    : (ult == null ? 'Buscando CDI, poupança e IPCA no Banco Central… (precisa de internet)' : 'Índices do Banco Central até ${mesLongo(ult).toLowerCase()}.'),
-                style: TextStyle(color: G.apagado, fontSize: 11.5),
-              ),
-            ),
+            const SizedBox(height: 16),
             ChipsAssunto(nomes: [for (final a in assuntos) a.$1], construir: (_, i) => assuntos[i].$2),
           ]),
         );
@@ -129,17 +121,15 @@ class _CardIndices extends StatelessWidget {
     final nomes = ['Sua carteira', 'CDI', if (m.curvaPoup.isNotEmpty) 'Poupança', if (m.curvaIpca.isNotEmpty) 'Inflação'];
     return Cartao(
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        CabecalhoCartao('Comparado com o CDI', sub: '${m.meses.length} ${m.meses.length == 1 ? 'mês' : 'meses'} · ${mesLongo(m.meses.first).toLowerCase()} a ${mesLongo(m.meses.last).toLowerCase()}'),
-        Text('R\$ 100 aplicados no começo do período viraram…', style: TextStyle(color: G.texto2, fontSize: 12.5, fontWeight: FontWeight.w600)),
-        const SizedBox(height: 6),
+        CabecalhoCartao('Rendimento acumulado', sub: '${_mesAno(m.meses.first)} a ${_mesAno(m.meses.last)} · ${m.meses.length} ${m.meses.length == 1 ? 'mês' : 'meses'}'),
         GraficoLinha(
-          titulo: 'Sua carteira × CDI × poupança × inflação',
-          series: series,
+          titulo: 'Rendimento acumulado',
+          series: [for (final l in series) [for (final v in l) v - 100]],
           cores: cores,
           nomes: nomes,
           tracejada: [false, false, true, true],
           rotulosX: rot,
-          formatoY: (v) => 'R\$ ${v.round()}',
+          formatoY: (v) => '${v.round()}%',
           preencherPrimeira: true,
           altura: 220,
         ),
@@ -165,6 +155,7 @@ class _CardIndices extends StatelessWidget {
               ),
           ]);
         }),
+        Rodape(idx.exemplo ? 'Índices de exemplo (demonstração).' : 'CDI, poupança e IPCA: Banco Central${idx.ultimo(idx.cdi) == null ? '' : ', até ${_mesAno(idx.ultimo(idx.cdi)!)}'}.'),
       ]),
     );
   }
@@ -178,7 +169,7 @@ class _CardAtivos extends StatelessWidget {
     final fracos = lista.where((d) => d.pctCdi != null && d.pctCdi! < .7 && d.saldo > 100).toList();
     return Cartao(
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        const CabecalhoCartao('Desempenho por ativo', sub: 'Rendimento no período, sem contar os aportes'),
+        const CabecalhoCartao('Por ativo', sub: 'Rendimento no período, sem contar aportes'),
         CaixaLista([
           for (var i = 0; i < lista.length; i++)
             Padding(
@@ -211,23 +202,8 @@ class _CardAtivos extends StatelessWidget {
               ]),
             ),
         ]),
-        if (fracos.isNotEmpty) ...[
-          const SizedBox(height: 10),
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: G.alerta.withValues(alpha: .12), borderRadius: BorderRadius.circular(12)),
-            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Icon(Icons.lightbulb_outline_rounded, size: 18, color: G.alerta),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  '${fracos.map((d) => d.a.nome).join(', ')} ${fracos.length > 1 ? 'renderam' : 'rendeu'} menos de 70% do CDI. Vale ver se o dinheiro não está parado rendendo pouco.',
-                  style: TextStyle(color: G.texto2, fontSize: 12.5),
-                ),
-              ),
-            ]),
-          ),
-        ],
+        if (fracos.isNotEmpty)
+          Dica('${fracos.map((d) => d.a.nome).join(', ')} ${fracos.length > 1 ? 'renderam' : 'rendeu'} menos de 70% do CDI.'),
       ]),
     );
   }
@@ -248,15 +224,7 @@ class _CardRendaState extends State<_CardRenda> {
     final s = sel;
     return Cartao(
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        CabecalhoCartao('Renda passiva', sub: 'Quanto seus investimentos rendem por mês · média de ${rp.meses.length} ${rp.meses.length == 1 ? 'mês' : 'meses'}'),
-        Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-          ValorAnimado(rp.media, estilo: TextStyle(fontSize: 30, fontWeight: FontWeight.w800, letterSpacing: -1, color: G.pos)),
-          Padding(padding: const EdgeInsets.only(bottom: 5, left: 6), child: Text('por mês', style: TextStyle(color: G.texto2, fontWeight: FontWeight.w600))),
-        ]),
-        const SizedBox(height: 6),
-        if (rp.pctSalario != null) Text('Equivale a ${(rp.pctSalario! * 100).toStringAsFixed(1).replaceAll('.', ',')}% da sua renda mensal.', style: TextStyle(color: G.texto2, fontSize: 13)),
-        if (rp.pagaConta != null) Text('Já paga sozinha a conta "${rp.pagaConta}" (${brl(rp.valorConta!)}). 🎉', style: TextStyle(color: G.texto2, fontSize: 13)),
-        const SizedBox(height: 12),
+        const CabecalhoCartao('Renda passiva', sub: 'Quanto os investimentos renderam em cada mês'),
         GraficoBarras(
           titulo: 'Rendimento mês a mês',
           rotulos: [for (final ym in rp.meses) _abr(ym)],
@@ -268,11 +236,11 @@ class _CardRendaState extends State<_CardRenda> {
           selecionado: s,
           onToque: (i) => setState(() => sel = i == sel ? null : i),
         ),
-        if (s != null && s < rp.meses.length)
-          Padding(
-            padding: const EdgeInsets.only(top: 6),
-            child: Text('${mesLongo(rp.meses[s])}: ${brl(rp.ganhos[s], sinal: true)} de rendimento', style: const TextStyle(fontWeight: FontWeight.w600)),
-          ),
+        FaixaNumeros([
+          if (s != null && s < rp.meses.length) ('Em ${_abr(rp.meses[s])}', brl(rp.ganhos[s], sinal: true), G.pos) else ('Média por mês', brl(rp.media), G.pos),
+          if (rp.pctSalario != null) ('Da sua renda', '${(rp.pctSalario! * 100).toStringAsFixed(1).replaceAll('.', ',')}%', null),
+          if (rp.pagaConta != null) ('Já paga', rp.pagaConta!, null),
+        ]),
       ]),
     );
   }
@@ -329,15 +297,8 @@ class _CardDiversificacao extends StatelessWidget {
             ]),
           ),
         ]),
-        if (conc) ...[
-          const SizedBox(height: 10),
-          Text('${(maior.valor / tot * 100).round()}% está em ${maior.nome}. Espalhar entre mais lugares diminui o risco.', style: TextStyle(color: G.alerta, fontSize: 12.5, fontWeight: FontWeight.w600)),
-        ],
-        if (!porClasse && fatias.any((f) => f.nome == 'Outras'))
-          Padding(
-            padding: const EdgeInsets.only(top: 6),
-            child: Text('Dica: em Ativos, preencha a instituição de cada investimento para esta divisão ficar exata.', style: TextStyle(color: G.apagado, fontSize: 11.5)),
-          ),
+        if (conc) Dica('${(maior.valor / tot * 100).round()}% está em ${maior.nome}. Espalhar diminui o risco.', icone: Icons.pie_chart_outline_rounded),
+        if (!porClasse && fatias.any((f) => f.nome == 'Outras')) const Rodape('Preencha a instituição de cada ativo (aba Ativos) para a divisão ficar exata.'),
       ]),
     );
   }

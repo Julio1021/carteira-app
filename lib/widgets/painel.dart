@@ -1,6 +1,7 @@
 // Peças da organização "combinada": quadradinhos de números (2 por linha),
 // chips que mostram um assunto por vez (com deslize) e o botão de período.
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
 import '../tema.dart';
@@ -116,7 +117,8 @@ class Segmentos extends StatelessWidget {
   }
 }
 
-/// Chips de assunto: mostra um assunto por vez; dá para tocar ou deslizar.
+/// Chips de assunto: mostra um assunto por vez. Toque no chip ou deslize
+/// para o lado (a página acompanha o dedo e a altura se ajusta aos poucos).
 class ChipsAssunto extends StatefulWidget {
   final List<String> nomes;
   final Widget Function(BuildContext, int) construir;
@@ -128,50 +130,77 @@ class ChipsAssunto extends StatefulWidget {
 
 class _ChipsAssuntoState extends State<ChipsAssunto> {
   late int sel = widget.inicial;
-  int dir = 1;
-  final rolagem = ScrollController();
+  late final PageController pc = PageController(initialPage: widget.inicial);
+  final alturas = <int, double>{};
   final chaves = <int, GlobalKey>{};
+  static const _gap = 6.0; // espaço entre as páginas durante o deslize
 
-  void _ir(int i) {
-    if (i < 0 || i >= widget.nomes.length || i == sel) return;
+  void _irPara(int i) {
+    if (i < 0 || i >= widget.nomes.length) return;
     HapticFeedback.selectionClick();
-    setState(() {
-      dir = i > sel ? 1 : -1;
-      sel = i;
-    });
-    // mantém o chip escolhido visível
+    pc.animateToPage(i, duration: Duration(milliseconds: semAnimacao(context) ? 1 : 340), curve: Curves.easeOutCubic);
+  }
+
+  void _mudou(int i) {
+    setState(() => sel = i);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final c = chaves[i]?.currentContext;
       if (c != null) Scrollable.ensureVisible(c, duration: const Duration(milliseconds: 250), alignment: .5);
     });
   }
 
+  void _medida(int i, double h) {
+    if ((alturas[i] ?? -1) == h) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() => alturas[i] = h);
+    });
+  }
+
+  double _alturaAtual() {
+    final n = widget.nomes.length;
+    final p = (pc.hasClients && pc.position.hasContentDimensions) ? (pc.page ?? sel.toDouble()) : sel.toDouble();
+    final a = p.floor().clamp(0, n - 1), b = p.ceil().clamp(0, n - 1);
+    final ha = alturas[a] ?? alturas[sel] ?? alturas.values.fold<double>(0, (x, y) => x > y ? x : y);
+    final hb = alturas[b] ?? ha;
+    final h = ha + (hb - ha) * (p - a);
+    return h <= 0 ? 320 : h;
+  }
+
+  @override
+  void didUpdateWidget(ChipsAssunto old) {
+    super.didUpdateWidget(old);
+    if (old.nomes.length != widget.nomes.length) alturas.clear();
+    if (sel >= widget.nomes.length) {
+      sel = widget.nomes.length - 1;
+      if (pc.hasClients) pc.jumpToPage(sel);
+    }
+  }
+
   @override
   void dispose() {
-    rolagem.dispose();
+    pc.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (sel >= widget.nomes.length) sel = widget.nomes.length - 1;
-    if (sel < 0) sel = 0;
+    final n = widget.nomes.length;
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       SingleChildScrollView(
-        controller: rolagem,
         scrollDirection: Axis.horizontal,
+        clipBehavior: Clip.none,
         child: Row(children: [
-          for (var i = 0; i < widget.nomes.length; i++)
+          for (var i = 0; i < n; i++)
             Padding(
               key: chaves.putIfAbsent(i, GlobalKey.new),
-              padding: EdgeInsets.only(right: i < widget.nomes.length - 1 ? 6 : 0),
+              padding: EdgeInsets.only(right: i < n - 1 ? 6 : 0),
               child: Toque(
                 escala: .93,
                 child: GestureDetector(
-                  onTap: () => _ir(i),
+                  onTap: () => _irPara(i),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 220),
-                    padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     decoration: BoxDecoration(
                       color: i == sel ? G.texto : G.fundo2,
                       borderRadius: BorderRadius.circular(99),
@@ -185,29 +214,38 @@ class _ChipsAssuntoState extends State<ChipsAssunto> {
         ]),
       ),
       const SizedBox(height: 10),
-      GestureDetector(
-        behavior: HitTestBehavior.translucent,
-        onHorizontalDragEnd: (d) {
-          final v = d.primaryVelocity ?? 0;
-          if (v < -250) _ir(sel + 1);
-          if (v > 250) _ir(sel - 1);
-        },
-        child: AnimatedSwitcher(
-          duration: Duration(milliseconds: semAnimacao(context) ? 0 : 280),
-          switchInCurve: Curves.easeOutCubic,
-          switchOutCurve: Curves.easeInCubic,
-          layoutBuilder: (atual, antigos) => Stack(alignment: Alignment.topCenter, children: [...antigos, if (atual != null) atual]),
-          transitionBuilder: (child, a) {
-            final entrando = child.key == ValueKey(sel);
-            final de = Offset(entrando ? .12 * dir : -.12 * dir, 0);
-            return FadeTransition(opacity: a, child: SlideTransition(position: Tween(begin: de, end: Offset.zero).animate(a), child: child));
-          },
-          child: KeyedSubtree(key: ValueKey(sel), child: widget.construir(context, sel)),
-        ),
-      ),
-      const SizedBox(height: 8),
+      LayoutBuilder(builder: (context, cons) {
+        final w = cons.maxWidth;
+        return AnimatedBuilder(
+          animation: pc,
+          builder: (context, _) => SizedBox(
+            height: _alturaAtual(),
+            child: OverflowBox(
+              minWidth: w + _gap * 2,
+              maxWidth: w + _gap * 2,
+              alignment: Alignment.topCenter,
+              child: PageView.builder(
+                controller: pc,
+                itemCount: n,
+                allowImplicitScrolling: true, // já mede a página vizinha
+                onPageChanged: _mudou,
+                itemBuilder: (context, i) => OverflowBox(
+                  minHeight: 0,
+                  maxHeight: double.infinity,
+                  alignment: Alignment.topCenter,
+                  child: _Medir(
+                    aoMedir: (h) => _medida(i, h),
+                    child: Padding(padding: const EdgeInsets.symmetric(horizontal: _gap), child: widget.construir(context, i)),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      }),
+      const SizedBox(height: 10),
       Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-        for (var i = 0; i < widget.nomes.length; i++)
+        for (var i = 0; i < n; i++)
           AnimatedContainer(
             duration: const Duration(milliseconds: 220),
             margin: const EdgeInsets.symmetric(horizontal: 2.5),
@@ -217,6 +255,26 @@ class _ChipsAssuntoState extends State<ChipsAssunto> {
           ),
       ]),
     ]);
+  }
+}
+
+/// Informa a altura do filho depois de cada layout.
+class _Medir extends SingleChildRenderObjectWidget {
+  final ValueChanged<double> aoMedir;
+  const _Medir({required this.aoMedir, required Widget super.child});
+  @override
+  RenderObject createRenderObject(BuildContext context) => _RenderMedir(aoMedir);
+  @override
+  void updateRenderObject(BuildContext context, _RenderMedir r) => r.aoMedir = aoMedir;
+}
+
+class _RenderMedir extends RenderProxyBox {
+  ValueChanged<double> aoMedir;
+  _RenderMedir(this.aoMedir);
+  @override
+  void performLayout() {
+    super.performLayout();
+    aoMedir(size.height);
   }
 }
 
@@ -271,5 +329,71 @@ class TituloSecao extends StatelessWidget {
           Expanded(child: Text(texto.toUpperCase(), style: TextStyle(fontSize: 11, letterSpacing: 1.1, fontWeight: FontWeight.w700, color: G.apagado))),
           if (direita != null) direita!,
         ]),
+      );
+}
+
+/// Faixa de 2–3 números no rodapé de um cartão: rótulo pequeno em cima,
+/// valor embaixo, separados por uma linha fina.
+class FaixaNumeros extends StatelessWidget {
+  final List<(String, String, Color?)> itens;
+  const FaixaNumeros(this.itens, {super.key});
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(top: 12),
+      padding: const EdgeInsets.only(top: 12),
+      decoration: BoxDecoration(border: Border(top: BorderSide(color: G.borda))),
+      child: IntrinsicHeight(
+        child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          for (var i = 0; i < itens.length; i++) ...[
+            if (i > 0) VerticalDivider(width: 20, thickness: 1, color: G.borda),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(itens[i].$1, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: G.apagado, fontSize: 11.5, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 3),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(itens[i].$2, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5, color: itens[i].$3 ?? G.texto)),
+                ),
+              ]),
+            ),
+          ],
+        ]),
+      ),
+    );
+  }
+}
+
+/// Dica curta numa pílula colorida (uma ou duas linhas, no máximo).
+class Dica extends StatelessWidget {
+  final IconData icone;
+  final String texto;
+  final Color? cor;
+  const Dica(this.texto, {super.key, this.icone = Icons.lightbulb_outline_rounded, this.cor});
+  @override
+  Widget build(BuildContext context) {
+    final c = cor ?? G.alerta;
+    return Container(
+      margin: const EdgeInsets.only(top: 12),
+      padding: const EdgeInsets.fromLTRB(10, 8, 12, 8),
+      decoration: BoxDecoration(color: c.withValues(alpha: .10), borderRadius: BorderRadius.circular(12)),
+      child: Row(children: [
+        Icon(icone, size: 17, color: c),
+        const SizedBox(width: 8),
+        Expanded(child: Text(texto, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: G.texto2, fontSize: 12.5, height: 1.3))),
+      ]),
+    );
+  }
+}
+
+/// Nota de rodapé (fonte dos dados etc.).
+class Rodape extends StatelessWidget {
+  final String texto;
+  const Rodape(this.texto, {super.key});
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(top: 10),
+        child: Text(texto, style: TextStyle(color: G.apagado, fontSize: 11)),
       );
 }
