@@ -259,6 +259,7 @@ class _ChipsAssuntoState extends State<ChipsAssunto> with SingleTickerProviderSt
             duration: Duration(milliseconds: semAnimacao(context) ? 0 : 260),
             curve: Curves.easeOutCubic,
             alignment: Alignment.topCenter,
+            clipBehavior: Clip.none, // nunca corta o cartão enquanto ajusta a altura
             child: Stack(clipBehavior: Clip.none, children: [
               Transform.translate(offset: Offset(dx, 0), child: KeyedSubtree(key: paginas.putIfAbsent(sel, GlobalKey.new), child: widget.construir(context, sel))),
               if (a != null && a != sel)
