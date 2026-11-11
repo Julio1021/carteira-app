@@ -1,7 +1,6 @@
 // Peças da organização "combinada": quadradinhos de números (2 por linha),
 // chips que mostram um assunto por vez (com deslize) e o botão de período.
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
 import '../tema.dart';
@@ -118,7 +117,7 @@ class Segmentos extends StatelessWidget {
 }
 
 /// Chips de assunto: mostra um assunto por vez. Toque no chip ou deslize
-/// para o lado (a página acompanha o dedo e a altura se ajusta aos poucos).
+/// para o lado (a página acompanha o dedo).
 class ChipsAssunto extends StatefulWidget {
   final List<String> nomes;
   final Widget Function(BuildContext, int) construir;
@@ -128,63 +127,96 @@ class ChipsAssunto extends StatefulWidget {
   State<ChipsAssunto> createState() => _ChipsAssuntoState();
 }
 
-class _ChipsAssuntoState extends State<ChipsAssunto> {
+class _ChipsAssuntoState extends State<ChipsAssunto> with SingleTickerProviderStateMixin {
   late int sel = widget.inicial;
-  late final PageController pc = PageController(initialPage: widget.inicial);
-  final alturas = <int, double>{};
+  int? alvo; // página que entra durante o deslize/animação
+  double dx = 0; // quanto a página atual andou para o lado
+  double larg = 1;
+  late final AnimationController ac = AnimationController(vsync: this);
   final chaves = <int, GlobalKey>{};
-  static const _gap = 6.0; // espaço entre as páginas durante o deslize
+  final paginas = <int, GlobalKey>{}; // mantém a página viva ao trocar de lugar
+  static const _gap = 12.0;
 
-  void _irPara(int i) {
-    if (i < 0 || i >= widget.nomes.length) return;
-    HapticFeedback.selectionClick();
-    pc.animateToPage(i, duration: Duration(milliseconds: semAnimacao(context) ? 1 : 340), curve: Curves.easeOutCubic);
+  int get n => widget.nomes.length;
+
+  void _animar(double ate, {VoidCallback? fim}) {
+    final de = dx;
+    ac.stop();
+    ac.value = 0;
+    final dist = (ate - de).abs();
+    final ms = semAnimacao(context) ? 1 : (dist / (larg + _gap) * 380).clamp(140, 380).round();
+    void tick() => setState(() => dx = de + (ate - de) * Curves.easeOutCubic.transform(ac.value));
+    ac.addListener(tick);
+    ac.animateTo(1, duration: Duration(milliseconds: ms)).whenComplete(() {
+      ac.removeListener(tick);
+      if (mounted) fim?.call();
+    });
   }
 
-  void _mudou(int i) {
-    setState(() => sel = i);
+  void _concluir(int i) {
+    setState(() {
+      sel = i;
+      alvo = null;
+      dx = 0;
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final c = chaves[i]?.currentContext;
       if (c != null) Scrollable.ensureVisible(c, duration: const Duration(milliseconds: 250), alignment: .5);
     });
   }
 
-  void _medida(int i, double h) {
-    if ((alturas[i] ?? -1) == h) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) setState(() => alturas[i] = h);
+  void _irPara(int i) {
+    if (i < 0 || i >= n || i == sel || ac.isAnimating) return;
+    HapticFeedback.selectionClick();
+    setState(() => alvo = i);
+    _animar(i > sel ? -(larg + _gap) : (larg + _gap), fim: () => _concluir(i));
+  }
+
+  void _arrastou(DragUpdateDetails d) {
+    if (ac.isAnimating) return;
+    final temProx = sel + 1 < n, temAnt = sel > 0;
+    var novo = dx + d.delta.dx;
+    // resistência nas pontas
+    if ((novo < 0 && !temProx) || (novo > 0 && !temAnt)) novo = dx + d.delta.dx * .3;
+    setState(() {
+      dx = novo.clamp(-(larg + _gap), larg + _gap).toDouble();
+      alvo = dx < 0 ? (temProx ? sel + 1 : null) : (dx > 0 ? (temAnt ? sel - 1 : null) : null);
     });
   }
 
-  double _alturaAtual() {
-    final n = widget.nomes.length;
-    final p = (pc.hasClients && pc.position.hasContentDimensions) ? (pc.page ?? sel.toDouble()) : sel.toDouble();
-    final a = p.floor().clamp(0, n - 1), b = p.ceil().clamp(0, n - 1);
-    final ha = alturas[a] ?? alturas[sel] ?? alturas.values.fold<double>(0, (x, y) => x > y ? x : y);
-    final hb = alturas[b] ?? ha;
-    final h = ha + (hb - ha) * (p - a);
-    return h <= 0 ? 320 : h;
+  void _soltou(DragEndDetails d) {
+    if (ac.isAnimating) return;
+    final v = d.primaryVelocity ?? 0;
+    final a = alvo;
+    final passou = dx.abs() > larg * .25 || v.abs() > 450;
+    final sentidoOk = a != null && ((a > sel && dx < 0 && v <= 250) || (a < sel && dx > 0 && v >= -250));
+    if (passou && sentidoOk) {
+      HapticFeedback.selectionClick();
+      _animar(a > sel ? -(larg + _gap) : (larg + _gap), fim: () => _concluir(a));
+    } else {
+      _animar(0, fim: () => setState(() => alvo = null));
+    }
   }
 
   @override
   void didUpdateWidget(ChipsAssunto old) {
     super.didUpdateWidget(old);
-    if (old.nomes.length != widget.nomes.length) alturas.clear();
-    if (sel >= widget.nomes.length) {
-      sel = widget.nomes.length - 1;
-      if (pc.hasClients) pc.jumpToPage(sel);
-    }
+    if (sel >= n) sel = n - 1;
+    if (alvo != null && alvo! >= n) alvo = null;
+    if (old.nomes.join('|') != widget.nomes.join('|')) paginas.clear();
   }
 
   @override
   void dispose() {
-    pc.dispose();
+    ac.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final n = widget.nomes.length;
+    final a = alvo;
+    // o chip e os pontinhos acompanham o deslize
+    final mostrado = a != null && dx.abs() > (larg + _gap) / 2 ? a : sel;
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       SingleChildScrollView(
         scrollDirection: Axis.horizontal,
@@ -199,14 +231,14 @@ class _ChipsAssuntoState extends State<ChipsAssunto> {
                 child: GestureDetector(
                   onTap: () => _irPara(i),
                   child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 220),
+                    duration: const Duration(milliseconds: 200),
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     decoration: BoxDecoration(
-                      color: i == sel ? G.texto : G.fundo2,
+                      color: i == mostrado ? G.texto : G.fundo2,
                       borderRadius: BorderRadius.circular(99),
-                      border: Border.all(color: i == sel ? G.texto : G.borda),
+                      border: Border.all(color: i == mostrado ? G.texto : G.borda),
                     ),
-                    child: Text(widget.nomes[i], style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: i == sel ? G.fundo : G.texto2)),
+                    child: Text(widget.nomes[i], style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: i == mostrado ? G.fundo : G.texto2)),
                   ),
                 ),
               ),
@@ -215,31 +247,28 @@ class _ChipsAssuntoState extends State<ChipsAssunto> {
       ),
       const SizedBox(height: 10),
       LayoutBuilder(builder: (context, cons) {
-        final w = cons.maxWidth;
-        return AnimatedBuilder(
-          animation: pc,
-          builder: (context, _) => SizedBox(
-            height: _alturaAtual(),
-            child: OverflowBox(
-              minWidth: w + _gap * 2,
-              maxWidth: w + _gap * 2,
-              alignment: Alignment.topCenter,
-              child: PageView.builder(
-                controller: pc,
-                itemCount: n,
-                allowImplicitScrolling: true, // já mede a página vizinha
-                onPageChanged: _mudou,
-                itemBuilder: (context, i) => OverflowBox(
-                  minHeight: 0,
-                  maxHeight: double.infinity,
-                  alignment: Alignment.topCenter,
-                  child: _Medir(
-                    aoMedir: (h) => _medida(i, h),
-                    child: Padding(padding: const EdgeInsets.symmetric(horizontal: _gap), child: widget.construir(context, i)),
-                  ),
+        larg = cons.maxWidth;
+        final passo = larg + _gap;
+        return GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onHorizontalDragUpdate: _arrastou,
+          onHorizontalDragEnd: _soltou,
+          // A altura é a da página atual (sem medir nada); a vizinha entra pelo
+          // lado, alinhada no topo. Ao trocar, a altura se ajusta suavemente.
+          child: AnimatedSize(
+            duration: Duration(milliseconds: semAnimacao(context) ? 0 : 260),
+            curve: Curves.easeOutCubic,
+            alignment: Alignment.topCenter,
+            child: Stack(clipBehavior: Clip.none, children: [
+              Transform.translate(offset: Offset(dx, 0), child: KeyedSubtree(key: paginas.putIfAbsent(sel, GlobalKey.new), child: widget.construir(context, sel))),
+              if (a != null && a != sel)
+                Positioned(
+                  top: 0,
+                  left: (a > sel ? passo : -passo) + dx,
+                  width: larg,
+                  child: IgnorePointer(child: KeyedSubtree(key: paginas.putIfAbsent(a, GlobalKey.new), child: widget.construir(context, a))),
                 ),
-              ),
-            ),
+            ]),
           ),
         );
       }),
@@ -247,34 +276,14 @@ class _ChipsAssuntoState extends State<ChipsAssunto> {
       Row(mainAxisAlignment: MainAxisAlignment.center, children: [
         for (var i = 0; i < n; i++)
           AnimatedContainer(
-            duration: const Duration(milliseconds: 220),
+            duration: const Duration(milliseconds: 200),
             margin: const EdgeInsets.symmetric(horizontal: 2.5),
-            width: i == sel ? 18 : 6,
+            width: i == mostrado ? 18 : 6,
             height: 6,
-            decoration: BoxDecoration(color: i == sel ? G.lavanda : G.v(0x22), borderRadius: BorderRadius.circular(3)),
+            decoration: BoxDecoration(color: i == mostrado ? G.lavanda : G.v(0x22), borderRadius: BorderRadius.circular(3)),
           ),
       ]),
     ]);
-  }
-}
-
-/// Informa a altura do filho depois de cada layout.
-class _Medir extends SingleChildRenderObjectWidget {
-  final ValueChanged<double> aoMedir;
-  const _Medir({required this.aoMedir, required Widget super.child});
-  @override
-  RenderObject createRenderObject(BuildContext context) => _RenderMedir(aoMedir);
-  @override
-  void updateRenderObject(BuildContext context, _RenderMedir r) => r.aoMedir = aoMedir;
-}
-
-class _RenderMedir extends RenderProxyBox {
-  ValueChanged<double> aoMedir;
-  _RenderMedir(this.aoMedir);
-  @override
-  void performLayout() {
-    super.performLayout();
-    aoMedir(size.height);
   }
 }
 
