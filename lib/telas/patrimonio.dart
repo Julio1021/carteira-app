@@ -659,20 +659,66 @@ class _Ativos extends StatelessWidget {
   }
 }
 
-class TelaAtivo extends StatelessWidget {
+/// Tela de um ativo: saldo, gráfico da evolução e histórico agrupado por mês.
+class TelaAtivo extends StatefulWidget {
   final String id;
   const TelaAtivo({super.key, required this.id});
   @override
+  State<TelaAtivo> createState() => _TelaAtivoState();
+}
+
+class _PontoAtivo {
+  final String data;
+  final double saldo, aplicado;
+  const _PontoAtivo(this.data, this.saldo, this.aplicado);
+}
+
+class _TelaAtivoState extends State<TelaAtivo> {
+  String periodo = '6m';
+  int vista = 0; // 0 = saldo, 1 = rendimento por mês
+  int mostrar = 40; // linhas do histórico
+  int? mesSel;
+
+  static const _opcoes = [('1m', '1 mês'), ('3m', '3 meses'), ('6m', '6 meses'), ('12m', '12 meses'), ('tudo', 'Tudo')];
+
+  String _inicio(String hoje) {
+    final meses = switch (periodo) { '1m' => 1, '3m' => 3, '6m' => 6, '12m' => 12, _ => 0 };
+    if (meses == 0) return '0000-00-00';
+    final d = DateTime.parse(hoje);
+    final ini = DateTime(d.year, d.month - meses, d.day);
+    return '${ini.year.toString().padLeft(4, '0')}-${ini.month.toString().padLeft(2, '0')}-${ini.day.toString().padLeft(2, '0')}';
+  }
+
+  @override
   Widget build(BuildContext context) {
     final repo = RepoScope.of(context);
-    final d = repo.porId(id);
+    final d = repo.porId(widget.id);
     if (d == null) return const Scaffold(body: Center(child: Text('Ativo excluído.')));
     final a = Ativo(d);
     final c = calcularCarteira(repo);
-    final filhos = c.ativos.where((x) => x.pai == id).map((x) => x.id).toSet();
-    final ids = filhos.isEmpty ? {id} : filhos;
-    final lancs = repo.doTipo('lanc').map(Lancamento.new).where((l) => ids.contains(l.ativo)).toList()..sort((x, y) => y.data.compareTo(x.data));
+    final filhos = c.ativos.where((x) => x.pai == widget.id).map((x) => x.id).toSet();
+    final ids = filhos.isEmpty ? {widget.id} : filhos;
     final nomes = {for (final x in c.ativos) x.id: x.nome};
+    final lancs = repo.doTipo('lanc').map(Lancamento.new).where((l) => ids.contains(l.ativo)).toList()..sort((x, y) => x.data.compareTo(y.data));
+
+    // variação de cada lançamento em relação ao anterior do mesmo ativo (sem o aporte)
+    final variacao = <String, double?>{};
+    final ultimoDe = <String, Lancamento>{};
+    for (final l in lancs) {
+      final ant = ultimoDe[l.ativo];
+      variacao[l.id] = ant == null ? null : l.saldo - ant.saldo - l.aporte;
+      ultimoDe[l.ativo] = l;
+    }
+
+    // série diária do ativo (soma dos filhos, se for um grupo)
+    final serie = <_PontoAtivo>[];
+    for (final dia in c.dias) {
+      final s = ids.fold<double>(0, (t, i) => t + (dia.porAtivo[i] ?? 0));
+      final ap = ids.fold<double>(0, (t, i) => t + (dia.investidoPorAtivo[i] ?? 0));
+      if (serie.isEmpty && s == 0 && ap == 0) continue;
+      serie.add(_PontoAtivo(dia.data, s, ap));
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text(a.nome, style: const TextStyle(fontWeight: FontWeight.w700)),
@@ -680,27 +726,228 @@ class TelaAtivo extends StatelessWidget {
       ),
       body: lancs.isEmpty
           ? Center(child: Text('Nenhum lançamento ainda.', style: TextStyle(color: G.apagado)))
-          : ListView(padding: const EdgeInsets.fromLTRB(14, 4, 14, 40), children: [
-              Text('Histórico · ${lancs.length} lançamento(s)', style: TextStyle(color: G.texto2, fontWeight: FontWeight.w600)),
-              const SizedBox(height: 10),
-              CaixaLista([
-                for (final l in lancs)
-                  ListTile(
-                    title: Text(brl(l.saldo), style: const TextStyle(fontWeight: FontWeight.w700)),
-                    subtitle: Text(
-                      [dataBr(l.data), if (filhos.isNotEmpty) nomes[l.ativo] ?? '', if (l.aporte != 0) 'aporte ${brl(l.aporte, sinal: true)}'].where((s) => s.isNotEmpty).join(' · '),
-                      style: TextStyle(color: G.apagado, fontSize: 12.5),
-                    ),
-                    trailing: IconButton(
-                      tooltip: 'Excluir lançamento',
-                      icon: Icon(Icons.delete_outline_rounded, color: G.neg),
-                      onPressed: () async {
-                        if (await confirmar(context, 'Excluir lançamento?', 'Saldo de ${brl(l.saldo)} em ${dataBr(l.data)}.')) await repo.apagar(l.id);
-                      },
-                    ),
-                  ),
-              ]),
+          : ListView(padding: const EdgeInsets.fromLTRB(12, 4, 12, 40), children: [
+              _resumo(serie),
+              const SizedBox(height: 14),
+              if (serie.length >= 2) ...[_grafico(serie), const SizedBox(height: 18)],
+              ..._historico(context, repo, lancs.reversed.toList(), variacao, filhos.isEmpty ? null : nomes),
             ]),
+    );
+  }
+
+  // --- saldo de hoje e o que rendeu desde o começo
+  Widget _resumo(List<_PontoAtivo> serie) {
+    final ult = serie.isEmpty ? null : serie.last;
+    final saldo = ult?.saldo ?? 0, aplicado = ult?.aplicado ?? 0;
+    final rendeu = saldo - aplicado;
+    return Cartao(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text('Saldo', style: TextStyle(color: G.apagado, fontWeight: FontWeight.w600, fontSize: 13)),
+        const SizedBox(height: 2),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: ValorAnimado(saldo, formato: brl, estilo: const TextStyle(fontSize: 30, fontWeight: FontWeight.w800, letterSpacing: -1)),
+        ),
+        if (ult != null) Text('em ${dataBr(ult.data)}', style: TextStyle(color: G.apagado, fontSize: 12)),
+        FaixaNumeros([
+          ('Você aplicou', brl(aplicado), null),
+          ('Rendeu', brl(rendeu, sinal: true), rendeu >= 0 ? G.pos : G.neg),
+          ('Rentabilidade', aplicado > 0 ? pct(rendeu / aplicado, sinal: true) : '—', rendeu >= 0 ? G.pos : G.neg),
+        ]),
+      ]),
+    );
+  }
+
+  // --- gráfico: saldo × aplicado, ou rendimento de cada mês
+  Widget _grafico(List<_PontoAtivo> tudo) {
+    final hoje = tudo.last.data;
+    final ini = _inicio(hoje);
+    var pts = tudo.where((p) => p.data.compareTo(ini) >= 0).toList();
+    // começa no último ponto antes do período, para a linha não "pular"
+    final antes = tudo.lastIndexWhere((p) => p.data.compareTo(ini) < 0);
+    if (antes >= 0) pts = [tudo[antes], ...pts];
+    if (pts.length < 2) pts = tudo.length >= 2 ? tudo.sublist(tudo.length - 2) : tudo;
+    final amostra = _Resumo._amostrar([for (final p in pts) LinhaDia(p.data, p.saldo, 0, p.aplicado, 0, 0, 0, const {}, const {})], 90);
+
+    // rendimento por mês = variação do saldo − o que foi aplicado no mês
+    final meses = <String>[], ganhos = <double>[];
+    _PontoAtivo? fimAnt;
+    String? ymAtual;
+    _PontoAtivo? fimAtual;
+    void fechar() {
+      if (ymAtual != null && fimAtual != null && fimAnt != null) {
+        meses.add(ymAtual!);
+        ganhos.add((fimAtual!.saldo - fimAnt!.saldo) - (fimAtual!.aplicado - fimAnt!.aplicado));
+      }
+    }
+    for (final p in tudo) {
+      final ym = p.data.substring(0, 7);
+      if (ym != ymAtual) {
+        fechar();
+        if (fimAtual != null) fimAnt = fimAtual;
+        ymAtual = ym;
+      }
+      fimAtual = p;
+    }
+    fechar();
+    final nMeses = switch (periodo) { '1m' => 3, '3m' => 3, '6m' => 6, '12m' => 12, _ => meses.length };
+    final ms = meses.length > nMeses ? meses.sublist(meses.length - nMeses) : meses;
+    final gs = ganhos.length > nMeses ? ganhos.sublist(ganhos.length - nMeses) : ganhos;
+
+    final p0 = pts.first, p1 = pts.last;
+    final aportes = p1.aplicado - p0.aplicado;
+    final rendeuPer = (p1.saldo - p0.saldo) - aportes;
+    final sel = mesSel != null && mesSel! < ms.length ? mesSel : null;
+
+    return Cartao(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Row(children: [
+          const Expanded(child: Text('Evolução', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700))),
+          BotaoPeriodo(valor: periodo, opcoes: _opcoes, onMudar: (v) => setState(() {
+                periodo = v;
+                mesSel = null;
+              })),
+        ]),
+        const SizedBox(height: 12),
+        Segmentos(nomes: const ['Saldo', 'Rendimento por mês'], sel: vista, onSel: (i) => setState(() => vista = i)),
+        const SizedBox(height: 14),
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 220),
+          child: vista == 0
+              ? Column(key: const ValueKey('saldo'), crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                  GraficoLinha(
+                    titulo: 'Evolução do saldo',
+                    series: [amostra.map((d) => d.total).toList(), amostra.map((d) => d.investido).toList()],
+                    cores: [G.pos, const Color(0xFF9AA0BC)],
+                    tracejada: const [false, true],
+                    formatoY: curto,
+                    rotulosX: [dataCurta(amostra.first.data), dataCurta(amostra[amostra.length ~/ 2].data), dataCurta(amostra.last.data)],
+                    nomes: const ['Saldo', 'Aplicado'],
+                    rotuloToque: (i) => dataBr(amostra[i.clamp(0, amostra.length - 1).toInt()].data),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(children: [Legenda(G.pos, 'Saldo'), const SizedBox(width: 14), const Legenda(Color(0xFF9AA0BC), 'Quanto você aplicou')]),
+                ])
+              : ms.isEmpty
+                  ? Padding(
+                      key: const ValueKey('vazio'),
+                      padding: const EdgeInsets.symmetric(vertical: 24),
+                      child: Text('Precisa de pelo menos 2 meses de lançamentos.', textAlign: TextAlign.center, style: TextStyle(color: G.apagado)),
+                    )
+                  : GraficoBarras(
+                      key: const ValueKey('mes'),
+                      titulo: 'Rendimento por mês',
+                      rotulos: [for (final m in ms) mesesAbr[int.parse(m.substring(5)) - 1]],
+                      valores: [for (final g in gs) [g]],
+                      cores: [G.pos],
+                      nomes: const ['Rendeu'],
+                      formatoY: curto,
+                      selecionado: sel,
+                      onToque: (i) => setState(() => mesSel = mesSel == i ? null : i),
+                    ),
+        ),
+        FaixaNumeros(vista == 1 && sel != null
+            ? [
+                ('Rendeu em ${mesesAbr[int.parse(ms[sel].substring(5)) - 1]}', brl(gs[sel], sinal: true), gs[sel] >= 0 ? G.pos : G.neg),
+                ('Média por mês', brl(gs.fold<double>(0, (a, b) => a + b) / gs.length), null),
+              ]
+            : [
+                ('Rendeu no período', brl(rendeuPer, sinal: true), rendeuPer >= 0 ? G.pos : G.neg),
+                ('Aportes', brl(aportes, sinal: true), null),
+                if (vista == 1 && gs.isNotEmpty) ('Média por mês', brl(gs.fold<double>(0, (a, b) => a + b) / gs.length), null) else ('Variação', p0.saldo > 0 ? pct(p1.saldo / p0.saldo - 1, sinal: true) : '—', null),
+              ]),
+      ]),
+    );
+  }
+
+  // --- histórico agrupado por mês; tocar numa linha mostra os detalhes
+  List<Widget> _historico(BuildContext context, Repo repo, List<Lancamento> lancs, Map<String, double?> variacao, Map<String, String>? nomes) {
+    final vis = lancs.take(mostrar).toList();
+    final porMes = <String, List<Lancamento>>{};
+    for (final l in vis) {
+      porMes.putIfAbsent(l.data.substring(0, 7), () => []).add(l);
+    }
+    final out = <Widget>[TituloSecao('Histórico · ${lancs.length} lançamento${lancs.length == 1 ? '' : 's'}')];
+    for (final e in porMes.entries) {
+      final ganhoMes = lancs.where((l) => l.data.startsWith(e.key)).fold<double>(0, (t, l) => t + (variacao[l.id] ?? 0));
+      out.add(Padding(
+        padding: const EdgeInsets.fromLTRB(4, 6, 4, 6),
+        child: Row(children: [
+          Expanded(child: Text(mesLongo(e.key), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14))),
+          Text('${ganhoMes >= 0 ? 'rendeu' : 'variou'} ${brl(ganhoMes, sinal: true)}', style: TextStyle(color: ganhoMes >= 0 ? G.pos : G.neg, fontSize: 12.5, fontWeight: FontWeight.w600)),
+        ]),
+      ));
+      out.add(CaixaLista([
+        for (final l in e.value)
+          InkWell(
+            onTap: () => _detalhe(context, repo, l, variacao[l.id], nomes?[l.ativo]),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+              child: Row(children: [
+                SizedBox(
+                  width: 44,
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(l.data.substring(8, 10), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                    Text(_semana(l.data), style: TextStyle(color: G.apagado, fontSize: 11)),
+                  ]),
+                ),
+                Expanded(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(brl(l.saldo), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                    if (nomes != null || l.aporte != 0)
+                      Text(
+                        [if (nomes != null) nomes[l.ativo] ?? '', if (l.aporte != 0) '${l.aporte > 0 ? 'aporte' : 'resgate'} ${brl(l.aporte.abs())}'].where((s) => s.isNotEmpty).join(' · '),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: l.aporte > 0 ? G.lavanda : G.apagado, fontSize: 12),
+                      ),
+                  ]),
+                ),
+                Builder(builder: (_) {
+                  final v = variacao[l.id];
+                  if (v == null) return Text('início', style: TextStyle(color: G.apagado, fontSize: 12.5));
+                  return Text(brl(v, sinal: true), style: TextStyle(color: v >= 0 ? G.pos : G.neg, fontWeight: FontWeight.w700, fontSize: 13.5));
+                }),
+              ]),
+            ),
+          ),
+      ]));
+      out.add(const SizedBox(height: 8));
+    }
+    if (lancs.length > mostrar) {
+      out.add(Center(child: TextButton(onPressed: () => setState(() => mostrar += 60), child: Text('Mostrar mais (${lancs.length - mostrar})'))));
+    }
+    return out;
+  }
+
+  static String _semana(String iso) => const ['seg', 'ter', 'qua', 'qui', 'sex', 'sáb', 'dom'][DateTime.parse(iso).weekday - 1];
+
+  void _detalhe(BuildContext context, Repo repo, Lancamento l, double? v, String? nomeFilho) {
+    abrirFolha(
+      context,
+      CorpoFolha([
+        TituloFolha(dataBr(l.data)),
+        if (nomeFilho != null) Text(nomeFilho, style: TextStyle(color: G.texto2)),
+        FaixaNumeros([
+          ('Saldo', brl(l.saldo), null),
+          ('Rendeu no dia', v == null ? '—' : brl(v, sinal: true), v == null ? null : (v >= 0 ? G.pos : G.neg)),
+          ('Aporte', l.aporte == 0 ? '—' : brl(l.aporte, sinal: true), null),
+        ]),
+        const SizedBox(height: 20),
+        OutlinedButton.icon(
+          onPressed: () async {
+            final nav = Navigator.of(context);
+            if (await confirmar(context, 'Excluir lançamento?', 'Saldo de ${brl(l.saldo)} em ${dataBr(l.data)}.')) {
+              await repo.apagar(l.id);
+              nav.pop();
+            }
+          },
+          style: OutlinedButton.styleFrom(foregroundColor: G.neg, side: BorderSide(color: G.neg.withValues(alpha: .4)), padding: const EdgeInsets.symmetric(vertical: 14)),
+          icon: const Icon(Icons.delete_outline_rounded),
+          label: const Text('Excluir lançamento'),
+        ),
+      ]),
     );
   }
 }

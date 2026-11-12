@@ -78,6 +78,7 @@ jobs:
               --virtual-time-budget=15000 \
               --screenshot="../../prints/$1.png" "http://localhost:8080/carteira-app/?demo=1$2" || true
           }
+          tirar a1-ativo "&tema=linho&aba=3&tela=ativo" 2300
           # computador (tela larga)
           tirar w1-inicio "&tema=claro" 900 1440 1
           tirar w2-extrato "&tema=claro&aba=1" 900 1440 1

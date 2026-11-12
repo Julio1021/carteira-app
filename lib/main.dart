@@ -22,6 +22,7 @@ import 'telas/limites.dart';
 import 'telas/cartoes.dart';
 import 'telas/emprestimos.dart';
 import 'telas/planejar.dart';
+import 'dados/patrimonio.dart';
 import 'telas/patrimonio.dart';
 import 'telas/avisos.dart';
 import 'telas/busca.dart';
@@ -200,6 +201,10 @@ class _CascaState extends State<Casca> {
                 altura: alt,
               ),
             );
+          }
+          if (tela == 'ativo') {
+            final c = calcularCarteira(RepoScope.ler(context));
+            if (c.posicoes.isNotEmpty) Navigator.of(context).push(MaterialPageRoute(builder: (_) => TelaAtivo(id: c.posicoes.first.a.id)));
           }
           if (tela == 'limites') _abrirLimites();
           if (tela == 'ajustes') Navigator.of(context).pushNamed('/ajustes');

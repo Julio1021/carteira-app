@@ -327,6 +327,7 @@ class GraficoBarras extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final mx = valores.expand((g) => g).fold<double>(0, math.max);
+    final mn = valores.expand((g) => g).fold<double>(0, math.min); // barras negativas (ex.: mês que rendeu menos)
     final largura = valores.isEmpty ? 10.0 : (valores.length <= 6 ? 14.0 : 8.0);
     final topo = mx <= 0 ? 1.0 : mx * 1.12;
     final poucosRotulos = rotulos.length > 8 && altura < 400;
@@ -339,6 +340,7 @@ class GraficoBarras extends StatelessWidget {
           curve: Curves.easeOutCubic,
           BarChartData(
             maxY: topo,
+            minY: mn < 0 ? mn * 1.12 : 0,
             gridData: _grade(passoRedondo(topo)),
             borderData: FlBorderData(show: false),
             alignment: BarChartAlignment.spaceAround,
