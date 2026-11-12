@@ -108,6 +108,8 @@ class G {
   static const coresSerieClaro = [Color(0xFF4F57D6), Color(0xFF12935A), Color(0xFFE8664F), Color(0xFF2C8FD9), Color(0xFFD69A2D), Color(0xFFD35A9E), Color(0xFF1FA595), Color(0xFF8A8FA8)];
   /// Cores dos gráficos do tema Linho & Safira (as mesmas do site).
   static const coresSerieLinho = [Color(0xFF2448C8), Color(0xFFD98A1E), Color(0xFF11885A), Color(0xFFC8553D), Color(0xFF7C4DCC), Color(0xFF1A8FA8), Color(0xFFD14D86), Color(0xFF7A7F8C)];
+  /// Cor única para "quanto você aplicou"/linhas de referência em todos os gráficos.
+  static Color get neutroSerie => claro ? const Color(0xFF9AA0BC) : const Color(0xFF7D839F);
   static List<Color> get coresSerie => claro ? (_l ? coresSerieLinho : coresSerieClaro) : coresSerieEscuro;
 }
 
@@ -167,19 +169,29 @@ ThemeData temaGrafite() {
     scaffoldBackgroundColor: G.fundo,
     fontFamily: null,
   );
-  final t = base.textTheme.apply(bodyColor: G.texto, displayColor: G.texto);
+  final t0 = base.textTheme.apply(bodyColor: G.texto, displayColor: G.texto);
+  // números com a mesma largura (colunas de valores alinhadas, como num extrato)
+  const tab = [FontFeature.tabularFigures()];
+  TextStyle? f(TextStyle? e) => e?.copyWith(fontFeatures: tab);
+  final t = TextTheme(
+    displayLarge: f(t0.displayLarge), displayMedium: f(t0.displayMedium), displaySmall: f(t0.displaySmall),
+    headlineLarge: f(t0.headlineLarge?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -1)),
+    headlineMedium: f(t0.headlineMedium), headlineSmall: f(t0.headlineSmall),
+    titleLarge: f(t0.titleLarge?.copyWith(fontWeight: FontWeight.w700, letterSpacing: -.3)),
+    titleMedium: f(t0.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+    titleSmall: f(t0.titleSmall),
+    bodyLarge: f(t0.bodyLarge), bodyMedium: f(t0.bodyMedium), bodySmall: f(t0.bodySmall),
+    labelLarge: f(t0.labelLarge), labelMedium: f(t0.labelMedium), labelSmall: f(t0.labelSmall),
+  );
   return base.copyWith(
-    textTheme: t.copyWith(
-      headlineLarge: t.headlineLarge?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -1),
-      titleLarge: t.titleLarge?.copyWith(fontWeight: FontWeight.w700, letterSpacing: -.3),
-      titleMedium: t.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-    ),
+    textTheme: t,
     appBarTheme: AppBarTheme(
       backgroundColor: Colors.transparent,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       centerTitle: true,
       foregroundColor: G.texto,
+      titleTextStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, letterSpacing: -.2, color: G.texto, fontFeatures: const [FontFeature.tabularFigures()]),
     ),
     dividerTheme: DividerThemeData(color: G.borda, thickness: 1, space: 1),
     inputDecorationTheme: InputDecorationTheme(

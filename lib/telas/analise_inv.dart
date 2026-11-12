@@ -186,7 +186,7 @@ class _CardAtivos extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                  Text(pct(lista[i].rent, sinal: true), style: TextStyle(fontWeight: FontWeight.w800, color: lista[i].rent >= 0 ? G.pos : G.neg)),
+                  Text(pct(lista[i].rent, sinal: true), style: TextStyle(fontWeight: FontWeight.w700, color: lista[i].rent >= 0 ? G.texto : G.neg)),
                   if (lista[i].pctCdi != null)
                     Builder(builder: (_) {
                       final q = lista[i].pctCdi!;

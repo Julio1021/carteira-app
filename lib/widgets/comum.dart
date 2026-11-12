@@ -21,7 +21,7 @@ class Cartao extends StatelessWidget {
   final Gradient? gradiente;
   final double raio;
   final VoidCallback? onTap;
-  const Cartao({super.key, required this.child, this.padding = const EdgeInsets.all(14), this.gradiente, this.raio = 18, this.onTap});
+  const Cartao({super.key, required this.child, this.padding = const EdgeInsets.all(16), this.gradiente, this.raio = 20, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -79,19 +79,18 @@ class IconeCategoria extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = cat.cor;
+    // ícone colorido sobre um fundo clarinho da mesma cor: a categoria continua
+    // fácil de reconhecer sem pesar na lista
+    final escuro = !G.claro;
+    final cor = escuro ? Color.lerp(c, Colors.white, .25)! : Color.lerp(c, Colors.black, .08)!;
     return Container(
       width: tam,
       height: tam,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(tam * .33),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color.lerp(c, Colors.white, .08)!, Color.lerp(c, Colors.black, .22)!],
-        ),
-        boxShadow: [BoxShadow(color: c.withValues(alpha: .35), blurRadius: 10, offset: const Offset(0, 4), spreadRadius: -6)],
+        borderRadius: BorderRadius.circular(tam * .32),
+        color: c.withValues(alpha: escuro ? .20 : .13),
       ),
-      child: Icon(cat.icone, color: Colors.white, size: tam * .5),
+      child: Icon(cat.icone, color: cor, size: tam * .52),
     );
   }
 }

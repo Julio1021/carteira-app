@@ -201,10 +201,10 @@ class _Resumo extends StatelessWidget {
             'Origem' => Cartao(
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           CabecalhoCartao('De onde vem seu patrimônio', sub: c.investido > 0 ? '${pct(c.rendeu / c.investido, sinal: true)} desde ${dataBr(c.dias.first.data)}' : null),
-          Barra(c.total > 0 ? c.investido / c.total : 0, cor: const Color(0xFF9AA0BC), trilho: G.pos, altura: 10),
+          Barra(c.total > 0 ? c.investido / c.total : 0, cor: G.neutroSerie, trilho: G.pos, altura: 10),
           const SizedBox(height: 12),
           Row(children: [
-            Expanded(child: _Mini('Você aplicou', brl(c.investido), const Color(0xFF9AA0BC))),
+            Expanded(child: _Mini('Você aplicou', brl(c.investido), G.neutroSerie)),
             Expanded(child: _Mini('O dinheiro rendeu', brl(c.rendeu, sinal: true), G.pos)),
           ]),
         ]),
@@ -215,7 +215,7 @@ class _Resumo extends StatelessWidget {
             GraficoLinha(
               titulo: 'Evolução do patrimônio',
               series: [amostra.map((d) => d.total).toList(), amostra.map((d) => d.investido).toList()],
-              cores: [G.pos, Color(0xFF9AA0BC)],
+              cores: [G.pos, G.neutroSerie],
               tracejada: const [false, true],
               formatoY: curto,
               rotulosX: [dataCurta(amostra.first.data), dataCurta(amostra[amostra.length ~/ 2].data), dataCurta(amostra.last.data)],
@@ -226,7 +226,7 @@ class _Resumo extends StatelessWidget {
             Row(children: [
               _Legenda(G.pos, 'Saldo'),
               SizedBox(width: 14),
-              _Legenda(Color(0xFF9AA0BC), 'Quanto você aplicou'),
+              _Legenda(G.neutroSerie, 'Quanto você aplicou'),
             ]),
           ]),
         ),
@@ -371,7 +371,7 @@ class _LinhaPos extends StatelessWidget {
         Row(children: [
           Text('${pct(total > 0 ? p.valor / total : 0, casas: 1)} da carteira', style: TextStyle(color: G.apagado, fontSize: 12)),
           const Spacer(),
-          Text('${brl(p.lucro, sinal: true)} (${pct(p.rent, sinal: true)})', style: TextStyle(color: p.lucro >= 0 ? G.pos : G.neg, fontSize: 12, fontWeight: FontWeight.w600)),
+          Text('${brl(p.lucro, sinal: true)} (${pct(p.rent, sinal: true)})', style: TextStyle(color: p.lucro >= 0 ? G.texto2 : G.neg, fontSize: 12, fontWeight: FontWeight.w600)),
         ]),
       ]),
     );
@@ -725,7 +725,7 @@ class _TelaAtivoState extends State<TelaAtivo> {
         actions: [IconButton(tooltip: 'Editar', onPressed: () => abrirFolha(context, FormAtivo(doc: d)), icon: const Icon(Icons.edit_outlined))],
       ),
       body: lancs.isEmpty
-          ? Center(child: Text('Nenhum lançamento ainda.', style: TextStyle(color: G.apagado)))
+          ? Center(child: Vazio(icone: Icons.show_chart_rounded, titulo: 'Nenhum saldo lançado', texto: 'Lance o saldo deste ativo para ver a evolução aqui.'))
           : ListView(padding: const EdgeInsets.fromLTRB(12, 4, 12, 40), children: [
               _resumo(serie),
               const SizedBox(height: 14),
@@ -819,7 +819,7 @@ class _TelaAtivoState extends State<TelaAtivo> {
                   GraficoLinha(
                     titulo: 'Evolução do saldo',
                     series: [amostra.map((d) => d.total).toList(), amostra.map((d) => d.investido).toList()],
-                    cores: [G.pos, const Color(0xFF9AA0BC)],
+                    cores: [G.pos, G.neutroSerie],
                     tracejada: const [false, true],
                     formatoY: curto,
                     rotulosX: [dataCurta(amostra.first.data), dataCurta(amostra[amostra.length ~/ 2].data), dataCurta(amostra.last.data)],
@@ -827,7 +827,7 @@ class _TelaAtivoState extends State<TelaAtivo> {
                     rotuloToque: (i) => dataBr(amostra[i.clamp(0, amostra.length - 1).toInt()].data),
                   ),
                   const SizedBox(height: 8),
-                  Row(children: [Legenda(G.pos, 'Saldo'), const SizedBox(width: 14), const Legenda(Color(0xFF9AA0BC), 'Quanto você aplicou')]),
+                  Row(children: [Legenda(G.pos, 'Saldo'), const SizedBox(width: 14), Legenda(G.neutroSerie, 'Quanto você aplicou')]),
                 ])
               : ms.isEmpty
                   ? Padding(
@@ -911,7 +911,7 @@ class _TelaAtivoState extends State<TelaAtivo> {
                 Builder(builder: (_) {
                   final v = variacao[l.id];
                   if (v == null) return Text('início', style: TextStyle(color: G.apagado, fontSize: 12.5));
-                  return Text(brl(v, sinal: true), style: TextStyle(color: v >= 0 ? G.pos : G.neg, fontWeight: FontWeight.w700, fontSize: 13.5));
+                  return Text(brl(v, sinal: true), style: TextStyle(color: v >= 0 ? G.texto2 : G.neg, fontWeight: FontWeight.w600, fontSize: 13.5));
                 }),
               ]),
             ),
@@ -1160,7 +1160,7 @@ class _RelatoriosState extends State<_Relatorios> {
               FittedBox(fit: BoxFit.scaleDown, child: Text(brl(fim.saldo), style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w800))),
               const SizedBox(height: 8),
               Row(children: [
-                Expanded(child: _Mini('Você investiu', brl(fim.investido), const Color(0xFF9AA0BC))),
+                Expanded(child: _Mini('Você investiu', brl(fim.investido), G.neutroSerie)),
                 Expanded(child: _Mini('Juros trabalharam', brl(fim.saldo - fim.investido), G.pos)),
               ]),
             ]),
@@ -1169,7 +1169,7 @@ class _RelatoriosState extends State<_Relatorios> {
           GraficoLinha(
             titulo: 'Projeção',
             series: [amostra.map((p) => p.saldo).toList(), amostra.map((p) => p.investido).toList()],
-            cores: [G.pos, Color(0xFF9AA0BC)],
+            cores: [G.pos, G.neutroSerie],
             tracejada: const [false, true],
             formatoY: curto,
             rotulosX: ['hoje', '${anos ~/ 2} anos', '$anos anos'],

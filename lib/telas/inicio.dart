@@ -129,7 +129,7 @@ class _Ultimos extends StatelessWidget {
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         CabecalhoCartao('Últimos lançamentos', sub: mesLongo(r.ym), acao: 'Ver extrato', onAcao: irExtrato),
         if (ult.isEmpty)
-          Padding(padding: EdgeInsets.symmetric(vertical: 10), child: Text('Nada lançado neste mês. Toque no + para começar.', style: TextStyle(color: G.apagado)))
+          Vazio(icone: Icons.receipt_long_rounded, titulo: 'Nada lançado neste mês', texto: 'Comece pelo primeiro gasto ou entrada.', acao: 'Lançar gasto', onAcao: () => abrirFormLanc(context))
         else
           CaixaLista([for (final l in ult) LinhaLanc(l, onTap: () => abrirFormLanc(context, doc: l.doc))]),
       ]),

@@ -176,12 +176,13 @@ class GraficoLinha extends StatelessWidget {
             maxX: math.max(1, n - 1).toDouble(),
             minY: base,
             maxY: topo,
-            clipData: const FlClipData.all(),
+            // a borda direita não corta o último ponto nem o último rótulo
+            clipData: const FlClipData(top: true, bottom: true, left: true, right: false),
             gridData: _grade(passoRedondo(topo - base)),
             borderData: FlBorderData(show: false),
             titlesData: FlTitlesData(
               topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 16, getTitlesWidget: (_, __) => const SizedBox.shrink())),
               leftTitles: AxisTitles(
                 sideTitles: SideTitles(
                   showTitles: true,

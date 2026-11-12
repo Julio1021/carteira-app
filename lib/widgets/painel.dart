@@ -26,11 +26,13 @@ class KpiTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cor = k.cor ?? G.texto;
-    final estilo = TextStyle(fontSize: 20, fontWeight: FontWeight.w800, letterSpacing: -.5, color: cor);
+    // a cor fica no ícone; o número só ganha cor quando pede atenção
+    final alerta = k.cor == G.neg || k.cor == G.alerta;
+    final estilo = TextStyle(fontSize: 20, fontWeight: FontWeight.w800, letterSpacing: -.5, color: alerta ? cor : G.texto);
     return Cartao(
       onTap: k.onTap,
-      padding: const EdgeInsets.fromLTRB(12, 11, 12, 11),
-      raio: 16,
+      padding: const EdgeInsets.fromLTRB(13, 12, 13, 12),
+      raio: 20,
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           Icon(k.icone, size: 15, color: cor),
@@ -377,6 +379,8 @@ class TituloSecao extends StatelessWidget {
 class FaixaNumeros extends StatelessWidget {
   final List<(String, String, Color?)> itens;
   const FaixaNumeros(this.itens, {super.key});
+  // verde de "deu certo" vira neutro; vermelho/alerta continuam chamando atenção
+  static Color _cor(Color? c) => (c == null || c == G.pos) ? G.texto : c;
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -394,7 +398,7 @@ class FaixaNumeros extends StatelessWidget {
                 FittedBox(
                   fit: BoxFit.scaleDown,
                   alignment: Alignment.centerLeft,
-                  child: Text(itens[i].$2, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5, color: itens[i].$3 ?? G.texto)),
+                  child: Text(itens[i].$2, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5, color: _cor(itens[i].$3))),
                 ),
               ]),
             ),
@@ -436,4 +440,43 @@ class Rodape extends StatelessWidget {
         padding: const EdgeInsets.only(top: 10),
         child: Text(texto, style: TextStyle(color: G.apagado, fontSize: 11)),
       );
+}
+
+/// Tela/área vazia: um desenho simples, uma frase e (opcional) o botão que
+/// leva direto à ação.
+class Vazio extends StatelessWidget {
+  final IconData icone;
+  final String titulo;
+  final String? texto;
+  final String? acao;
+  final VoidCallback? onAcao;
+  const Vazio({super.key, required this.icone, required this.titulo, this.texto, this.acao, this.onAcao});
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 26, horizontal: 20),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        SizedBox(
+          width: 86,
+          height: 86,
+          child: Stack(alignment: Alignment.center, children: [
+            Container(decoration: BoxDecoration(shape: BoxShape.circle, color: G.lavanda.withValues(alpha: .10))),
+            Positioned(right: 6, top: 8, child: Container(width: 14, height: 14, decoration: BoxDecoration(shape: BoxShape.circle, color: G.lavanda.withValues(alpha: .22)))),
+            Positioned(left: 10, bottom: 12, child: Container(width: 9, height: 9, decoration: BoxDecoration(shape: BoxShape.circle, color: G.pos.withValues(alpha: .35)))),
+            Icon(icone, size: 36, color: G.lavanda),
+          ]),
+        ),
+        const SizedBox(height: 14),
+        Text(titulo, textAlign: TextAlign.center, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+        if (texto != null) ...[
+          const SizedBox(height: 4),
+          Text(texto!, textAlign: TextAlign.center, style: TextStyle(color: G.apagado, fontSize: 13, height: 1.35)),
+        ],
+        if (acao != null && onAcao != null) ...[
+          const SizedBox(height: 16),
+          FilledButton.icon(onPressed: onAcao, icon: const Icon(Icons.add_rounded), label: Text(acao!)),
+        ],
+      ]),
+    );
+  }
 }

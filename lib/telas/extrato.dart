@@ -6,6 +6,7 @@ import '../dados/resumo.dart';
 import '../tema.dart';
 import '../util/fmt.dart';
 import '../widgets/comum.dart';
+import '../widgets/painel.dart';
 import '../widgets/movimento.dart';
 import 'analise.dart';
 import 'busca.dart';
@@ -249,14 +250,15 @@ class _TelaExtratoState extends State<TelaExtrato> {
         const SliverToBoxAdapter(child: SizedBox(height: 130))
       else if (lista.isEmpty)
         SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.all(30),
-            child: Column(children: [
-              Icon(Icons.receipt_long_rounded, size: 40, color: G.apagado),
-              const SizedBox(height: 10),
-              Text(q.isNotEmpty ? 'Nada encontrado para “${buscaC.text}”.' : 'Nenhum lançamento em ${mesLongo(widget.ym).toLowerCase()}.', textAlign: TextAlign.center, style: TextStyle(color: G.apagado)),
-            ]),
-          ),
+          child: q.isNotEmpty || cat != null || filtro != 'tudo'
+              ? Vazio(icone: Icons.search_off_rounded, titulo: 'Nada encontrado', texto: q.isNotEmpty ? 'Nenhum lançamento com “${buscaC.text}” neste mês.' : 'Nenhum lançamento com esse filtro neste mês.')
+              : Vazio(
+                  icone: Icons.receipt_long_rounded,
+                  titulo: 'Nada lançado em ${mesLongo(widget.ym).toLowerCase()}',
+                  texto: 'Seus gastos e entradas do mês aparecem aqui.',
+                  acao: 'Lançar gasto',
+                  onAcao: () => abrirFormLanc(context),
+                ),
         )
       else
         SliverPadding(

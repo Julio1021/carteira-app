@@ -162,7 +162,10 @@ class _Carteira extends CustomPainter {
     canvas.save();
     canvas.scale(s);
     final fundo = RRect.fromRectAndRadius(const Rect.fromLTWH(0, 0, 512, 512), const Radius.circular(116));
-    canvas.drawRRect(fundo, Paint()..color = const Color(0xFF2A2D44));
+    canvas.drawRRect(
+      fundo,
+      Paint()..shader = const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF4A66EA), Color(0xFF121852)]).createShader(const Rect.fromLTWH(0, 0, 512, 512)),
+    );
 
     // moedas caindo de cima da tela para dentro da carteira (somem atrás dela)
     const moedas = [(x: 190.0, ini: .08), (x: 268.0, ini: .17), (x: 228.0, ini: .26)];
@@ -194,9 +197,13 @@ class _Carteira extends CustomPainter {
     final dy = -10 * math.sin(tranco * math.pi);
     canvas.save();
     canvas.translate(0, dy);
-    canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(104, 218, 304, 184), const Radius.circular(48)), Paint()..color = Colors.white);
-    canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(300, 292, 108, 70), const Radius.circular(24)), Paint()..color = const Color(0xFFC9CDFB));
-    canvas.drawCircle(const Offset(334, 327), 14, Paint()..color = const Color(0xFF14151F));
+    canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(113, 220, 286, 174), const Radius.circular(38)), Paint()..color = const Color(0xFFDEE4FF));
+    canvas.drawRRect(
+      RRect.fromRectAndCorners(const Rect.fromLTWH(113, 259, 286, 135), bottomLeft: const Radius.circular(38), bottomRight: const Radius.circular(38)),
+      Paint()..color = Colors.white,
+    );
+    canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(297, 284, 113, 56), const Radius.circular(26)), Paint()..color = const Color(0xFFCBD4FF));
+    canvas.drawCircle(const Offset(335, 312), 11, Paint()..color = const Color(0xFF182068));
     canvas.restore();
 
     // gráfico crescendo acima da carteira
@@ -220,9 +227,9 @@ class _Carteira extends CustomPainter {
       canvas.drawPath(
         parcial,
         Paint()
-          ..color = const Color(0xFFB9BFF6)
+          ..color = const Color(0xFF5EE6A8)
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 28
+          ..strokeWidth = 26
           ..strokeCap = StrokeCap.round
           ..strokeJoin = StrokeJoin.round,
       );
@@ -230,14 +237,15 @@ class _Carteira extends CustomPainter {
       final pop = _f(.62, .7, Curves.elasticOut);
       if (pop > 0) {
         final fim = pts.last + const Offset(10, -6);
-        canvas.drawCircle(fim, 22 * pop, Paint()..color = const Color(0xFF4FD98C));
+        canvas.drawCircle(fim, 23 * pop, Paint()..color = const Color(0xFF5EE6A8));
+        canvas.drawCircle(fim, 10 * pop, Paint()..color = Colors.white);
         final halo = _f(.64, .8);
         if (halo > 0 && halo < 1) {
           canvas.drawCircle(
             fim,
             22 + 40 * halo,
             Paint()
-              ..color = const Color(0xFF4FD98C).withValues(alpha: .5 * (1 - halo))
+              ..color = const Color(0xFF5EE6A8).withValues(alpha: .5 * (1 - halo))
               ..style = PaintingStyle.stroke
               ..strokeWidth = 6,
           );
