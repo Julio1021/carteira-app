@@ -853,9 +853,13 @@ class _TelaAtivoState extends State<TelaAtivo> {
                 ('Média por mês', brl(gs.fold<double>(0, (a, b) => a + b) / gs.length), null),
               ]
             : [
-                ('Rendeu no período', brl(rendeuPer, sinal: true), rendeuPer >= 0 ? G.pos : G.neg),
+                ('Rendeu', brl(rendeuPer, sinal: true), rendeuPer >= 0 ? G.pos : G.neg),
                 ('Aportes', brl(aportes, sinal: true), null),
-                if (vista == 1 && gs.isNotEmpty) ('Média por mês', brl(gs.fold<double>(0, (a, b) => a + b) / gs.length), null) else ('Variação', p0.saldo > 0 ? pct(p1.saldo / p0.saldo - 1, sinal: true) : '—', null),
+                if (vista == 1 && gs.isNotEmpty)
+                  ('Média por mês', brl(gs.fold<double>(0, (a, b) => a + b) / gs.length), null)
+                else
+                  // rendimento sem contar o dinheiro novo
+                  ('Rentabilidade', p0.saldo > 0 ? pct(rendeuPer / p0.saldo, sinal: true) : '—', rendeuPer >= 0 ? G.pos : G.neg),
               ]),
       ]),
     );
