@@ -96,6 +96,11 @@ jobs:
           tirar e7-planejar "&tema=esmeralda&aba=2" 1400
           tirar e8-pc "&tema=esmeralda" 900 1440 1
           tirar e9-pc-analise "&tema=linho&aba=1&analise=1" 1500 1440 1
+          tirar m1-inicio "&tema=ametista" 1750
+          tirar m2-analise "&tema=ametista&aba=1&analise=1" 2100
+          tirar m3-patrimonio "&tema=ametista&aba=3" 1900
+          tirar m4-ajustes "&tema=ametista&tela=ajustes" 1000
+          tirar m5-planejar "&tema=ametista&aba=2" 1400
           # computador (tela larga)
           tirar w1-inicio "&tema=claro" 900 1440 1
           tirar w2-extrato "&tema=claro&aba=1" 900 1440 1

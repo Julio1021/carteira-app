@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 
 import '../dados/drive.dart';
 import '../tema.dart';
+import '../tela_cheia.dart';
 import 'abertura.dart';
 import '../widgets/movimento.dart';
 import '../widgets/comum.dart';
@@ -110,6 +111,7 @@ class _TelaAjustesState extends State<TelaAjustes> {
         const _Aparencia(),
         const SizedBox(height: 12),
         const _AberturaAjuste(),
+        if (!kIsWeb) ...[const SizedBox(height: 12), const _TelaCheiaAjuste()],
         const SizedBox(height: 18),
         Padding(padding: const EdgeInsets.fromLTRB(4, 0, 4, 8), child: Text('Sincronização', style: TextStyle(color: G.apagado, fontWeight: FontWeight.w600))),
         const _CartaoDrive(),
@@ -153,6 +155,7 @@ class _Aparencia extends StatelessWidget {
           'auto' => kIsWeb ? 'Segue o tema do computador: Pérola de dia, Grafite quando ele estiver no modo escuro.' : 'Segue o tema do celular: Pérola de dia, Grafite quando o celular estiver no modo escuro.',
           'claro' => 'Pérola: fundo claro com o cartão principal grafite.',
           'linho' => 'Linho & Safira: fundo cor de linho e cartão principal azul safira, igual ao site.',
+          'ametista' => 'Lilás & Ametista: claro, com fundo lilás bem suave, cartão principal em degradê violeta e detalhes em ametista.',
           'esmeralda' => 'Noite & Esmeralda: escuro em verde-petróleo, cartão principal esmeralda e detalhes em menta e ouro.',
           _ => 'Grafite: tudo escuro, com detalhes em lavanda.',
         };
@@ -160,7 +163,8 @@ class _Aparencia extends StatelessWidget {
         final temas = <_MiniTema>[
           _MiniTema('auto', 'Automático', fundo: perola, fundoB: grafite, cartao: const Color(0xFFFFFFFF), cartaoB: const Color(0xFF1B1C28), hero: GE.gradHero, destaque: const Color(0xFF4F57D6), linha: const Color(0xFFB9BFF6)),
           _MiniTema('linho', 'Linho & Safira', fundo: const Color(0xFFF3EFE7), cartao: const Color(0xFFFFFFFF), hero: GH.gradSafira, destaque: const Color(0xFF2448C8), linha: const Color(0xFFD9D2C4)),
-          _MiniTema('esmeralda', 'Noite & Esmeralda', fundo: const Color(0xFF081114), cartao: const Color(0xFF12252A), hero: GH.gradEsmeralda, destaque: const Color(0xFF34D8AC), linha: const Color(0xFF2A4A47), novo: true),
+          _MiniTema('ametista', 'Lilás & Ametista', fundo: const Color(0xFFF6F3FC), cartao: const Color(0xFFFFFFFF), hero: GH.gradAmetista, destaque: const Color(0xFF6B3FD4), linha: const Color(0xFFDDD3F0), novo: true),
+          _MiniTema('esmeralda', 'Noite & Esmeralda', fundo: const Color(0xFF081114), cartao: const Color(0xFF12252A), hero: GH.gradEsmeralda, destaque: const Color(0xFF34D8AC), linha: const Color(0xFF2A4A47)),
           _MiniTema('claro', 'Pérola', fundo: perola, cartao: const Color(0xFFFFFFFF), hero: GE.gradHero, destaque: const Color(0xFF12131C), linha: const Color(0xFFD9DBE6)),
           _MiniTema('escuro', 'Grafite', fundo: grafite, cartao: const Color(0xFF1B1C28), hero: GE.gradHero, destaque: const Color(0xFFB9BFF6), linha: const Color(0xFF34364A)),
         ];
@@ -286,8 +290,8 @@ class _CartaoTema extends StatelessWidget {
                   top: -6,
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(color: const Color(0xFF34D8AC), borderRadius: BorderRadius.circular(99)),
-                    child: const Text('novo', style: TextStyle(color: Color(0xFF04231B), fontSize: 10, fontWeight: FontWeight.w800)),
+                    decoration: BoxDecoration(color: t.destaque, borderRadius: BorderRadius.circular(99)),
+                    child: const Text('novo', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800)),
                   ),
                 ),
             ]),
@@ -430,6 +434,56 @@ class _CartaoDrive extends StatelessWidget {
           ]),
         );
       },
+    );
+  }
+}
+
+/// Tela cheia: liga/desliga e escolhe como as barras do Android se comportam.
+class _TelaCheiaAjuste extends StatelessWidget {
+  const _TelaCheiaAjuste();
+  @override
+  Widget build(BuildContext context) {
+    const opcoes = <(String, IconData, String, String)>[
+      ('tudo', Icons.fullscreen_rounded, 'Esconder tudo', 'Some a barra de cima e os botões de baixo. Deslize da borda para vê-los por alguns segundos.'),
+      ('topo', Icons.vertical_align_top_rounded, 'Esconder só a barra de cima', 'Somem a hora, a bateria e as notificações; os botões de baixo continuam.'),
+      ('transparente', Icons.layers_outlined, 'Barras transparentes', 'A hora e a bateria continuam visíveis, mas o app passa por trás, sem faixa preta.'),
+    ];
+    return AnimatedBuilder(
+      animation: Listenable.merge([telaCheia, telaCheiaTipo]),
+      builder: (context, _) => Container(
+        decoration: BoxDecoration(color: G.v(0x07), borderRadius: BorderRadius.circular(18), border: Border.all(color: G.borda)),
+        child: Column(children: [
+          SwitchListTile(
+            value: telaCheia.value,
+            onChanged: (v) => definirTelaCheia(ligada: v),
+            title: const Text('Tela cheia', style: TextStyle(fontWeight: FontWeight.w600)),
+            subtitle: Text('O app ocupa mais da tela do celular. Escolha abaixo como.', style: TextStyle(color: G.apagado, fontSize: 12.5)),
+          ),
+          if (telaCheia.value)
+            for (final (id, icone, nome, sub) in opcoes)
+              InkWell(
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  definirTelaCheia(tipo: id);
+                },
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 14, 10),
+                  child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Padding(padding: const EdgeInsets.only(top: 2), child: Icon(icone, size: 20, color: telaCheiaTipo.value == id ? G.lavanda : G.texto2)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text(nome, style: TextStyle(fontWeight: FontWeight.w600, color: telaCheiaTipo.value == id ? G.lavanda : G.texto)),
+                        Text(sub, style: TextStyle(color: G.apagado, fontSize: 12, height: 1.3)),
+                      ]),
+                    ),
+                    const SizedBox(width: 8),
+                    Icon(telaCheiaTipo.value == id ? Icons.radio_button_checked_rounded : Icons.radio_button_off_rounded, size: 20, color: telaCheiaTipo.value == id ? G.lavanda : G.apagado),
+                  ]),
+                ),
+              ),
+        ]),
+      ),
     );
   }
 }

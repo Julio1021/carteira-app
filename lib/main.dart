@@ -14,6 +14,7 @@ import 'widgets/graficos.dart';
 import 'dados/drive.dart';
 import 'dados/indices.dart';
 import 'tema.dart';
+import 'tela_cheia.dart';
 import 'widgets/movimento.dart';
 import 'telas/abertura.dart';
 import 'telas/ajustes.dart';
@@ -51,6 +52,7 @@ Future<void> main() async {
     await carregarAparencia();
     await carregarAbertura();
     await carregarPrivacidade();
+    await carregarTelaCheia();
     valoresOcultos = privacidade.value;
   }
   final repo = demo ? Repo.memoria(dadosDemo()) : Repo();
@@ -63,18 +65,9 @@ Future<void> main() async {
 }
 
 /// Liga/desliga o tema claro a partir da escolha em Ajustes e do tema do celular.
-bool resolverClaro(String modo, Brightness celular) => modo == 'claro' || modo == 'linho' || (modo == 'auto' && celular == Brightness.light);
+bool resolverClaro(String modo, Brightness celular) => modo == 'claro' || modo == 'linho' || modo == 'ametista' || (modo == 'auto' && celular == Brightness.light);
 
-void _barrasDoSistema() {
-  final icones = G.claro ? Brightness.dark : Brightness.light;
-  SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent,
-    statusBarIconBrightness: icones,
-    statusBarBrightness: G.claro ? Brightness.light : Brightness.dark,
-    systemNavigationBarColor: G.fundo,
-    systemNavigationBarIconBrightness: icones,
-  ));
-}
+void _barrasDoSistema() => aplicarBarras();
 
 class AppCarteira extends StatefulWidget {
   final Repo repo;
@@ -93,6 +86,7 @@ class _AppCarteiraState extends State<AppCarteira> with WidgetsBindingObserver {
     G.claro = resolverClaro(aparencia.value, WidgetsBinding.instance.platformDispatcher.platformBrightness);
     G.linho = aparencia.value == 'linho';
     G.noite = aparencia.value == 'esmeralda';
+    G.ametista = aparencia.value == 'ametista';
     _barrasDoSistema();
   }
 
@@ -109,16 +103,20 @@ class _AppCarteiraState extends State<AppCarteira> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState s) {
-    if (s == AppLifecycleState.resumed) unawaited(syncDrive?.sincronizar());
+    if (s == AppLifecycleState.resumed) {
+      aplicarBarras(); // o Android pode devolver as barras ao voltar para o app
+      unawaited(syncDrive?.sincronizar());
+    }
   }
 
   void _aplicar() {
     final claro = resolverClaro(aparencia.value, WidgetsBinding.instance.platformDispatcher.platformBrightness);
-    final linho = aparencia.value == 'linho', noite = aparencia.value == 'esmeralda';
-    if ((claro == G.claro && linho == G.linho && noite == G.noite) || !mounted) return;
+    final linho = aparencia.value == 'linho', noite = aparencia.value == 'esmeralda', ametista = aparencia.value == 'ametista';
+    if ((claro == G.claro && linho == G.linho && noite == G.noite && ametista == G.ametista) || !mounted) return;
     G.claro = claro;
     G.linho = linho;
     G.noite = noite;
+    G.ametista = ametista;
     _barrasDoSistema();
     _refazerTudo();
   }
