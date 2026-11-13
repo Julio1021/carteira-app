@@ -365,7 +365,7 @@ class _ChipsAssuntoState extends State<ChipsAssunto> with SingleTickerProviderSt
                       if (i == sel)
                         Positioned(top: 0, left: x, width: larg, child: pagina[i]!)
                       else if (i == a)
-                        Positioned(top: 0, left: (a > sel ? passo : -passo) + x, width: larg, child: IgnorePointer(child: pagina[i]!))
+                        Positioned(top: 0, left: (a! > sel ? passo : -passo) + x, width: larg, child: IgnorePointer(child: pagina[i]!))
                       else
                         escondida(i),
                   ]),
