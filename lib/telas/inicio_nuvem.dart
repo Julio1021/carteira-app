@@ -370,7 +370,7 @@ class _MedidorPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = esp
       ..strokeCap = StrokeCap.round
-      ..shader = SweepGradient(startAngle: math.pi, endAngle: math.pi * 2, colors: [Color.lerp(cor, Colors.white, .45)!, cor]).createShader(rect);
+      ..shader = SweepGradient(startAngle: math.pi, endAngle: math.pi * 2, colors: [Color.lerp(cor, Colors.white, .22)!, cor]).createShader(rect);
     canvas.drawArc(rect, math.pi, math.pi * v, false, p);
   }
 
