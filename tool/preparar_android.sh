@@ -36,15 +36,37 @@ splash31() {
     <style name="LaunchTheme" parent="$2">
         <item name="android:windowBackground">@drawable/launch_background</item>
         <item name="android:windowSplashScreenBackground">$3</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
     </style>
     <style name="NormalTheme" parent="$2">
         <item name="android:windowBackground">?android:colorBackground</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
     </style>
 </resources>
 EOF
 }
 splash31 values-v31 "@android:style/Theme.Light.NoTitleBar" "#F4F5F9"
 splash31 values-night-v31 "@android:style/Theme.Black.NoTitleBar" "#101119"
+# Tela cheia de verdade: deixa o app usar também a faixa da câmera (recorte).
+# Sem isto, ao esconder a barra de cima o Android deixa uma faixa preta no lugar.
+recorte28() {
+  mkdir -p "$RES/$1"
+  cat > "$RES/$1/styles.xml" <<EOF
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="LaunchTheme" parent="$2">
+        <item name="android:windowBackground">@drawable/launch_background</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+    </style>
+    <style name="NormalTheme" parent="$2">
+        <item name="android:windowBackground">?android:colorBackground</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+    </style>
+</resources>
+EOF
+}
+recorte28 values-v28 "@android:style/Theme.Light.NoTitleBar"
+recorte28 values-night-v28 "@android:style/Theme.Black.NoTitleBar"
 
 # web: título, cor e nome do app instalado
 sed -i 's#<title>carteira</title>#<title>Diário da Carteira</title>#' web/index.html || true
