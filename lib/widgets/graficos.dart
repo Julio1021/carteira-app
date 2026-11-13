@@ -329,14 +329,18 @@ class GraficoBarras extends StatelessWidget {
   Widget build(BuildContext context) {
     final mx = valores.expand((g) => g).fold<double>(0, math.max);
     final mn = valores.expand((g) => g).fold<double>(0, math.min); // barras negativas (ex.: mês que rendeu menos)
-    final largura = valores.isEmpty ? 10.0 : (valores.length <= 6 ? 14.0 : 8.0);
     final topo = mx <= 0 ? 1.0 : mx * 1.12;
     final poucosRotulos = rotulos.length > 8 && altura < 400;
     return _Moldura(
       altura: altura,
       onExpandir: titulo == null ? null : () => abrirGraficoCheio(context, titulo!, _com),
       grafico: _Entrada(
-        builder: (t) => BarChart(
+        builder: (t) => LayoutBuilder(builder: (context, k) {
+          // a largura das barras acompanha o espaço: nem fiapos no computador, nem coladas no celular
+          final series = valores.isEmpty ? 1 : valores.map((g) => g.length).fold<int>(1, math.max);
+          final vaga = (k.maxWidth - 46) / math.max(1, valores.length);
+          final largura = ((vaga * .62 - 4 * (series - 1)) / series).clamp(5.0, 30.0).toDouble();
+          return BarChart(
           duration: const Duration(milliseconds: 450),
           curve: Curves.easeOutCubic,
           BarChartData(
@@ -409,15 +413,16 @@ class GraficoBarras extends StatelessWidget {
                               ? [cores[s % cores.length].withValues(alpha: .75), cores[s % cores.length]]
                               : [cores[s % cores.length].withValues(alpha: .22), cores[s % cores.length].withValues(alpha: .38)],
                         ),
-                        borderRadius: BorderRadius.vertical(top: Radius.circular(largura / 2)),
-                        // trilho de fundo: mostra a escala até o topo
-                        backDrawRodData: BackgroundBarChartRodData(show: valores[g].length == 1, toY: topo, color: G.v(0x07)),
+                        borderRadius: valores[g][s] < 0
+                            ? BorderRadius.vertical(bottom: Radius.circular(math.min(largura / 2, 7)))
+                            : BorderRadius.vertical(top: Radius.circular(math.min(largura / 2, 7))),
                       ),
                   ],
                 ),
             ],
           ),
-        ),
+        );
+        }),
       ),
     );
   }

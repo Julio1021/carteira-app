@@ -1120,27 +1120,63 @@ class _RelatoriosState extends State<_Relatorios> {
           Expanded(child: _Kpi('Aportes', brl(c.aportesAno(ano)), G.texto)),
         ]),
         const SizedBox(height: 12),
-        for (final m in meses) ...[
+        if (meses.length >= 2) ...[
           Cartao(
-            padding: const EdgeInsets.all(14),
-            child: Column(children: [
-              Row(children: [
-                Expanded(child: Text(mesLongo(m.ym), style: const TextStyle(fontWeight: FontWeight.w700))),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(color: (m.rent >= 0 ? G.pos : G.neg).withValues(alpha: .18), borderRadius: BorderRadius.circular(99)),
-                  child: Text(pct(m.rent, sinal: true), style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: m.rent >= 0 ? G.pos : G.neg)),
-                ),
-              ]),
-              const SizedBox(height: 8),
-              _Lin('Saldo inicial', brl(m.ini)),
-              _Lin('Aportes / resgates', brl(m.aportes, sinal: true)),
-              _Lin('Rendimento', brl(m.ganho, sinal: true), cor: m.ganho >= 0 ? G.pos : G.neg),
-              _Lin('Saldo final', brl(m.fim), forte: true),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              const CabecalhoCartao('Rendimento de cada mês', sub: 'Quanto os investimentos renderam, sem contar aportes'),
+              GraficoBarras(
+                titulo: 'Rendimento de cada mês',
+                rotulos: [for (final m in meses.reversed) mesesAbr[int.parse(m.ym.substring(5, 7)) - 1]],
+                valores: [for (final m in meses.reversed) [m.ganho]],
+                cores: [G.pos],
+                nomes: const ['Rendeu'],
+                formatoY: curto,
+                altura: 190,
+              ),
             ]),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
         ],
+        // tabela: um mês por linha (antes era um cartão de 4 linhas por mês)
+        Cartao(
+          padding: const EdgeInsets.fromLTRB(14, 14, 14, 6),
+          child: Builder(builder: (context) {
+            String n(double v, {bool sinal = false}) => brl(v, sinal: sinal).replaceFirst('R\$ ', '');
+            final cab = TextStyle(color: G.apagado, fontSize: 11.5, fontWeight: FontWeight.w600);
+            Widget cel(String t, {int flex = 3, TextStyle? estilo}) => Expanded(
+                  flex: flex,
+                  child: FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerRight, child: Text(t, maxLines: 1, style: estilo ?? const TextStyle(fontSize: 13))),
+                );
+            return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              const CabecalhoCartao('Mês a mês', sub: 'Valores em reais'),
+              Row(children: [
+                Expanded(flex: 3, child: Text('Mês', style: cab)),
+                cel('Aportes', estilo: cab),
+                cel('Rendeu', estilo: cab),
+                cel('Saldo final', flex: 4, estilo: cab),
+              ]),
+              const SizedBox(height: 4),
+              for (final m in meses)
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 9),
+                  decoration: BoxDecoration(border: Border(top: BorderSide(color: G.borda))),
+                  child: Row(children: [
+                    Expanded(
+                      flex: 3,
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text(mesesLongos[int.parse(m.ym.substring(5, 7)) - 1].substring(0, 3), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5)),
+                        Text(pct(m.rent, sinal: true), style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: m.rent >= 0 ? G.pos : G.neg)),
+                      ]),
+                    ),
+                    cel(m.aportes == 0 ? '—' : n(m.aportes, sinal: true), estilo: TextStyle(fontSize: 13, color: G.texto2)),
+                    cel(n(m.ganho, sinal: true), estilo: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: m.ganho >= 0 ? G.texto : G.neg)),
+                    cel(n(m.fim), flex: 4, estilo: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                  ]),
+                ),
+            ]);
+          }),
+        ),
+        const SizedBox(height: 8),
         const SizedBox(height: 8),
       ],
       Cartao(

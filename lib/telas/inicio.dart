@@ -199,7 +199,7 @@ class HeroMes extends StatelessWidget {
       ),
       clipBehavior: Clip.antiAlias,
       child: Stack(children: [
-        Positioned.fill(child: IgnorePointer(child: CustomPaint(painter: GH.safira ? const Aurora() : const Aurora(a: Color(0x1FFFFFFF), b: Color(0x24B9BFF6))))),
+        Positioned.fill(child: IgnorePointer(child: CustomPaint(painter: GH.colorido ? const Aurora() : const Aurora(a: Color(0x1FFFFFFF), b: Color(0x24B9BFF6))))),
         Padding(
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
       child: Column(children: [

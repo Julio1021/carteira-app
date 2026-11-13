@@ -74,7 +74,9 @@ if [ -f web/manifest.json ]; then
 import json
 p = 'web/manifest.json'
 m = json.load(open(p))
-m.update({"name": "Diário da Carteira", "short_name": "Carteira", "background_color": "#F2EEE6", "theme_color": "#2B44C9"})
+m.update({"name": "Diário da Carteira", "short_name": "Carteira", "background_color": "#F2EEE6", "theme_color": "#2B44C9",
+          # instalado na tela inicial, abre em tela cheia (sem barra de endereço nem barra de notificações)
+          "display": "fullscreen", "display_override": ["fullscreen", "standalone"]})
 json.dump(m, open(p, 'w'), ensure_ascii=False, indent=2)
 PY
 fi

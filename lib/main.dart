@@ -92,6 +92,7 @@ class _AppCarteiraState extends State<AppCarteira> with WidgetsBindingObserver {
     privacidade.addListener(_privacidade);
     G.claro = resolverClaro(aparencia.value, WidgetsBinding.instance.platformDispatcher.platformBrightness);
     G.linho = aparencia.value == 'linho';
+    G.noite = aparencia.value == 'esmeralda';
     _barrasDoSistema();
   }
 
@@ -113,10 +114,11 @@ class _AppCarteiraState extends State<AppCarteira> with WidgetsBindingObserver {
 
   void _aplicar() {
     final claro = resolverClaro(aparencia.value, WidgetsBinding.instance.platformDispatcher.platformBrightness);
-    final linho = aparencia.value == 'linho';
-    if ((claro == G.claro && linho == G.linho) || !mounted) return;
+    final linho = aparencia.value == 'linho', noite = aparencia.value == 'esmeralda';
+    if ((claro == G.claro && linho == G.linho && noite == G.noite) || !mounted) return;
     G.claro = claro;
     G.linho = linho;
+    G.noite = noite;
     _barrasDoSistema();
     _refazerTudo();
   }

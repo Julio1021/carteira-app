@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../dados/drive.dart';
 import '../tema.dart';
@@ -148,71 +149,166 @@ class _Aparencia extends StatelessWidget {
     return ValueListenableBuilder<String>(
       valueListenable: aparencia,
       builder: (context, modo, _) {
-        Widget op(String v, String t, List<Color> amostra) {
-          final on = modo == v;
-          return Expanded(
-            child: Toque(
-              escala: .95,
-              child: Material(
-                color: on ? G.lavandaFundo : Colors.transparent,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: BorderSide(color: on ? G.lavanda : G.borda, width: on ? 1.6 : 1)),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(14),
-                  onTap: () => definirAparencia(v),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-                    child: Column(children: [
-                      // amostra de cores do tema
-                      SizedBox(
-                        height: 26,
-                        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                          for (var i = 0; i < amostra.length; i++)
-                            Align(
-                              widthFactor: .7,
-                              child: Container(
-                                width: 22,
-                                height: 22,
-                                decoration: BoxDecoration(color: amostra[i], shape: BoxShape.circle, border: Border.all(color: G.borda, width: 1.5)),
-                              ),
-                            ),
-                        ]),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(t, textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: on ? G.lavanda : G.texto2)),
-                    ]),
-                  ),
-                ),
-              ),
-            ),
-          );
-        }
-
         final texto = switch (modo) {
           'auto' => kIsWeb ? 'Segue o tema do computador: Pérola de dia, Grafite quando ele estiver no modo escuro.' : 'Segue o tema do celular: Pérola de dia, Grafite quando o celular estiver no modo escuro.',
           'claro' => 'Pérola: fundo claro com o cartão principal grafite.',
           'linho' => 'Linho & Safira: fundo cor de linho e cartão principal azul safira, igual ao site.',
+          'esmeralda' => 'Noite & Esmeralda: escuro em verde-petróleo, cartão principal esmeralda e detalhes em menta e ouro.',
           _ => 'Grafite: tudo escuro, com detalhes em lavanda.',
         };
+        const perola = Color(0xFFF4F5F9), grafite = Color(0xFF101119);
+        final temas = <_MiniTema>[
+          _MiniTema('auto', 'Automático', fundo: perola, fundoB: grafite, cartao: const Color(0xFFFFFFFF), cartaoB: const Color(0xFF1B1C28), hero: GE.gradHero, destaque: const Color(0xFF4F57D6), linha: const Color(0xFFB9BFF6)),
+          _MiniTema('linho', 'Linho & Safira', fundo: const Color(0xFFF3EFE7), cartao: const Color(0xFFFFFFFF), hero: GH.gradSafira, destaque: const Color(0xFF2448C8), linha: const Color(0xFFD9D2C4)),
+          _MiniTema('esmeralda', 'Noite & Esmeralda', fundo: const Color(0xFF081114), cartao: const Color(0xFF12252A), hero: GH.gradEsmeralda, destaque: const Color(0xFF34D8AC), linha: const Color(0xFF2A4A47), novo: true),
+          _MiniTema('claro', 'Pérola', fundo: perola, cartao: const Color(0xFFFFFFFF), hero: GE.gradHero, destaque: const Color(0xFF12131C), linha: const Color(0xFFD9DBE6)),
+          _MiniTema('escuro', 'Grafite', fundo: grafite, cartao: const Color(0xFF1B1C28), hero: GE.gradHero, destaque: const Color(0xFFB9BFF6), linha: const Color(0xFF34364A)),
+        ];
         return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          Row(children: [
-            op('auto', 'Automático', const [Color(0xFFF4F5F9), Color(0xFF101119)]),
-            const SizedBox(width: 8),
-            op('claro', 'Pérola', const [Color(0xFFF4F5F9), Color(0xFF353950), Color(0xFF4F57D6)]),
-          ]),
-          const SizedBox(height: 8),
-          Row(children: [
-            op('linho', 'Linho & Safira', const [Color(0xFFF3EFE7), Color(0xFF2448C8), Color(0xFFB07A1F)]),
-            const SizedBox(width: 8),
-            op('escuro', 'Grafite', const [Color(0xFF101119), Color(0xFF353950), Color(0xFFB9BFF6)]),
-          ]),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            clipBehavior: Clip.none,
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              for (var i = 0; i < temas.length; i++) ...[
+                if (i > 0) const SizedBox(width: 10),
+                _CartaoTema(temas[i], ligado: modo == temas[i].id),
+              ],
+            ]),
+          ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
+            padding: const EdgeInsets.fromLTRB(4, 10, 4, 0),
             child: Text(texto, style: TextStyle(color: G.apagado, fontSize: 12)),
           ),
         ]);
       },
     );
   }
+}
+
+class _MiniTema {
+  final String id, nome;
+  final Color fundo, cartao, destaque, linha;
+  final Color? fundoB, cartaoB; // segunda metade (Automático)
+  final Gradient hero;
+  final bool novo;
+  const _MiniTema(this.id, this.nome, {required this.fundo, required this.cartao, required this.hero, required this.destaque, required this.linha, this.fundoB, this.cartaoB, this.novo = false});
+}
+
+/// Miniatura de uma tela do app com as cores do tema.
+class _CartaoTema extends StatelessWidget {
+  final _MiniTema t;
+  final bool ligado;
+  const _CartaoTema(this.t, {required this.ligado});
+  @override
+  Widget build(BuildContext context) {
+    Widget tela(Color fundo, Color cartao) => Container(
+          color: fundo,
+          padding: const EdgeInsets.fromLTRB(7, 8, 7, 0),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Container(
+              height: 40,
+              decoration: BoxDecoration(gradient: t.hero, borderRadius: BorderRadius.circular(8)),
+              padding: const EdgeInsets.all(6),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Container(width: 22, height: 4, decoration: BoxDecoration(color: const Color(0x99FFFFFF), borderRadius: BorderRadius.circular(2))),
+                const SizedBox(height: 5),
+                Container(width: 46, height: 8, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(3))),
+              ]),
+            ),
+            const SizedBox(height: 6),
+            for (var k = 0; k < 2; k++)
+              Container(
+                height: 17,
+                margin: const EdgeInsets.only(bottom: 5),
+                padding: const EdgeInsets.symmetric(horizontal: 5),
+                decoration: BoxDecoration(color: cartao, borderRadius: BorderRadius.circular(6)),
+                child: Row(children: [
+                  Container(width: 8, height: 8, decoration: BoxDecoration(color: k == 0 ? t.destaque : t.linha, borderRadius: BorderRadius.circular(3))),
+                  const SizedBox(width: 5),
+                  Expanded(child: Align(alignment: Alignment.centerLeft, child: Container(width: k == 0 ? 30 : 22, height: 4, decoration: BoxDecoration(color: t.linha, borderRadius: BorderRadius.circular(2))))),
+                ]),
+              ),
+            const Spacer(),
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Container(
+                width: 22,
+                height: 13,
+                margin: const EdgeInsets.only(bottom: 6),
+                decoration: BoxDecoration(color: t.destaque, borderRadius: BorderRadius.circular(5)),
+              ),
+            ),
+          ]),
+        );
+    return Toque(
+      escala: .95,
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          definirAparencia(t.id);
+        },
+        child: SizedBox(
+          width: 102,
+          child: Column(children: [
+            Stack(clipBehavior: Clip.none, children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                height: 132,
+                padding: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(17),
+                  border: Border.all(color: ligado ? G.lavanda : G.borda, width: ligado ? 2 : 1),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(13),
+                  child: t.fundoB == null
+                      ? tela(t.fundo, t.cartao)
+                      : Stack(fit: StackFit.expand, children: [
+                          tela(t.fundoB!, t.cartaoB ?? t.cartao),
+                          ClipPath(clipper: _Diagonal(), child: tela(t.fundo, t.cartao)),
+                        ]),
+                ),
+              ),
+              if (ligado)
+                Positioned(
+                  right: -4,
+                  top: -4,
+                  child: Container(
+                    width: 22,
+                    height: 22,
+                    decoration: BoxDecoration(color: G.lavanda, shape: BoxShape.circle, border: Border.all(color: G.fundo, width: 2)),
+                    child: Icon(Icons.check_rounded, size: 14, color: G.tinta),
+                  ),
+                ),
+              if (t.novo && !ligado)
+                Positioned(
+                  right: -4,
+                  top: -6,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(color: const Color(0xFF34D8AC), borderRadius: BorderRadius.circular(99)),
+                    child: const Text('novo', style: TextStyle(color: Color(0xFF04231B), fontSize: 10, fontWeight: FontWeight.w800)),
+                  ),
+                ),
+            ]),
+            const SizedBox(height: 7),
+            Text(t.nome, textAlign: TextAlign.center, maxLines: 2, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12, height: 1.15, color: ligado ? G.lavanda : G.texto2)),
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
+class _Diagonal extends CustomClipper<Path> {
+  @override
+  Path getClip(Size s) => Path()
+    ..moveTo(0, 0)
+    ..lineTo(s.width, 0)
+    ..lineTo(0, s.height)
+    ..close();
+  @override
+  bool shouldReclip(_Diagonal o) => false;
 }
 
 class _AberturaAjuste extends StatelessWidget {

@@ -274,7 +274,7 @@ class _CalendarioCalorState extends State<CalendarioCalor> {
                     for (var c = 0; c < 7; c++)
                       Builder(builder: (_) {
                         final i = l * 7 + c - primeiro + 1;
-                        final w = Padding(padding: EdgeInsets.only(right: c < 6 ? 6 : 0), child: SizedBox(width: lado, height: lado * .82));
+                        final w = Padding(padding: EdgeInsets.only(right: c < 6 ? 6 : 0), child: SizedBox(width: lado, height: (lado * .82).clamp(0.0, 48.0).toDouble()));
                         if (i < 1 || i > n) return w;
                         final v = por[i] ?? 0;
                         final iso = '${widget.ym}-${doisDig(i)}';
@@ -291,7 +291,7 @@ class _CalendarioCalorState extends State<CalendarioCalor> {
                               curve: Curves.easeOut,
                               builder: (_, a, __) => Container(
                                 width: lado,
-                                height: lado * .82,
+                                height: (lado * .82).clamp(0.0, 48.0).toDouble(),
                                 alignment: Alignment.center,
                                 decoration: BoxDecoration(
                                   color: v > 0 ? corBase.withValues(alpha: a) : G.v(futuro ? 0x05 : 0x0B),

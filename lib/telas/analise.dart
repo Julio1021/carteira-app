@@ -211,48 +211,54 @@ class _OndeFoi extends StatefulWidget {
 }
 
 class _OndeFoiState extends State<_OndeFoi> {
-  int? sel;
   @override
   Widget build(BuildContext context) {
     final r = widget.r;
     final itens = r.porCategoria.entries.where((e) => e.value > 0).toList()..sort((a, b) => b.value.compareTo(a.value));
     if (itens.isEmpty) return const SizedBox.shrink();
-    final top = itens.take(6).toList();
-    final resto = itens.skip(6).fold<double>(0, (a, e) => a + e.value);
+    final top = itens.take(7).toList();
+    final resto = itens.skip(7).fold<double>(0, (a, e) => a + e.value);
     final valores = [...top.map((e) => e.value), if (resto > 0) resto];
-    final cores = [...top.map((e) => catGasto(e.key).cor), if (resto > 0) const Color(0xFF5A5E72)];
-    final nomes = [...top.map((e) => catGasto(e.key).nome), if (resto > 0) 'Outras ${itens.length - 6}'];
+    final cores = [...top.map((e) => catGasto(e.key).cor), if (resto > 0) const Color(0xFF7A7F92)];
+    final nomes = [...top.map((e) => catGasto(e.key).nome), if (resto > 0) 'Outras ${itens.length - 7}'];
     final cats = [...top.map((e) => e.key), if (resto > 0) null];
-    final s = sel;
+    final maior = valores.first;
+    // Com várias categorias, barras ordenadas comparam melhor do que uma rosca:
+    // a faixa de cima mostra a divisão do total e a lista, o tamanho de cada uma.
     return Cartao(
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        const Text('Para onde foi o dinheiro', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
-        const SizedBox(height: 14),
-        Center(
-          child: Rosca(
-            valores: valores,
-            cores: cores,
-            centro: s == null ? brl(r.saiu) : brl(valores[s]),
-            sub: s == null ? 'em ${itens.length} categorias' : '${nomes[s]}\n${pct(valores[s] / r.saiu, casas: 1)}',
-            tam: 200,
-            onToque: (i) => setState(() => sel = i),
+        CabecalhoCartao('Para onde foi o dinheiro', sub: '${brl(r.saiu)} em ${itens.length} categoria${itens.length == 1 ? '' : 's'}'),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(6),
+          child: SizedBox(
+            height: 12,
+            child: Row(children: [
+              for (var i = 0; i < valores.length; i++) ...[
+                if (i > 0) const SizedBox(width: 2),
+                Expanded(flex: (valores[i] / r.saiu * 1000).round().clamp(8, 1000).toInt(), child: ColoredBox(color: cores[i])),
+              ],
+            ]),
           ),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 10),
         for (var i = 0; i < valores.length; i++)
           InkWell(
             borderRadius: BorderRadius.circular(10),
             onTap: cats[i] == null ? null : () => widget.verCategoria(cats[i]!),
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 2),
-              child: Row(children: [
-                Container(width: 12, height: 12, decoration: BoxDecoration(color: cores[i], borderRadius: BorderRadius.circular(4))),
-                const SizedBox(width: 10),
-                Expanded(child: Text(nomes[i], style: TextStyle(fontWeight: sel == i ? FontWeight.w700 : FontWeight.w600))),
-                Text(pct(valores[i] / r.saiu, casas: 0), style: TextStyle(color: G.apagado, fontSize: 12.5)),
-                const SizedBox(width: 12),
-                SizedBox(width: 92, child: Text(brl(valores[i]), textAlign: TextAlign.right, style: const TextStyle(fontWeight: FontWeight.w700))),
-                if (cats[i] != null) Icon(Icons.chevron_right_rounded, size: 18, color: G.apagado),
+              child: Column(children: [
+                Row(children: [
+                  Container(width: 10, height: 10, decoration: BoxDecoration(color: cores[i], borderRadius: BorderRadius.circular(3))),
+                  const SizedBox(width: 9),
+                  Expanded(child: Text(nomes[i], maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600))),
+                  Text(pct(valores[i] / r.saiu, casas: 0), style: TextStyle(color: G.apagado, fontSize: 12.5)),
+                  const SizedBox(width: 10),
+                  SizedBox(width: 92, child: Text(brl(valores[i]), textAlign: TextAlign.right, style: const TextStyle(fontWeight: FontWeight.w700))),
+                  if (cats[i] != null) Icon(Icons.chevron_right_rounded, size: 18, color: G.apagado) else const SizedBox(width: 18),
+                ]),
+                const SizedBox(height: 6),
+                Padding(padding: const EdgeInsets.only(left: 19, right: 18), child: Barra(valores[i] / maior, cor: cores[i], altura: 5)),
               ]),
             ),
           ),

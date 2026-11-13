@@ -87,6 +87,15 @@ jobs:
           tirar n6-objetivo-form "&tema=linho&aba=3&tela=objetivo" 1100
           for sl in 0 1 2 3 4 5 6; do tirar "r$sl-retro" "&tema=linho&tela=retro&slide=$sl" 844; done
           tirar n7-retro-pc "&tema=linho&tela=retro&slide=2" 900 1440 1
+          tirar e1-inicio "&tema=esmeralda" 1750
+          tirar e2-extrato "&tema=esmeralda&aba=1" 1100
+          tirar e3-analise "&tema=esmeralda&aba=1&analise=1" 2100
+          tirar e4-patrimonio "&tema=esmeralda&aba=3" 1900
+          tirar e5-ajustes "&tema=esmeralda&tela=ajustes" 900
+          tirar e6-relatorios "&tema=linho&aba=3&sub=3" 2300
+          tirar e7-planejar "&tema=esmeralda&aba=2" 1400
+          tirar e8-pc "&tema=esmeralda" 900 1440 1
+          tirar e9-pc-analise "&tema=linho&aba=1&analise=1" 1500 1440 1
           # computador (tela larga)
           tirar w1-inicio "&tema=claro" 900 1440 1
           tirar w2-extrato "&tema=claro&aba=1" 900 1440 1

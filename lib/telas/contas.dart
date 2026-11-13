@@ -48,16 +48,12 @@ class _CartaoContasState extends State<CartaoContas> {
         else ...[
           SeletorMes(ym: ym, onMudar: (v) => setState(() => ym = v)),
           const SizedBox(height: 14),
-          Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            Text('Falta pagar ', style: TextStyle(color: G.texto2)),
-            Expanded(
-              child: FittedBox(
-                alignment: Alignment.centerLeft,
-                fit: BoxFit.scaleDown,
-                child: Text(brl(m.falta), style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: m.nAtrasadas > 0 ? G.neg : G.texto)),
-              ),
-            ),
-          ]),
+          Text('Falta pagar', style: TextStyle(color: G.apagado, fontWeight: FontWeight.w600, fontSize: 13)),
+          FittedBox(
+            alignment: Alignment.centerLeft,
+            fit: BoxFit.scaleDown,
+            child: Text(brl(m.falta), style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, letterSpacing: -.8, color: m.nAtrasadas > 0 ? G.neg : G.texto)),
+          ),
           const SizedBox(height: 8),
           Barra(pct, cor: G.pos),
           const SizedBox(height: 6),
