@@ -25,16 +25,16 @@ class Cartao extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final nuvem = G.claro && G.nuvem != null;
-    final r = BorderRadius.circular(nuvem && raio == 20 ? 24 : raio);
+    final claro = G.claro;
+    final r = BorderRadius.circular(raio == 20 ? 24 : raio);
     final caixa = DecoratedBox(
       decoration: BoxDecoration(
         gradient: gradiente ?? G.gradCartao,
         borderRadius: r,
-        border: Border.all(color: nuvem ? const Color(0x0A000000) : G.borda),
-        boxShadow: nuvem
+        border: Border.all(color: claro ? const Color(0x0A000000) : G.borda),
+        boxShadow: claro
             ? [BoxShadow(color: G.sombra(0x55), blurRadius: 2, offset: const Offset(0, 1)), BoxShadow(color: G.sombra(0xAA), blurRadius: 24, offset: const Offset(0, 10), spreadRadius: -16)]
-            : [BoxShadow(color: G.sombra(0x55), blurRadius: 20, offset: Offset(0, 8), spreadRadius: -14)],
+            : [BoxShadow(color: G.sombra(0x66), blurRadius: 20, offset: const Offset(0, 8), spreadRadius: -14)],
       ),
       child: Material(
         type: MaterialType.transparency,
@@ -82,8 +82,8 @@ class IconeCategoria extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = cat.cor;
-    if (G.claro && G.nuvem != null) {
-      // visual Nuvem: bloco preenchido em degradê, com o ícone branco
+    {
+      // bloco preenchido em degradê, com o ícone branco
       return Container(
         width: tam,
         height: tam,
@@ -95,19 +95,6 @@ class IconeCategoria extends StatelessWidget {
         child: Icon(cat.icone, color: Colors.white, size: tam * .5),
       );
     }
-    // ícone colorido sobre um fundo clarinho da mesma cor: a categoria continua
-    // fácil de reconhecer sem pesar na lista
-    final escuro = !G.claro;
-    final cor = escuro ? Color.lerp(c, Colors.white, .25)! : Color.lerp(c, Colors.black, .08)!;
-    return Container(
-      width: tam,
-      height: tam,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(tam * .32),
-        color: c.withValues(alpha: escuro ? .20 : .13),
-      ),
-      child: Icon(cat.icone, color: cor, size: tam * .52),
-    );
   }
 }
 

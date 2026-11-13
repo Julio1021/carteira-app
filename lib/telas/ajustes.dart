@@ -161,7 +161,6 @@ class _Aparencia extends StatelessWidget {
           'oceano' => 'Nuvem · Oceano: claro e limpo, cartão principal azul-petróleo e menu escuro flutuante.',
           'floresta' => 'Nuvem · Floresta: claro, cartão principal verde-escuro e detalhes em verde.',
           'marinho' => 'Nuvem · Marinho: claro, cartão principal azul-marinho e detalhes em azul vivo.',
-          'ametista' => 'Lilás & Ametista: claro, com fundo lilás bem suave, cartão principal em degradê violeta e detalhes em ametista.',
           'esmeralda' => 'Noite & Esmeralda: escuro em verde-petróleo, cartão principal esmeralda e detalhes em menta e ouro.',
           _ => 'Grafite: tudo escuro, com detalhes em lavanda.',
         };
@@ -175,13 +174,12 @@ class _Aparencia extends StatelessWidget {
                 destaque: Color(p.c['lavanda']!),
                 linha: Color(p.c['borda']!),
                 nav: Color(p.c['navFundo']!),
-                novo: true),
-          _MiniTema('auto', 'Automático', fundo: perola, fundoB: grafite, cartao: const Color(0xFFFFFFFF), cartaoB: const Color(0xFF1B1C28), hero: GE.gradHero, destaque: const Color(0xFF4F57D6), linha: const Color(0xFFB9BFF6)),
-          _MiniTema('linho', 'Linho & Safira', fundo: const Color(0xFFF3EFE7), cartao: const Color(0xFFFFFFFF), hero: GH.gradSafira, destaque: const Color(0xFF2448C8), linha: const Color(0xFFD9D2C4)),
-          _MiniTema('ametista', 'Lilás & Ametista', fundo: const Color(0xFFF6F3FC), cartao: const Color(0xFFFFFFFF), hero: GH.gradAmetista, destaque: const Color(0xFF6B3FD4), linha: const Color(0xFFDDD3F0)),
-          _MiniTema('esmeralda', 'Noite & Esmeralda', fundo: const Color(0xFF081114), cartao: const Color(0xFF12252A), hero: GH.gradEsmeralda, destaque: const Color(0xFF34D8AC), linha: const Color(0xFF2A4A47)),
-          _MiniTema('claro', 'Pérola', fundo: perola, cartao: const Color(0xFFFFFFFF), hero: GE.gradHero, destaque: const Color(0xFF12131C), linha: const Color(0xFFD9DBE6)),
-          _MiniTema('escuro', 'Grafite', fundo: grafite, cartao: const Color(0xFF1B1C28), hero: GE.gradHero, destaque: const Color(0xFFB9BFF6), linha: const Color(0xFF34364A)),
+),
+          _MiniTema('linho', 'Linho & Safira', fundo: const Color(0xFFF3EFE7), cartao: const Color(0xFFFFFFFF), hero: GH.gradSafira, destaque: const Color(0xFF2448C8), linha: const Color(0xFFD9D2C4), nav: const Color(0xFF161C2D)),
+          _MiniTema('claro', 'Pérola', fundo: perola, cartao: const Color(0xFFFFFFFF), hero: GE.gradHero, destaque: const Color(0xFF4F57D6), linha: const Color(0xFFD9DBE6), nav: const Color(0xFF12131C)),
+          _MiniTema('esmeralda', 'Noite & Esmeralda', fundo: const Color(0xFF081114), cartao: const Color(0xFF12252A), hero: GH.gradEsmeralda, destaque: const Color(0xFF34D8AC), linha: const Color(0xFF2A4A47), nav: const Color(0xFF16332F)),
+          _MiniTema('escuro', 'Grafite', fundo: grafite, cartao: const Color(0xFF1B1C28), hero: GE.gradHero, destaque: const Color(0xFFB9BFF6), linha: const Color(0xFF34364A), nav: const Color(0xFF272938)),
+          _MiniTema('auto', 'Automático', fundo: perola, fundoB: grafite, cartao: const Color(0xFFFFFFFF), cartaoB: const Color(0xFF1B1C28), hero: GE.gradHero, destaque: const Color(0xFF4F57D6), linha: const Color(0xFFB9BFF6), nav: const Color(0xFF12131C)),
         ];
         return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           SingleChildScrollView(

@@ -13,9 +13,6 @@ import '../util/fmt.dart';
 import '../widgets/comum.dart';
 import '../widgets/movimento.dart';
 
-/// true quando o tema escolhido é um dos três do visual Nuvem.
-bool get visualNuvem => G.claro && G.nuvem != null;
-
 /// Nome para a saudação ("Olá, Júlio"). Vazio = sem nome.
 final nomeUsuario = ValueNotifier<String>('');
 

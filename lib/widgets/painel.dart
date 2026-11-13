@@ -1,6 +1,7 @@
 // Peças da organização "combinada": quadradinhos de números (2 por linha),
 // chips que mostram um assunto por vez (com deslize) e o botão de período.
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
 import '../tema.dart';
@@ -139,22 +140,27 @@ class ChipsAssunto extends StatefulWidget {
 class _ChipsAssuntoState extends State<ChipsAssunto> with SingleTickerProviderStateMixin {
   late int sel = widget.inicial;
   int? alvo; // página que entra durante o deslize/animação
-  double dx = 0; // quanto a página atual andou para o lado
+  /// Quanto a página atual andou para o lado. Fica num ValueNotifier para o
+  /// arrastar redesenhar só a posição, sem reconstruir as páginas (e os gráficos).
+  final dx = ValueNotifier<double>(0);
   double larg = 1;
   late final AnimationController ac = AnimationController(vsync: this);
   final chaves = <int, GlobalKey>{};
-  final paginas = <int, GlobalKey>{}; // mantém a página viva ao trocar de lugar
+  final paginas = <int, GlobalKey>{}; // cada página fica viva: não "recresce" a cada deslize
+  final alturas = <int, double>{};
+  final vistas = <int>{}; // páginas já montadas
   static const _gap = 12.0;
 
   int get n => widget.nomes.length;
+  bool get _movendo => alvo != null || dx.value != 0;
 
   void _animar(double ate, {VoidCallback? fim}) {
-    final de = dx;
+    final de = dx.value;
     ac.stop();
     ac.value = 0;
     final dist = (ate - de).abs();
-    final ms = semAnimacao(context) ? 1 : (dist / (larg + _gap) * 380).clamp(140, 380).round();
-    void tick() => setState(() => dx = de + (ate - de) * Curves.easeOutCubic.transform(ac.value));
+    final ms = semAnimacao(context) ? 1 : (dist / (larg + _gap) * 360).clamp(140, 360).round();
+    void tick() => dx.value = de + (ate - de) * Curves.easeOutCubic.transform(ac.value);
     ac.addListener(tick);
     ac.animateTo(1, duration: Duration(milliseconds: ms)).whenComplete(() {
       ac.removeListener(tick);
@@ -166,8 +172,8 @@ class _ChipsAssuntoState extends State<ChipsAssunto> with SingleTickerProviderSt
     setState(() {
       sel = i;
       alvo = null;
-      dx = 0;
     });
+    dx.value = 0;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final c = chaves[i]?.currentContext;
       if (c != null) Scrollable.ensureVisible(c, duration: const Duration(milliseconds: 250), alignment: .5);
@@ -177,28 +183,40 @@ class _ChipsAssuntoState extends State<ChipsAssunto> with SingleTickerProviderSt
   void _irPara(int i) {
     if (i < 0 || i >= n || i == sel || ac.isAnimating) return;
     HapticFeedback.selectionClick();
-    setState(() => alvo = i);
+    setState(() {
+      alvo = i;
+      vistas.add(i);
+    });
     _animar(i > sel ? -(larg + _gap) : (larg + _gap), fim: () => _concluir(i));
+  }
+
+  void _comecou(DragStartDetails _) {
+    if (ac.isAnimating) return;
+    // monta as vizinhas já no começo, para medir a altura antes de aparecerem
+    final antes = vistas.length;
+    if (sel + 1 < n) vistas.add(sel + 1);
+    if (sel > 0) vistas.add(sel - 1);
+    if (vistas.length != antes) setState(() {});
   }
 
   void _arrastou(DragUpdateDetails d) {
     if (ac.isAnimating) return;
     final temProx = sel + 1 < n, temAnt = sel > 0;
-    var novo = dx + d.delta.dx;
+    var novo = dx.value + d.delta.dx;
     // resistência nas pontas
-    if ((novo < 0 && !temProx) || (novo > 0 && !temAnt)) novo = dx + d.delta.dx * .3;
-    setState(() {
-      dx = novo.clamp(-(larg + _gap), larg + _gap).toDouble();
-      alvo = dx < 0 ? (temProx ? sel + 1 : null) : (dx > 0 ? (temAnt ? sel - 1 : null) : null);
-    });
+    if ((novo < 0 && !temProx) || (novo > 0 && !temAnt)) novo = dx.value + d.delta.dx * .3;
+    novo = novo.clamp(-(larg + _gap), larg + _gap).toDouble();
+    final novoAlvo = novo < 0 ? (temProx ? sel + 1 : null) : (novo > 0 ? (temAnt ? sel - 1 : null) : null);
+    if (novoAlvo != alvo) setState(() => alvo = novoAlvo);
+    dx.value = novo;
   }
 
   void _soltou(DragEndDetails d) {
     if (ac.isAnimating) return;
     final v = d.primaryVelocity ?? 0;
-    final a = alvo;
-    final passou = dx.abs() > larg * .25 || v.abs() > 450;
-    final sentidoOk = a != null && ((a > sel && dx < 0 && v <= 250) || (a < sel && dx > 0 && v >= -250));
+    final a = alvo, x = dx.value;
+    final passou = x.abs() > larg * .25 || v.abs() > 450;
+    final sentidoOk = a != null && ((a > sel && x < 0 && v <= 250) || (a < sel && x > 0 && v >= -250));
     if (passou && sentidoOk) {
       HapticFeedback.selectionClick();
       _animar(a > sel ? -(larg + _gap) : (larg + _gap), fim: () => _concluir(a));
@@ -207,17 +225,29 @@ class _ChipsAssuntoState extends State<ChipsAssunto> with SingleTickerProviderSt
     }
   }
 
+  void _mediu(int i, double h) {
+    if (alturas[i] == h) return;
+    alturas[i] = h;
+    // só precisa redesenhar se estiver no meio de um deslize
+    if (_movendo && mounted) WidgetsBinding.instance.addPostFrameCallback((_) => mounted ? setState(() {}) : null);
+  }
+
   @override
   void didUpdateWidget(ChipsAssunto old) {
     super.didUpdateWidget(old);
     if (sel >= n) sel = n - 1;
     if (alvo != null && alvo! >= n) alvo = null;
-    if (old.nomes.join('|') != widget.nomes.join('|')) paginas.clear();
+    if (old.nomes.join('|') != widget.nomes.join('|')) {
+      paginas.clear();
+      alturas.clear();
+      vistas.clear();
+    }
   }
 
   @override
   void dispose() {
     ac.dispose();
+    dx.dispose();
     super.dispose();
   }
 
@@ -245,37 +275,51 @@ class _ChipsAssuntoState extends State<ChipsAssunto> with SingleTickerProviderSt
   }
 
   Widget _umPorVez(BuildContext context) {
-    final a = alvo;
-    // o chip e os pontinhos acompanham o deslize
-    final mostrado = a != null && dx.abs() > (larg + _gap) / 2 ? a : sel;
+    vistas.add(sel);
+    // páginas montadas uma vez só; quem não aparece fica escondida e parada
+    final montadas = vistas.where((i) => i < n).toList()..sort();
+    final pagina = <int, Widget>{
+      for (final i in montadas)
+        i: KeyedSubtree(
+          key: paginas.putIfAbsent(i, GlobalKey.new),
+          child: RepaintBoundary(child: _Medir(aoMedir: (h) => _mediu(i, h), child: widget.construir(context, i))),
+        ),
+    };
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        clipBehavior: Clip.none,
-        child: Row(children: [
-          for (var i = 0; i < n; i++)
-            Padding(
-              key: chaves.putIfAbsent(i, GlobalKey.new),
-              padding: EdgeInsets.only(right: i < n - 1 ? 6 : 0),
-              child: Toque(
-                escala: .93,
-                child: GestureDetector(
-                  onTap: () => _irPara(i),
-                  behavior: HitTestBehavior.opaque,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: i == mostrado ? G.texto : G.fundo2,
-                      borderRadius: BorderRadius.circular(99),
-                      border: Border.all(color: i == mostrado ? G.texto : G.borda),
+      ValueListenableBuilder<double>(
+        valueListenable: dx,
+        builder: (context, x, _) {
+          final a = alvo;
+          final mostrado = a != null && x.abs() > (larg + _gap) / 2 ? a : sel;
+          return SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            clipBehavior: Clip.none,
+            child: Row(children: [
+              for (var i = 0; i < n; i++)
+                Padding(
+                  key: chaves.putIfAbsent(i, GlobalKey.new),
+                  padding: EdgeInsets.only(right: i < n - 1 ? 6 : 0),
+                  child: Toque(
+                    escala: .93,
+                    child: GestureDetector(
+                      onTap: () => _irPara(i),
+                      behavior: HitTestBehavior.opaque,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: i == mostrado ? G.texto : G.fundo2,
+                          borderRadius: BorderRadius.circular(99),
+                          border: Border.all(color: i == mostrado ? G.texto : G.borda),
+                        ),
+                        child: Text(widget.nomes[i], style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: i == mostrado ? G.fundo : G.texto2)),
+                      ),
                     ),
-                    child: Text(widget.nomes[i], style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: i == mostrado ? G.fundo : G.texto2)),
                   ),
                 ),
-              ),
-            ),
-        ]),
+            ]),
+          );
+        },
       ),
       const SizedBox(height: 10),
       LayoutBuilder(builder: (context, cons) {
@@ -283,40 +327,102 @@ class _ChipsAssuntoState extends State<ChipsAssunto> with SingleTickerProviderSt
         final passo = larg + _gap;
         return GestureDetector(
           behavior: HitTestBehavior.translucent,
+          onHorizontalDragStart: _comecou,
           onHorizontalDragUpdate: _arrastou,
           onHorizontalDragEnd: _soltou,
-          // A altura é a da página atual (sem medir nada); a vizinha entra pelo
-          // lado, alinhada no topo. Ao trocar, a altura se ajusta suavemente.
-          child: AnimatedSize(
-            duration: Duration(milliseconds: semAnimacao(context) ? 0 : 260),
-            curve: Curves.easeOutCubic,
-            alignment: Alignment.topCenter,
-            clipBehavior: Clip.none, // nunca corta o cartão enquanto ajusta a altura
-            child: Stack(clipBehavior: Clip.none, children: [
-              Transform.translate(offset: Offset(dx, 0), child: KeyedSubtree(key: paginas.putIfAbsent(sel, GlobalKey.new), child: widget.construir(context, sel))),
-              if (a != null && a != sel)
-                Positioned(
-                  top: 0,
-                  left: (a > sel ? passo : -passo) + dx,
-                  width: larg,
-                  child: IgnorePointer(child: KeyedSubtree(key: paginas.putIfAbsent(a, GlobalKey.new), child: widget.construir(context, a))),
+          onHorizontalDragCancel: () {
+            if (!ac.isAnimating && dx.value != 0) _animar(0, fim: () => setState(() => alvo = null));
+          },
+          child: ValueListenableBuilder<double>(
+            valueListenable: dx,
+            builder: (context, x, _) {
+              final a = alvo;
+              final movendo = a != null || x != 0;
+              Widget escondida(int i) => Positioned(
+                    top: 0,
+                    left: 0,
+                    width: larg,
+                    child: Offstage(child: TickerMode(enabled: false, child: pagina[i]!)),
+                  );
+              if (!movendo) {
+                // parado: a página atual dá a altura (sem medir nada)
+                return Stack(clipBehavior: Clip.none, children: [
+                  for (final i in montadas)
+                    if (i == sel) pagina[i]! else escondida(i),
+                ]);
+              }
+              // deslizando: a altura vai da atual para a próxima junto com o dedo,
+              // e o que passa da altura é cortado (nada fica por cima do resto da tela)
+              final p = (x.abs() / passo).clamp(0.0, 1.0);
+              final hSel = alturas[sel] ?? 0, hAlvo = a == null ? hSel : (alturas[a] ?? hSel);
+              final h = hSel + (hAlvo - hSel) * p;
+              return SizedBox(
+                height: h,
+                child: ClipRect(
+                  clipper: _CorteLateral(),
+                  child: Stack(clipBehavior: Clip.none, children: [
+                    for (final i in montadas)
+                      if (i == sel)
+                        Positioned(top: 0, left: x, width: larg, child: pagina[i]!)
+                      else if (i == a)
+                        Positioned(top: 0, left: (a > sel ? passo : -passo) + x, width: larg, child: IgnorePointer(child: pagina[i]!))
+                      else
+                        escondida(i),
+                  ]),
                 ),
-            ]),
+              );
+            },
           ),
         );
       }),
       const SizedBox(height: 10),
-      Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-        for (var i = 0; i < n; i++)
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            margin: const EdgeInsets.symmetric(horizontal: 2.5),
-            width: i == mostrado ? 18 : 6,
-            height: 6,
-            decoration: BoxDecoration(color: i == mostrado ? G.lavanda : G.v(0x22), borderRadius: BorderRadius.circular(3)),
-          ),
-      ]),
+      ValueListenableBuilder<double>(
+        valueListenable: dx,
+        builder: (context, x, _) {
+          final a = alvo;
+          final mostrado = a != null && x.abs() > (larg + _gap) / 2 ? a : sel;
+          return Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            for (var i = 0; i < n; i++)
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                margin: const EdgeInsets.symmetric(horizontal: 2.5),
+                width: i == mostrado ? 18 : 6,
+                height: 6,
+                decoration: BoxDecoration(color: i == mostrado ? G.lavanda : G.v(0x22), borderRadius: BorderRadius.circular(3)),
+              ),
+          ]);
+        },
+      ),
     ]);
+  }
+}
+
+/// Corta embaixo (para a página mais alta não passar por cima do resto) mas deixa
+/// sobrar dos lados e em cima (sombra dos cartões e a página que entra).
+class _CorteLateral extends CustomClipper<Rect> {
+  @override
+  Rect getClip(Size s) => Rect.fromLTRB(-60, -24, s.width + 60, s.height + 2);
+  @override
+  bool shouldReclip(_CorteLateral o) => false;
+}
+
+/// Informa a altura do filho depois de cada layout.
+class _Medir extends SingleChildRenderObjectWidget {
+  final ValueChanged<double> aoMedir;
+  const _Medir({required this.aoMedir, required Widget super.child});
+  @override
+  RenderObject createRenderObject(BuildContext context) => _RenderMedir(aoMedir);
+  @override
+  void updateRenderObject(BuildContext context, _RenderMedir r) => r.aoMedir = aoMedir;
+}
+
+class _RenderMedir extends RenderProxyBox {
+  ValueChanged<double> aoMedir;
+  _RenderMedir(this.aoMedir);
+  @override
+  void performLayout() {
+    super.performLayout();
+    aoMedir(size.height);
   }
 }
 

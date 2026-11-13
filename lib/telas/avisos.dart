@@ -26,7 +26,7 @@ class BotaoAvisos extends StatelessWidget {
           await repo.guardarLista('av.vistos', {...vistos, ...l.map((a) => a.k)}.toList().reversed.take(300).toList());
           if (context.mounted) abrirAvisos(context, verCategoria);
         },
-        style: G.claro && G.nuvem != null
+        style: true
             ? IconButton.styleFrom(
                 backgroundColor: G.fundo2,
                 shape: const CircleBorder(),

@@ -90,7 +90,9 @@ Future<void> carregarAparencia() async {
       await sp.setBool('nuvemApresentado', true);
       await sp.setString('aparencia', 'oceano');
     }
-    aparencia.value = sp.getString('aparencia') ?? 'oceano';
+    var a = sp.getString('aparencia') ?? 'oceano';
+    if (a == 'ametista') a = 'oceano'; // tema retirado
+    aparencia.value = a;
   } catch (_) {}
 }
 
@@ -169,6 +171,8 @@ class G {
   static Color get saida => _p('saida') ?? _c(0xFFE0445E, const Color(0xFFFF7A8C), 0xFFC23B2A);
   static Color get navApagado => _p('navApagado') ?? _c(0xFF9A9DB0, const Color(0xFF80849B), 0xFF6B7183, 0xFF6F8B84, 0xFF8A82A0);
   static Color get navFundo => _p('navFundo') ?? _c(0xF5FFFFFF, const Color(0xEB1E1F2C), 0xF0FFFFFF, 0xEB10201F, 0xF0FFFFFF);
+  /// Menu de baixo (pílula flutuante): sempre escuro, com o ícone ativo num círculo claro.
+  static Color get navPill => _p('navFundo') ?? (claro ? Color(_l ? 0xFF161C2D : 0xFF12131C) : Color(noite ? 0xFF16332F : 0xFF272938));
   static Color get dica => _p('dica') ?? _c(0xF212131C, const Color(0xF2232434), 0xF2161C2D, 0xF2142A2B, 0xF21E1633);
   /// Fundo das abas (Lançamentos | Análise etc.) e dos campos.
   static Color get abasFundo => _p('abasFundo') ?? _c(0x0F12131C, const Color(0x10FFFFFF), 0xFFEFEAE0, 0x14A7F3D0, 0xFFEDE7F7);
@@ -286,7 +290,7 @@ ThemeData temaGrafite() {
       onError: Colors.white,
     ).copyWith(brightness: G.claro ? Brightness.light : Brightness.dark),
     scaffoldBackgroundColor: G.fundo,
-    fontFamily: G.claro && G.nuvem != null ? 'Jakarta' : null,
+    fontFamily: 'Jakarta',
   );
   final t0 = base.textTheme.apply(bodyColor: G.texto, displayColor: G.texto);
   // números com a mesma largura (colunas de valores alinhadas, como num extrato)

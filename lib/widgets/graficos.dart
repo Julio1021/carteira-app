@@ -100,7 +100,7 @@ void abrirGraficoCheio(BuildContext context, String titulo, Widget Function(doub
 
 
 /// Gráfico de linhas com toque mostrando os valores.
-class GraficoLinha extends StatelessWidget {
+class GraficoLinha extends StatefulWidget {
   final List<List<double>> series;
   final List<Color> cores;
   final List<bool> tracejada;
@@ -147,8 +147,37 @@ class GraficoLinha extends StatelessWidget {
       );
 
   @override
+  State<GraficoLinha> createState() => _GraficoLinhaState();
+}
+
+class _GraficoLinhaState extends State<GraficoLinha> {
+  /// Ponto escolhido com o dedo (toque ou toque longo + arrastar). O gráfico não
+  /// usa o arrastar do próprio fl_chart: assim deslizar a tela (para cima ou para
+  /// o lado) nunca fica preso no gráfico nem deixa a dica "grudada".
+  int? toque;
+  bool arrastando = false;
+
+  int _indice(double dx, double largura, int n) {
+    final util = largura - _esq - _dir;
+    if (util <= 0 || n <= 1) return 0;
+    return (((dx - _esq) / util) * (n - 1)).round().clamp(0, n - 1).toInt();
+  }
+
+  static const _esq = 40.0, _dir = 16.0;
+
+  @override
+  void didUpdateWidget(GraficoLinha old) {
+    super.didUpdateWidget(old);
+    if (old.series.length != widget.series.length || (old.series.isNotEmpty && widget.series.isNotEmpty && old.series.first.length != widget.series.first.length)) toque = null;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final todos = [...series.expand((s) => s), if (linhaH != null) linhaH!].where((v) => v.isFinite).toList();
+    final w = widget;
+    final series = w.series, cores = w.cores, tracejada = w.tracejada, nomes = w.nomes, rotulosX = w.rotulosX;
+    final rotuloToque = w.rotuloToque, formatoY = w.formatoY, altura = w.altura, preencherPrimeira = w.preencherPrimeira;
+    final linhaH = w.linhaH, nomeLinhaH = w.nomeLinhaH, pontosX = w.pontosX, titulo = w.titulo;
+    final todos = [...series.expand((s) => s), if (linhaH != null) linhaH].where((v) => v.isFinite).toList();
     if (todos.isEmpty) return SizedBox(height: altura);
     var mn = todos.reduce(math.min), mx = todos.reduce(math.max);
     if (mn > 0 && mn < mx * .35) mn = 0;
@@ -164,11 +193,46 @@ class GraficoLinha extends StatelessWidget {
       posRotulos[x] = rotulosX[i];
     }
     final topo = mx + pad, base = mn - (mn == 0 ? 0 : pad);
+    List<LineChartBarData> barrasDe(double t) => [
+      for (var s = 0; s < series.length; s++)
+        LineChartBarData(
+          spots: [for (var i = 0; i < series[s].length; i++) FlSpot(i.toDouble(), mn + (series[s][i] - mn) * t)],
+          isCurved: true,
+          curveSmoothness: .22,
+          preventCurveOverShooting: true,
+          color: cores[s % cores.length],
+          barWidth: s == 0 ? 3 : 2,
+          isStrokeCapRound: true,
+          dashArray: s < tracejada.length && tracejada[s] ? [6, 5] : null,
+          dotData: FlDotData(
+            show: t > .98,
+            // ponto no fim de cada linha (o da principal com um anel)
+            checkToShowDot: (spot, bar) => spot.x == bar.spots.last.x,
+            getDotPainter: (_, __, ___, ____) => FlDotCirclePainter(
+              radius: s == 0 ? 5 : 3.2,
+              color: cores[s % cores.length],
+              strokeWidth: s == 0 ? 3 : 2,
+              strokeColor: G.fundo2,
+            ),
+          ),
+          belowBarData: BarAreaData(
+            show: s == 0 && preencherPrimeira,
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [cores[0].withValues(alpha: .30), cores[0].withValues(alpha: .08), cores[0].withValues(alpha: 0)],
+              stops: const [0, .6, 1],
+            ),
+          ),
+        ),
+    ];
     return _Moldura(
       altura: altura,
-      onExpandir: titulo == null ? null : () => abrirGraficoCheio(context, titulo!, _com),
+      onExpandir: titulo == null ? null : () => abrirGraficoCheio(context, titulo, w._com),
       grafico: _Entrada(
-        builder: (t) => LineChart(
+        builder: (t) {
+          final barras = barrasDe(t);
+          return _toqueLinha(n, LineChart(
           duration: const Duration(milliseconds: 450),
           curve: Curves.easeOutCubic,
           LineChartData(
@@ -210,7 +274,7 @@ class GraficoLinha extends StatelessWidget {
                 ? null
                 : ExtraLinesData(horizontalLines: [
                     HorizontalLine(
-                      y: linhaH!,
+                      y: linhaH,
                       color: G.neg.withValues(alpha: .7),
                       strokeWidth: 1.4,
                       dashArray: [6, 5],
@@ -222,9 +286,17 @@ class GraficoLinha extends StatelessWidget {
                       ),
                     ),
                   ]),
+            showingTooltipIndicators: toque == null || t < 1
+                ? const []
+                : [
+                    ShowingTooltipIndicators([
+                      for (var b = 0; b < barras.length; b++)
+                        if (toque! < barras[b].spots.length) LineBarSpot(barras[b], b, barras[b].spots[toque!]),
+                    ]),
+                  ],
             lineTouchData: LineTouchData(
-              handleBuiltInTouches: true,
-              touchSpotThreshold: 40,
+              enabled: false,
+              handleBuiltInTouches: false,
               getTouchedSpotIndicator: (bar, idx) => [
                 for (final _ in idx)
                   TouchedSpotIndicatorData(
@@ -241,53 +313,44 @@ class GraficoLinha extends StatelessWidget {
                   for (var k = 0; k < spots.length; k++)
                     LineTooltipItem(
                       '${k == 0 && rotuloToque != null ? '${rotuloToque!(spots[k].x.round())}\n' : ''}${spots[k].barIndex < nomes.length ? '${nomes[spots[k].barIndex]}: ' : ''}${brl(spots[k].y)}',
-                      TextStyle(color: cores[spots[k].barIndex % cores.length], fontWeight: FontWeight.w600, fontSize: 12),
+                      TextStyle(color: Color.lerp(cores[spots[k].barIndex % cores.length], Colors.white, .35), fontWeight: FontWeight.w700, fontSize: 12),
                     ),
                 ],
               ),
             ),
-            lineBarsData: [
-              for (var s = 0; s < series.length; s++)
-                LineChartBarData(
-                  spots: [for (var i = 0; i < series[s].length; i++) FlSpot(i.toDouble(), mn + (series[s][i] - mn) * t)],
-                  isCurved: true,
-                  curveSmoothness: .22,
-                  preventCurveOverShooting: true,
-                  color: cores[s % cores.length],
-                  barWidth: s == 0 ? 3 : 2,
-                  isStrokeCapRound: true,
-                  dashArray: s < tracejada.length && tracejada[s] ? [6, 5] : null,
-                  dotData: FlDotData(
-                    show: t > .98,
-                    // ponto no fim de cada linha (o da principal com um anel)
-                    checkToShowDot: (spot, bar) => spot.x == bar.spots.last.x,
-                    getDotPainter: (_, __, ___, ____) => FlDotCirclePainter(
-                      radius: s == 0 ? 5 : 3.2,
-                      color: cores[s % cores.length],
-                      strokeWidth: s == 0 ? 3 : 2,
-                      strokeColor: G.fundo2,
-                    ),
-                  ),
-                  belowBarData: BarAreaData(
-                    show: s == 0 && preencherPrimeira,
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [cores[0].withValues(alpha: .30), cores[0].withValues(alpha: .08), cores[0].withValues(alpha: 0)],
-                      stops: const [0, .6, 1],
-                    ),
-                  ),
-                ),
-            ],
+            lineBarsData: barras,
           ),
-        ),
+          ));
+        },
       ),
     );
   }
+
+  /// Toque mostra o valor daquele ponto; toque longo e arrastar percorre a linha.
+  /// Toque de novo no mesmo ponto esconde.
+  Widget _toqueLinha(int n, Widget grafico) => LayoutBuilder(
+        builder: (context, k) => GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onTapUp: (d) {
+            final i = _indice(d.localPosition.dx, k.maxWidth, n);
+            setState(() => toque = toque == i ? null : i);
+          },
+          onLongPressStart: (d) => setState(() {
+            arrastando = true;
+            toque = _indice(d.localPosition.dx, k.maxWidth, n);
+          }),
+          onLongPressMoveUpdate: (d) {
+            final i = _indice(d.localPosition.dx, k.maxWidth, n);
+            if (i != toque) setState(() => toque = i);
+          },
+          onLongPressEnd: (_) => arrastando = false,
+          child: grafico,
+        ),
+      );
 }
 
 /// Barras agrupadas (ex.: entradas e saídas de cada mês).
-class GraficoBarras extends StatelessWidget {
+class GraficoBarras extends StatefulWidget {
   final List<String> rotulos;
   final List<List<double>> valores; // valores[grupo][série]
   final List<Color> cores;
@@ -326,21 +389,45 @@ class GraficoBarras extends StatelessWidget {
       );
 
   @override
+  State<GraficoBarras> createState() => _GraficoBarrasState();
+}
+
+class _GraficoBarrasState extends State<GraficoBarras> {
+  int? toque; // grupo tocado (quando quem usa o gráfico não controla a seleção)
+
+  @override
   Widget build(BuildContext context) {
+    final w = widget;
+    final rotulos = w.rotulos, valores = w.valores, cores = w.cores, nomes = w.nomes, formatoY = w.formatoY;
+    final altura = w.altura, rodape = w.rodape, coresRodape = w.coresRodape, titulo = w.titulo;
+    final selecionado = w.onToque != null ? w.selecionado : toque;
     final mx = valores.expand((g) => g).fold<double>(0, math.max);
     final mn = valores.expand((g) => g).fold<double>(0, math.min); // barras negativas (ex.: mês que rendeu menos)
     final topo = mx <= 0 ? 1.0 : mx * 1.12;
     final poucosRotulos = rotulos.length > 8 && altura < 400;
     return _Moldura(
       altura: altura,
-      onExpandir: titulo == null ? null : () => abrirGraficoCheio(context, titulo!, _com),
+      onExpandir: titulo == null ? null : () => abrirGraficoCheio(context, titulo, w._com),
       grafico: _Entrada(
         builder: (t) => LayoutBuilder(builder: (context, k) {
           // a largura das barras acompanha o espaço: nem fiapos no computador, nem coladas no celular
           final series = valores.isEmpty ? 1 : valores.map((g) => g.length).fold<int>(1, math.max);
           final vaga = (k.maxWidth - 46) / math.max(1, valores.length);
           final largura = ((vaga * .62 - 4 * (series - 1)) / series).clamp(5.0, 30.0).toDouble();
-          return BarChart(
+          // toque escolhe o grupo pela posição; o gráfico não disputa o arrastar da tela
+          return GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onTapUp: (d) {
+            if (valores.isEmpty) return;
+            final util = k.maxWidth - 40;
+            final g = (((d.localPosition.dx - 40) / util) * valores.length).floor().clamp(0, valores.length - 1).toInt();
+            if (w.onToque != null) {
+              w.onToque!(g);
+            } else {
+              setState(() => toque = toque == g ? null : g);
+            }
+          },
+          child: BarChart(
           duration: const Duration(milliseconds: 450),
           curve: Curves.easeOutCubic,
           BarChartData(
@@ -382,9 +469,8 @@ class GraficoBarras extends StatelessWidget {
               ),
             ),
             barTouchData: BarTouchData(
-              touchCallback: (ev, resp) {
-                if (onToque != null && ev is FlTapUpEvent && resp?.spot != null) onToque!(resp!.spot!.touchedBarGroupIndex);
-              },
+              enabled: false,
+              handleBuiltInTouches: false,
               touchTooltipData: BarTouchTooltipData(
                 getTooltipColor: (_) => G.dica,
                 tooltipBorderRadius: BorderRadius.circular(12),
@@ -392,7 +478,7 @@ class GraficoBarras extends StatelessWidget {
                 fitInsideVertically: true,
                 getTooltipItem: (group, gi, rod, ri) => BarTooltipItem(
                   '${ri == 0 ? '${rotulos[gi]}\n' : ''}${ri < nomes.length ? '${nomes[ri]}: ' : ''}${brl(valores[gi][ri])}',
-                  TextStyle(color: cores[ri % cores.length], fontWeight: FontWeight.w600, fontSize: 12),
+                  TextStyle(color: Color.lerp(cores[ri % cores.length], Colors.white, .35), fontWeight: FontWeight.w700, fontSize: 12),
                 ),
               ),
             ),
@@ -401,6 +487,8 @@ class GraficoBarras extends StatelessWidget {
                 BarChartGroupData(
                   x: g,
                   barsSpace: 4,
+                  // a dica aparece no grupo escolhido (só quando nada controla a seleção por fora)
+                  showingTooltipIndicators: w.onToque == null && toque == g && t >= 1 ? [for (var r = 0; r < valores[g].length; r++) r] : const [],
                   barRods: [
                     for (var s = 0; s < valores[g].length; s++)
                       BarChartRodData(
@@ -421,6 +509,7 @@ class GraficoBarras extends StatelessWidget {
                 ),
             ],
           ),
+        ),
         );
         }),
       ),

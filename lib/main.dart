@@ -429,7 +429,7 @@ class _Cabecalho extends StatelessWidget {
   const _Cabecalho({required this.titulo, required this.verCategoria, this.largo = false, this.inicio = false});
   @override
   Widget build(BuildContext context) {
-    final nuvem = G.claro && G.nuvem != null;
+    const nuvem = true;
     final estilo = nuvem
         ? IconButton.styleFrom(backgroundColor: G.fundo2, shape: const CircleBorder(), fixedSize: const Size(42, 42), minimumSize: const Size(42, 42), padding: EdgeInsets.zero)
         : IconButton.styleFrom(
@@ -598,7 +598,7 @@ class _MenuBaixo extends StatelessWidget {
 
   /// Visual Nuvem: pílula escura flutuante, só ícones; o item ativo vira um círculo claro.
   Widget _nuvem(BuildContext context) {
-    final escuro = G.navFundo;
+    final escuro = G.navPill;
     Widget item(int i, IconData ic, IconData icOn, String t) {
       final on = aba == i;
       return Tooltip(
@@ -674,95 +674,7 @@ class _MenuBaixo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (G.claro && G.nuvem != null) return _nuvem(context);
-    Widget item(int i, IconData ic, IconData icOn, String t) {
-      final on = aba == i;
-      return Expanded(
-        child: Toque(
-          escala: .9,
-          child: InkResponse(
-            onTap: () => onAba(i),
-            radius: 36,
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 260),
-                  curve: Curves.easeOutBack,
-                  width: on ? 48 : 32,
-                  height: 28,
-                  decoration: BoxDecoration(color: on ? G.lavandaFundo : Colors.transparent, borderRadius: BorderRadius.circular(15)),
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 200),
-                    transitionBuilder: (c, a) => ScaleTransition(scale: a, child: c),
-                    child: Icon(on ? icOn : ic, key: ValueKey(on), color: on ? G.lavanda : G.navApagado, size: 22),
-                  ),
-                ),
-                const SizedBox(height: 3),
-                AnimatedDefaultTextStyle(
-                  duration: const Duration(milliseconds: 200),
-                  style: TextStyle(fontSize: 10.5, fontWeight: on ? FontWeight.w700 : FontWeight.w600, color: on ? G.texto : G.navApagado),
-                  child: Text(t, maxLines: 1),
-                ),
-              ]),
-            ),
-          ),
-        ),
-      );
-    }
-
-    return SafeArea(
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
-        child: Container(
-          height: 62,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [BoxShadow(color: G.sombra(0xD9), blurRadius: 34, offset: Offset(0, 16), spreadRadius: -14)],
-          ),
-          // vidro fosco: o conteúdo passa desfocado por trás da barra
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(24),
-            child: BackdropFilter(
-              filter: ui.ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-              child: Container(
-          decoration: BoxDecoration(
-            color: G.navFundo.withValues(alpha: G.claro ? .80 : .74),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: G.v(0x14)),
-          ),
-          child: Row(children: [
-            item(0, Icons.home_outlined, Icons.home_rounded, 'Início'),
-            item(1, Icons.receipt_long_outlined, Icons.receipt_long_rounded, 'Extrato'),
-            // botão de lançar, alinhado com os outros itens
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 6),
-              child: Toque(
-                escala: .88,
-                child: Material(
-                  color: G.branco,
-                  borderRadius: BorderRadius.circular(16),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(16),
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      onMais();
-                    },
-                    child: SizedBox(width: 50, height: 44, child: Icon(Icons.add_rounded, color: G.tinta, size: 28, semanticLabel: 'Lançar')),
-                  ),
-                ),
-              ),
-            ),
-            item(2, Icons.event_note_outlined, Icons.event_note_rounded, 'Planejar'),
-            item(3, Icons.show_chart_rounded, Icons.show_chart_rounded, 'Patrimônio'),
-          ]),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
+    return _nuvem(context);
   }
 }
 
