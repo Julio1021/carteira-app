@@ -275,6 +275,18 @@ class _TelaRetroState extends State<TelaRetro> with TickerProviderStateMixin {
         ]);
       case 1:
         final taxa = r.entrou > 0 ? r.sobra / r.entrou : null;
+        if (taxa == null) {
+          // sem entradas lançadas: não dá para falar em sobra
+          return _coluna([
+            const Text('SAIU', style: _rot),
+            const SizedBox(height: 4),
+            _valor(r.saiu),
+            const SizedBox(height: 14),
+            Text('em ${r.gastos.length} gasto${r.gastos.length == 1 ? '' : 's'} · média de ${brl(r.saiu / d.diasContados)} por dia.', style: _texto),
+            const SizedBox(height: 26),
+            const _Fato(icone: Icons.south_west_rounded, titulo: 'Nenhuma entrada lançada', texto: 'Lance o que você recebeu para ver quanto sobrou.'),
+          ]);
+        }
         return _coluna([
           const Text('ENTROU', style: _rot),
           _valor(r.entrou, estilo: _medio.copyWith(fontSize: 32)),
@@ -289,9 +301,7 @@ class _TelaRetroState extends State<TelaRetro> with TickerProviderStateMixin {
           _valor(r.sobra.abs()),
           const SizedBox(height: 14),
           Text(
-            taxa == null
-                ? 'Sem entradas registradas no mês.'
-                : (r.sobra >= 0 ? 'Você ficou com ${(taxa * 100).round()}% de tudo o que entrou.' : 'Os gastos passaram das entradas em ${(-taxa * 100).round()}%.'),
+            r.sobra >= 0 ? 'Você ficou com ${(taxa * 100).round()}% de tudo o que entrou.' : 'Os gastos passaram das entradas em ${(-taxa * 100).round()}%.',
             style: _texto,
           ),
         ]);
@@ -397,16 +407,19 @@ class _TelaRetroState extends State<TelaRetro> with TickerProviderStateMixin {
           Text(menos ? 'São ${brl(d.ant.saiu - r.saiu)} que ficaram com você.' : 'Foram ${brl(r.saiu - d.ant.saiu)} a mais que no mês anterior.', style: _texto),
         ]);
       default:
+        final semEntrada = r.entrou <= 0;
         final bom = r.sobra >= 0;
         return _coluna([
-          Icon(bom ? Icons.emoji_events_rounded : Icons.flag_rounded, color: Colors.white, size: 46),
+          Icon(semEntrada ? Icons.task_alt_rounded : (bom ? Icons.emoji_events_rounded : Icons.flag_rounded), color: Colors.white, size: 46),
           const SizedBox(height: 16),
-          Text(bom ? 'Mês fechado\nno azul.' : 'Mês apertado.\nO próximo é seu.', style: _grande.copyWith(fontSize: 40)),
+          Text(semEntrada ? 'Mês anotado.\nBom trabalho.' : (bom ? 'Mês fechado\nno azul.' : 'Mês apertado.\nO próximo é seu.'), style: _grande.copyWith(fontSize: 40)),
           const SizedBox(height: 16),
           Text(
-            bom
-                ? (r.investiu > 0 ? 'Sobrou ${brl(r.sobra)} e ${brl(r.investiu)} foram investidos. Continue assim.' : 'Sobrou ${brl(r.sobra)}. Que tal investir uma parte?')
-                : 'Faltaram ${brl(r.sobra.abs())}. Dê uma olhada nos limites por categoria para o próximo mês.',
+            semEntrada
+                ? 'Você registrou ${r.gastos.length} gasto${r.gastos.length == 1 ? '' : 's'}. Quem anota, enxerga para onde o dinheiro vai.'
+                : (bom
+                    ? (r.investiu > 0 ? 'Sobrou ${brl(r.sobra)} e ${brl(r.investiu)} foram investidos. Continue assim.' : 'Sobrou ${brl(r.sobra)}. Que tal investir uma parte?')
+                    : 'Faltaram ${brl(r.sobra.abs())}. Dê uma olhada nos limites por categoria para o próximo mês.'),
             style: _texto,
           ),
           const SizedBox(height: 30),

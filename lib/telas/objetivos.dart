@@ -286,7 +286,7 @@ class _FormObjetivoState extends State<FormObjetivo> {
       const SizedBox(height: 12),
       CampoValor(valorC, rotulo: 'Quanto você quer juntar'),
       const Rotulo('Ícone'),
-      Wrap(spacing: 8, runSpacing: 8, children: [
+      Wrap(spacing: 6, runSpacing: 6, children: [
         for (var i = 0; i < iconesObjetivo.length; i++)
           Toque(
             escala: .9,
@@ -294,14 +294,14 @@ class _FormObjetivoState extends State<FormObjetivo> {
               onTap: () => setState(() => icone = i),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 180),
-                width: 42,
-                height: 42,
+                width: 37,
+                height: 37,
                 decoration: BoxDecoration(
                   color: i == icone ? G.lavandaFundo : G.v(0x0C),
-                  borderRadius: BorderRadius.circular(13),
+                  borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: i == icone ? G.lavanda : G.borda, width: i == icone ? 1.6 : 1),
                 ),
-                child: Icon(iconesObjetivo[i], size: 20, color: i == icone ? G.lavanda : G.texto2),
+                child: Icon(iconesObjetivo[i], size: 19, color: i == icone ? G.lavanda : G.texto2),
               ),
             ),
           ),

@@ -80,9 +80,11 @@ class _LinhaPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size s) {
     var mn = p.reduce(math.min), mx = p.reduce(math.max);
-    if (mn > 0) mn = 0;
-    if (mx < 0) mx = 0;
+    // a escala acompanha os valores do mês (sem prender no zero), para a
+    // variação aparecer mesmo quando o salário entra logo no dia 1
     if (mx - mn < 1e-6) mx = mn + 1;
+    final folga = (mx - mn) * .12;
+    mn -= folga;
     const topo = 6.0, base = 6.0;
     final h = s.height - topo - base;
     Offset pt(int i) => Offset(s.width * i / (p.length - 1), topo + h * (1 - (p[i] - mn) / (mx - mn)));
@@ -104,7 +106,7 @@ class _LinhaPainter extends CustomPainter {
     );
     // linha do zero (onde a sobra vira falta)
     final yZero = topo + h * (1 - (0 - mn) / (mx - mn));
-    if (mn < 0) canvas.drawLine(Offset(0, yZero), Offset(s.width, yZero), Paint()..color = cor.withValues(alpha: .25)..strokeWidth = 1);
+    if (mn < 0 && mx > 0 && p.any((x) => x < 0)) canvas.drawLine(Offset(0, yZero), Offset(s.width, yZero), Paint()..color = cor.withValues(alpha: .25)..strokeWidth = 1);
     canvas.drawPath(
       linha,
       Paint()
