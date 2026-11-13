@@ -13,6 +13,7 @@ import '../widgets/movimento.dart';
 import '../widgets/largo.dart';
 import '../widgets/painel.dart';
 import 'descobertas.dart';
+import 'inicio_nuvem.dart';
 import 'lancar.dart';
 
 class TelaInicio extends StatefulWidget {
@@ -22,7 +23,9 @@ class TelaInicio extends StatefulWidget {
   final VoidCallback irLimites;
   final void Function(String filtro) irExtratoFiltro;
   final VoidCallback irPlanejar;
-  const TelaInicio({super.key, required this.ym, required this.onMes, required this.irExtrato, required this.irLimites, required this.irExtratoFiltro, required this.irPlanejar});
+  final ValueChanged<String>? irCategoria;
+  final VoidCallback? irPatrimonio;
+  const TelaInicio({super.key, required this.ym, required this.onMes, required this.irExtrato, required this.irLimites, required this.irExtratoFiltro, required this.irPlanejar, this.irCategoria, this.irPatrimonio});
   @override
   State<TelaInicio> createState() => _TelaInicioState();
 }
@@ -38,13 +41,29 @@ class _TelaInicioState extends State<TelaInicio> {
     final temContas = repo.doTipo('pagar').isNotEmpty;
     final contas = temContas ? mesContas(repo, ymDe(hojeIso())) : null;
     final atrasadas = contas?.abertas.where((i) => i.st == 'atrasada').length ?? 0;
-    final nomes = ['Lançamentos', if (temContas) 'Contas', 'Gastos'];
+    final nuvem = visualNuvem;
+    // no Nuvem, os gastos por categoria já aparecem nos círculos
+    final nomes = ['Lançamentos', if (temContas) 'Contas', if (!nuvem) 'Gastos'];
     final sel = aba.clamp(0, nomes.length - 1);
     final nome = nomes[sel];
     var o = 0;
     final boasVindas = repo.vazio ? Surge(ordem: o++, child: _BoasVindas()) : null;
-    final hero = Surge(ordem: o++, child: HeroMes(r: r, onMes: w.onMes, onEntrou: () => w.irExtratoFiltro('entradas'), onSaiu: () => w.irExtratoFiltro('saidas'), onLimite: w.irLimites));
-    final numeros = Surge(ordem: o++, child: _Numeros(r: r, onInvestiu: () => r.investimentos.isEmpty ? abrirFormLanc(context, investido: true) : w.irExtratoFiltro('investido'), onLimite: w.irLimites));
+    void investiu() => r.investimentos.isEmpty ? abrirFormLanc(context, investido: true) : w.irExtratoFiltro('investido');
+    final hero = Surge(
+      ordem: o++,
+      child: nuvem
+          ? HeroNuvem(r: r, onMes: w.onMes, onEntrou: () => w.irExtratoFiltro('entradas'), onSaiu: () => w.irExtratoFiltro('saidas'))
+          : HeroMes(r: r, onMes: w.onMes, onEntrou: () => w.irExtratoFiltro('entradas'), onSaiu: () => w.irExtratoFiltro('saidas'), onLimite: w.irLimites),
+    );
+    final numeros = Surge(
+      ordem: o++,
+      child: nuvem
+          ? QuadrosNuvem(r: r, onLimite: w.irLimites, onInvestiu: investiu, onInvestido: w.irPatrimonio ?? investiu)
+          : _Numeros(r: r, onInvestiu: investiu, onLimite: w.irLimites),
+    );
+    final historias = nuvem
+        ? Surge(ordem: o++, child: HistoriasGastos(r: r, onCategoria: (c) => w.irCategoria != null ? w.irCategoria!(c) : w.irExtratoFiltro('saidas'), onAnalise: () => w.irExtratoFiltro('saidas')))
+        : null;
     final atalhos = Surge(ordem: o++, child: _Atalhos(irExtrato: w.irExtrato, irLimites: w.irLimites));
     final descobertas = Surge(ordem: o++, child: FaixaDescobertas(ym: w.ym));
     final abas = Surge(
@@ -88,6 +107,7 @@ class _TelaInicioState extends State<TelaInicio> {
                     hero,
                     const SizedBox(height: 10),
                     numeros,
+                    if (historias != null) ...[const SizedBox(height: 18), historias],
                     const SizedBox(height: 14),
                     descobertas,
                     if (temContas) ...[const SizedBox(height: 16), Surge(ordem: 3, child: _ContasInicio(irPlanejar: w.irPlanejar))],
@@ -107,10 +127,9 @@ class _TelaInicioState extends State<TelaInicio> {
         children: [
           if (boasVindas != null) ...[boasVindas, const SizedBox(height: 16)],
           hero,
-          const SizedBox(height: 10),
+          SizedBox(height: nuvem ? 12 : 10),
           numeros,
-          const SizedBox(height: 16),
-          atalhos,
+          if (nuvem) ...[const SizedBox(height: 20), historias!] else ...[const SizedBox(height: 16), atalhos],
           const SizedBox(height: 14),
           descobertas,
           const SizedBox(height: 16),

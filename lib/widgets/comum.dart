@@ -25,13 +25,16 @@ class Cartao extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final r = BorderRadius.circular(raio);
+    final nuvem = G.claro && G.nuvem != null;
+    final r = BorderRadius.circular(nuvem && raio == 20 ? 24 : raio);
     final caixa = DecoratedBox(
       decoration: BoxDecoration(
         gradient: gradiente ?? G.gradCartao,
         borderRadius: r,
-        border: Border.all(color: G.borda),
-        boxShadow: [BoxShadow(color: G.sombra(0x55), blurRadius: 20, offset: Offset(0, 8), spreadRadius: -14)],
+        border: Border.all(color: nuvem ? const Color(0x0A000000) : G.borda),
+        boxShadow: nuvem
+            ? [BoxShadow(color: G.sombra(0x55), blurRadius: 2, offset: const Offset(0, 1)), BoxShadow(color: G.sombra(0xAA), blurRadius: 24, offset: const Offset(0, 10), spreadRadius: -16)]
+            : [BoxShadow(color: G.sombra(0x55), blurRadius: 20, offset: Offset(0, 8), spreadRadius: -14)],
       ),
       child: Material(
         type: MaterialType.transparency,
@@ -79,6 +82,19 @@ class IconeCategoria extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = cat.cor;
+    if (G.claro && G.nuvem != null) {
+      // visual Nuvem: bloco preenchido em degradê, com o ícone branco
+      return Container(
+        width: tam,
+        height: tam,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(tam * .36),
+          gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color.lerp(c, Colors.white, .18)!, Color.lerp(c, Colors.black, .10)!]),
+          boxShadow: [BoxShadow(color: c.withValues(alpha: .28), blurRadius: 10, offset: const Offset(0, 4), spreadRadius: -4)],
+        ),
+        child: Icon(cat.icone, color: Colors.white, size: tam * .5),
+      );
+    }
     // ícone colorido sobre um fundo clarinho da mesma cor: a categoria continua
     // fácil de reconhecer sem pesar na lista
     final escuro = !G.claro;

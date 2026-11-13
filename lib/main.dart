@@ -37,6 +37,7 @@ import 'widgets/formulario.dart';
 import 'telas/descobertas.dart';
 import 'telas/objetivos.dart';
 import 'telas/retro.dart';
+import 'telas/inicio_nuvem.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -53,6 +54,7 @@ Future<void> main() async {
     await carregarAbertura();
     await carregarPrivacidade();
     await carregarTelaCheia();
+    await carregarNome();
     valoresOcultos = privacidade.value;
   }
   final repo = demo ? Repo.memoria(dadosDemo()) : Repo();
@@ -65,7 +67,7 @@ Future<void> main() async {
 }
 
 /// Liga/desliga o tema claro a partir da escolha em Ajustes e do tema do celular.
-bool resolverClaro(String modo, Brightness celular) => modo == 'claro' || modo == 'linho' || modo == 'ametista' || (modo == 'auto' && celular == Brightness.light);
+bool resolverClaro(String modo, Brightness celular) => modo == 'claro' || modo == 'linho' || modo == 'ametista' || paletaNuvem(modo) != null || (modo == 'auto' && celular == Brightness.light);
 
 void _barrasDoSistema() => aplicarBarras();
 
@@ -87,6 +89,7 @@ class _AppCarteiraState extends State<AppCarteira> with WidgetsBindingObserver {
     G.linho = aparencia.value == 'linho';
     G.noite = aparencia.value == 'esmeralda';
     G.ametista = aparencia.value == 'ametista';
+    G.nuvem = paletaNuvem(aparencia.value);
     _barrasDoSistema();
   }
 
@@ -112,7 +115,9 @@ class _AppCarteiraState extends State<AppCarteira> with WidgetsBindingObserver {
   void _aplicar() {
     final claro = resolverClaro(aparencia.value, WidgetsBinding.instance.platformDispatcher.platformBrightness);
     final linho = aparencia.value == 'linho', noite = aparencia.value == 'esmeralda', ametista = aparencia.value == 'ametista';
-    if ((claro == G.claro && linho == G.linho && noite == G.noite && ametista == G.ametista) || !mounted) return;
+    final nuvem = paletaNuvem(aparencia.value);
+    if ((claro == G.claro && linho == G.linho && noite == G.noite && ametista == G.ametista && nuvem == G.nuvem) || !mounted) return;
+    G.nuvem = nuvem;
     G.claro = claro;
     G.linho = linho;
     G.noite = noite;
@@ -338,6 +343,8 @@ class _CascaState extends State<Casca> {
         irLimites: _abrirLimites,
         irExtratoFiltro: (f) => _irAba(1, filtro: f),
         irPlanejar: () => _irAba(2),
+        irCategoria: (c) => _irAba(1, filtro: 'saidas', cat: c),
+        irPatrimonio: () => _irAba(3),
       ),
       TelaExtrato(ym: ym, onMes: (m) => setState(() => ym = m), filtroInicial: filtroExtrato, catInicial: catExtrato, analiseInicial: analiseDemo),
       TelaPlanejar(irLimites: _abrirLimites),
@@ -422,7 +429,10 @@ class _Cabecalho extends StatelessWidget {
   const _Cabecalho({required this.titulo, required this.verCategoria, this.largo = false, this.inicio = false});
   @override
   Widget build(BuildContext context) {
-    final estilo = IconButton.styleFrom(
+    final nuvem = G.claro && G.nuvem != null;
+    final estilo = nuvem
+        ? IconButton.styleFrom(backgroundColor: G.fundo2, shape: const CircleBorder(), fixedSize: const Size(42, 42), minimumSize: const Size(42, 42), padding: EdgeInsets.zero)
+        : IconButton.styleFrom(
       backgroundColor: G.v(0x10),
       side: BorderSide(color: G.borda),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -493,6 +503,42 @@ class _Cabecalho extends StatelessWidget {
         ]),
       );
     }
+    if (nuvem) {
+      // Nuvem: avatar (abre Ajustes), saudação ou título grande e botões redondos
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 14, 8),
+        child: Row(children: [
+          if (inicio) ...[
+            AvatarNuvem(onTap: () => Navigator.of(context).pushNamed('/ajustes')),
+            const SizedBox(width: 12),
+            Expanded(
+              child: ValueListenableBuilder<String>(
+                valueListenable: nomeUsuario,
+                builder: (_, nome, __) => Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+                  Text(
+                    nome.isEmpty ? '${diasSemana[agora.weekday - 1]}, ${agora.day} de ${mesesAbr[agora.month - 1]}' : saudacao(agora),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: G.apagado, fontSize: 13, fontWeight: FontWeight.w500),
+                  ),
+                  Text(nome.isEmpty ? saudacao(agora) : 'Olá, ${nome.split(' ').first}', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800, letterSpacing: -.4)),
+                ]),
+              ),
+            ),
+          ] else
+            Expanded(child: Text(titulo, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800, letterSpacing: -.8))),
+          olho,
+          const SizedBox(width: 8),
+          IconButton(tooltip: 'Buscar', onPressed: buscar, style: estilo, icon: const Icon(Icons.search_rounded, size: 21)),
+          const SizedBox(width: 8),
+          BotaoAvisos(verCategoria: verCategoria),
+          if (!inicio) ...[
+            const SizedBox(width: 8),
+            IconButton(tooltip: 'Ajustes', onPressed: () => Navigator.of(context).pushNamed('/ajustes'), style: estilo, icon: const Icon(Icons.settings_outlined, size: 21)),
+          ],
+        ]),
+      );
+    }
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
       child: Row(children: [
@@ -550,8 +596,85 @@ class _MenuBaixo extends StatelessWidget {
   final VoidCallback onMais;
   const _MenuBaixo({required this.aba, required this.onAba, required this.onMais});
 
+  /// Visual Nuvem: pílula escura flutuante, só ícones; o item ativo vira um círculo claro.
+  Widget _nuvem(BuildContext context) {
+    final escuro = G.navFundo;
+    Widget item(int i, IconData ic, IconData icOn, String t) {
+      final on = aba == i;
+      return Tooltip(
+        message: t,
+        child: Toque(
+          escala: .88,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () {
+              HapticFeedback.selectionClick();
+              onAba(i);
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 280),
+              curve: Curves.easeOutBack,
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(color: on ? Colors.white : Colors.transparent, shape: BoxShape.circle),
+              child: Icon(on ? icOn : ic, semanticLabel: t, color: on ? escuro : Colors.white.withValues(alpha: .62), size: 24),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Center(
+          heightFactor: 1,
+          child: Container(
+            padding: const EdgeInsets.all(7),
+            decoration: BoxDecoration(
+              color: escuro,
+              borderRadius: BorderRadius.circular(99),
+              boxShadow: [BoxShadow(color: escuro.withValues(alpha: .45), blurRadius: 30, offset: const Offset(0, 14), spreadRadius: -12)],
+            ),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              item(0, Icons.home_outlined, Icons.home_rounded, 'Início'),
+              const SizedBox(width: 4),
+              item(1, Icons.receipt_long_outlined, Icons.receipt_long_rounded, 'Extrato'),
+              const SizedBox(width: 6),
+              Toque(
+                escala: .86,
+                child: GestureDetector(
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    onMais();
+                  },
+                  child: Container(
+                    width: 56,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: G.lavanda,
+                      borderRadius: BorderRadius.circular(26),
+                      boxShadow: [BoxShadow(color: G.lavanda.withValues(alpha: .55), blurRadius: 16, offset: const Offset(0, 4), spreadRadius: -4)],
+                    ),
+                    child: const Icon(Icons.add_rounded, color: Colors.white, size: 30, semanticLabel: 'Lançar'),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              item(2, Icons.event_note_outlined, Icons.event_note_rounded, 'Planejar'),
+              const SizedBox(width: 4),
+              item(3, Icons.savings_outlined, Icons.savings_rounded, 'Patrimônio'),
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (G.claro && G.nuvem != null) return _nuvem(context);
     Widget item(int i, IconData ic, IconData icOn, String t) {
       final on = aba == i;
       return Expanded(

@@ -13,6 +13,7 @@ import '../widgets/movimento.dart';
 import '../widgets/comum.dart';
 import '../widgets/formulario.dart';
 import 'importar.dart';
+import 'inicio_nuvem.dart';
 
 class TelaAjustes extends StatefulWidget {
   const TelaAjustes({super.key});
@@ -108,6 +109,8 @@ class _TelaAjustesState extends State<TelaAjustes> {
       body: ListView(padding: const EdgeInsets.fromLTRB(14, 4, 14, 40), children: [
         if (ocupado) const LinearProgressIndicator(minHeight: 2),
         Padding(padding: const EdgeInsets.fromLTRB(4, 8, 4, 8), child: Text('Aparência', style: TextStyle(color: G.apagado, fontWeight: FontWeight.w600))),
+        const _Nome(),
+        const SizedBox(height: 14),
         const _Aparencia(),
         const SizedBox(height: 12),
         const _AberturaAjuste(),
@@ -155,15 +158,27 @@ class _Aparencia extends StatelessWidget {
           'auto' => kIsWeb ? 'Segue o tema do computador: Pérola de dia, Grafite quando ele estiver no modo escuro.' : 'Segue o tema do celular: Pérola de dia, Grafite quando o celular estiver no modo escuro.',
           'claro' => 'Pérola: fundo claro com o cartão principal grafite.',
           'linho' => 'Linho & Safira: fundo cor de linho e cartão principal azul safira, igual ao site.',
+          'oceano' => 'Nuvem · Oceano: claro e limpo, cartão principal azul-petróleo e menu escuro flutuante.',
+          'floresta' => 'Nuvem · Floresta: claro, cartão principal verde-escuro e detalhes em verde.',
+          'marinho' => 'Nuvem · Marinho: claro, cartão principal azul-marinho e detalhes em azul vivo.',
           'ametista' => 'Lilás & Ametista: claro, com fundo lilás bem suave, cartão principal em degradê violeta e detalhes em ametista.',
           'esmeralda' => 'Noite & Esmeralda: escuro em verde-petróleo, cartão principal esmeralda e detalhes em menta e ouro.',
           _ => 'Grafite: tudo escuro, com detalhes em lavanda.',
         };
         const perola = Color(0xFFF4F5F9), grafite = Color(0xFF101119);
         final temas = <_MiniTema>[
+          for (final p in paletasNuvem)
+            _MiniTema(p.id, p.nome,
+                fundo: Color(p.c['fundo']!),
+                cartao: Colors.white,
+                hero: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: p.hero),
+                destaque: Color(p.c['lavanda']!),
+                linha: Color(p.c['borda']!),
+                nav: Color(p.c['navFundo']!),
+                novo: true),
           _MiniTema('auto', 'Automático', fundo: perola, fundoB: grafite, cartao: const Color(0xFFFFFFFF), cartaoB: const Color(0xFF1B1C28), hero: GE.gradHero, destaque: const Color(0xFF4F57D6), linha: const Color(0xFFB9BFF6)),
           _MiniTema('linho', 'Linho & Safira', fundo: const Color(0xFFF3EFE7), cartao: const Color(0xFFFFFFFF), hero: GH.gradSafira, destaque: const Color(0xFF2448C8), linha: const Color(0xFFD9D2C4)),
-          _MiniTema('ametista', 'Lilás & Ametista', fundo: const Color(0xFFF6F3FC), cartao: const Color(0xFFFFFFFF), hero: GH.gradAmetista, destaque: const Color(0xFF6B3FD4), linha: const Color(0xFFDDD3F0), novo: true),
+          _MiniTema('ametista', 'Lilás & Ametista', fundo: const Color(0xFFF6F3FC), cartao: const Color(0xFFFFFFFF), hero: GH.gradAmetista, destaque: const Color(0xFF6B3FD4), linha: const Color(0xFFDDD3F0)),
           _MiniTema('esmeralda', 'Noite & Esmeralda', fundo: const Color(0xFF081114), cartao: const Color(0xFF12252A), hero: GH.gradEsmeralda, destaque: const Color(0xFF34D8AC), linha: const Color(0xFF2A4A47)),
           _MiniTema('claro', 'Pérola', fundo: perola, cartao: const Color(0xFFFFFFFF), hero: GE.gradHero, destaque: const Color(0xFF12131C), linha: const Color(0xFFD9DBE6)),
           _MiniTema('escuro', 'Grafite', fundo: grafite, cartao: const Color(0xFF1B1C28), hero: GE.gradHero, destaque: const Color(0xFFB9BFF6), linha: const Color(0xFF34364A)),
@@ -195,7 +210,8 @@ class _MiniTema {
   final Color? fundoB, cartaoB; // segunda metade (Automático)
   final Gradient hero;
   final bool novo;
-  const _MiniTema(this.id, this.nome, {required this.fundo, required this.cartao, required this.hero, required this.destaque, required this.linha, this.fundoB, this.cartaoB, this.novo = false});
+  final Color? nav; // menu escuro flutuante (Nuvem)
+  const _MiniTema(this.id, this.nome, {required this.fundo, required this.cartao, required this.hero, required this.destaque, required this.linha, this.fundoB, this.cartaoB, this.novo = false, this.nav});
 }
 
 /// Miniatura de uma tela do app com as cores do tema.
@@ -235,12 +251,21 @@ class _CartaoTema extends StatelessWidget {
             const Spacer(),
             Align(
               alignment: Alignment.bottomCenter,
-              child: Container(
-                width: 22,
-                height: 13,
-                margin: const EdgeInsets.only(bottom: 6),
-                decoration: BoxDecoration(color: t.destaque, borderRadius: BorderRadius.circular(5)),
-              ),
+              child: t.nav != null
+                  ? Container(
+                      width: 52,
+                      height: 14,
+                      margin: const EdgeInsets.only(bottom: 6),
+                      decoration: BoxDecoration(color: t.nav, borderRadius: BorderRadius.circular(99)),
+                      alignment: Alignment.center,
+                      child: Container(width: 14, height: 8, decoration: BoxDecoration(color: t.destaque, borderRadius: BorderRadius.circular(4))),
+                    )
+                  : Container(
+                      width: 22,
+                      height: 13,
+                      margin: const EdgeInsets.only(bottom: 6),
+                      decoration: BoxDecoration(color: t.destaque, borderRadius: BorderRadius.circular(5)),
+                    ),
             ),
           ]),
         );
@@ -486,4 +511,28 @@ class _TelaCheiaAjuste extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Nome para a saudação do Início.
+class _Nome extends StatefulWidget {
+  const _Nome();
+  @override
+  State<_Nome> createState() => _NomeState();
+}
+
+class _NomeState extends State<_Nome> {
+  late final c = TextEditingController(text: nomeUsuario.value);
+  @override
+  void dispose() {
+    c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => TextField(
+        controller: c,
+        textCapitalization: TextCapitalization.words,
+        onChanged: definirNome,
+        decoration: const InputDecoration(labelText: 'Seu nome', hintText: 'Para a saudação do Início', prefixIcon: Icon(Icons.person_outline_rounded)),
+      );
 }

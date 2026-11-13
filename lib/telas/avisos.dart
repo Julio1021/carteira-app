@@ -26,14 +26,24 @@ class BotaoAvisos extends StatelessWidget {
           await repo.guardarLista('av.vistos', {...vistos, ...l.map((a) => a.k)}.toList().reversed.take(300).toList());
           if (context.mounted) abrirAvisos(context, verCategoria);
         },
-        style: IconButton.styleFrom(
-          backgroundColor: G.v(0x10),
-          side: BorderSide(color: G.borda),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          fixedSize: const Size(38, 38),
-          minimumSize: const Size(38, 38),
-          padding: EdgeInsets.zero,
-        ),
+        style: G.claro && G.nuvem != null
+            ? IconButton.styleFrom(
+                backgroundColor: G.fundo2,
+                shape: const CircleBorder(),
+                fixedSize: const Size(42, 42),
+                minimumSize: const Size(42, 42),
+                padding: EdgeInsets.zero,
+                elevation: 0,
+                shadowColor: Colors.transparent,
+              )
+            : IconButton.styleFrom(
+                backgroundColor: G.v(0x10),
+                side: BorderSide(color: G.borda),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                fixedSize: const Size(38, 38),
+                minimumSize: const Size(38, 38),
+                padding: EdgeInsets.zero,
+              ),
         icon: Icon(Icons.notifications_none_rounded, color: grave ? G.negTexto : G.texto),
       ),
       if (novos.isNotEmpty)

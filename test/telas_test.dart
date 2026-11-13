@@ -13,7 +13,7 @@ void main() {
     await t.pumpWidget(AppCarteira(repo: Repo.memoria(dadosDemo())));
     await t.pumpAndSettle();
 
-    expect(find.text('Início'), findsWidgets);
+    expect(find.bySemanticsLabel('Início'), findsWidgets);
     expect(find.text('Entrou'), findsOneWidget);
     await t.scrollUntilVisible(find.text('Últimos lançamentos'), 300, scrollable: find.byType(Scrollable).first);
     expect(find.text('Últimos lançamentos'), findsOneWidget);
@@ -21,7 +21,7 @@ void main() {
     // ao rolar para baixo o menu se recolhe; rolar um pouco para cima traz de volta
     await t.drag(find.byType(Scrollable).first, const Offset(0, 160));
     await t.pumpAndSettle();
-    await t.tap(find.text('Extrato').last);
+    await t.tap(find.bySemanticsLabel('Extrato').first);
     await t.pumpAndSettle();
     expect(find.text('Buscar no mês'), findsOneWidget);
 

@@ -79,7 +79,7 @@ class MenuLateral extends StatelessWidget {
 
     return Container(
       width: 236,
-      decoration: BoxDecoration(color: G.navFundo, border: Border(right: BorderSide(color: G.borda))),
+      decoration: BoxDecoration(color: G.claro && G.nuvem != null ? G.fundo2 : G.navFundo, border: Border(right: BorderSide(color: G.borda))),
       padding: const EdgeInsets.fromLTRB(14, 18, 14, 16),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Row(children: [

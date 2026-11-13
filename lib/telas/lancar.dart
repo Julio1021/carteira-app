@@ -11,6 +11,7 @@ import '../widgets/comum.dart';
 import '../widgets/formulario.dart';
 import '../widgets/largo.dart';
 import '../widgets/movimento.dart';
+import 'importar.dart';
 import 'rapido.dart';
 
 /// Menu do botão +: o que você quer registrar?
@@ -54,11 +55,23 @@ Future<void> abrirMenuLancar(BuildContext context, {String rapidoInicial = ''}) 
               ),
             ]),
           ),
+          const SizedBox(height: 4),
+          Center(
+            child: TextButton.icon(
+              onPressed: () => Navigator.pop(c, 'importar'),
+              icon: const Icon(Icons.file_download_outlined, size: 19),
+              label: const Text('Importar extrato do banco'),
+            ),
+          ),
         ]),
       ),
     ),
   );
   if (escolha == null || !context.mounted) return;
+  if (escolha == 'importar') {
+    await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TelaImportarExtrato()));
+    return;
+  }
   await abrirFormLanc(context, entrada: escolha == 'entrada', investido: escolha == 'invest');
 }
 
