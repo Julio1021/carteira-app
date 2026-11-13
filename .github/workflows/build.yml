@@ -79,6 +79,14 @@ jobs:
               --screenshot="../../prints/$1.png" "http://localhost:8080/carteira-app/?demo=1$2" || true
           }
           tirar a1-ativo "&tema=linho&aba=3&tela=ativo" 2300
+          tirar n1-inicio "&tema=linho" 1750
+          tirar n2-inicio-escuro "&tema=escuro" 1750
+          tirar n3-oculto "&tema=linho&oculto=1" 1100
+          tirar n4-rapido "&tema=linho&tela=rapido" 844
+          tirar n5-objetivos "&tema=linho&aba=3" 1500
+          tirar n6-objetivo-form "&tema=linho&aba=3&tela=objetivo" 1100
+          for sl in 0 1 2 3 4 5 6; do tirar "r$sl-retro" "&tema=linho&tela=retro&slide=$sl" 844; done
+          tirar n7-retro-pc "&tema=linho&tela=retro&slide=2" 900 1440 1
           # computador (tela larga)
           tirar w1-inicio "&tema=claro" 900 1440 1
           tirar w2-extrato "&tema=claro&aba=1" 900 1440 1

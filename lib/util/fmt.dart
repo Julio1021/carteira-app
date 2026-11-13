@@ -7,8 +7,14 @@ const mesesLongos = [
 const mesesAbr = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 const diasSemana = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
 
-/// R$ 1.234,56 (com sinal de menos quando negativo).
-String brl(num v, {bool sinal = false}) {
+/// Modo privacidade: quando ligado, os valores em reais viram "R$ ••••".
+bool valoresOcultos = false;
+
+/// R$ 1.234,56 (com sinal de menos quando negativo). Respeita o modo privacidade.
+String brl(num v, {bool sinal = false}) => valoresOcultos ? 'R\$ ••••' : brlSempre(v, sinal: sinal);
+
+/// Igual a [brl], mas mostra o valor mesmo no modo privacidade (campos de edição).
+String brlSempre(num v, {bool sinal = false}) {
   final neg = v < 0;
   final cent = (v.abs() * 100).round();
   final inteiro = cent ~/ 100;
@@ -37,7 +43,7 @@ double? lerValor(String? t) {
 }
 
 /// Valor para mostrar num campo de edição: 1234.5 -> "1.234,50".
-String valorCampo(double v) => brl(v).replaceFirst('R\$ ', '').replaceFirst('− ', '-');
+String valorCampo(double v) => brlSempre(v).replaceFirst('R\$ ', '').replaceFirst('− ', '-');
 
 String doisDig(int n) => n.toString().padLeft(2, '0');
 

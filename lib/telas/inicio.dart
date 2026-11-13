@@ -12,6 +12,7 @@ import '../widgets/comum.dart';
 import '../widgets/movimento.dart';
 import '../widgets/largo.dart';
 import '../widgets/painel.dart';
+import 'descobertas.dart';
 import 'lancar.dart';
 
 class TelaInicio extends StatefulWidget {
@@ -45,6 +46,7 @@ class _TelaInicioState extends State<TelaInicio> {
     final hero = Surge(ordem: o++, child: HeroMes(r: r, onMes: w.onMes, onEntrou: () => w.irExtratoFiltro('entradas'), onSaiu: () => w.irExtratoFiltro('saidas'), onLimite: w.irLimites));
     final numeros = Surge(ordem: o++, child: _Numeros(r: r, onInvestiu: () => r.investimentos.isEmpty ? abrirFormLanc(context, investido: true) : w.irExtratoFiltro('investido'), onLimite: w.irLimites));
     final atalhos = Surge(ordem: o++, child: _Atalhos(irExtrato: w.irExtrato, irLimites: w.irLimites));
+    final descobertas = Surge(ordem: o++, child: FaixaDescobertas(ym: w.ym));
     final abas = Surge(
       ordem: o++,
       child: Segmentos(
@@ -86,6 +88,8 @@ class _TelaInicioState extends State<TelaInicio> {
                     hero,
                     const SizedBox(height: 10),
                     numeros,
+                    const SizedBox(height: 14),
+                    descobertas,
                     if (temContas) ...[const SizedBox(height: 16), Surge(ordem: 3, child: _ContasInicio(irPlanejar: w.irPlanejar))],
                     const SizedBox(height: 16),
                     Surge(ordem: 4, child: _OndeFoi(r: r, irLimites: w.irLimites)),
@@ -107,7 +111,9 @@ class _TelaInicioState extends State<TelaInicio> {
           numeros,
           const SizedBox(height: 16),
           atalhos,
-          const SizedBox(height: 18),
+          const SizedBox(height: 14),
+          descobertas,
+          const SizedBox(height: 16),
           abas,
           const SizedBox(height: 10),
           conteudo,
@@ -191,6 +197,10 @@ class HeroMes extends StatelessWidget {
         border: Border.all(color: const Color(0x17FFFFFF)),
         boxShadow: [BoxShadow(color: GH.sombra, blurRadius: 50, offset: Offset(0, 28), spreadRadius: -30)],
       ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(children: [
+        Positioned.fill(child: IgnorePointer(child: CustomPaint(painter: GH.safira ? const Aurora() : const Aurora(a: Color(0x1FFFFFFF), b: Color(0x24B9BFF6))))),
+        Padding(
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
       child: Column(children: [
         SeletorMes(ym: r.ym, onMudar: onMes, escuro: true),
@@ -204,6 +214,8 @@ class HeroMes extends StatelessWidget {
             child: SlideTransition(position: Tween(begin: const Offset(0, .04), end: Offset.zero).animate(a), child: child),
           ),
           child: KeyedSubtree(key: ValueKey(r.ym), child: _corpo(context, principal, uso, corLim)),
+        ),
+      ]),
         ),
       ]),
     ));
@@ -222,7 +234,22 @@ class HeroMes extends StatelessWidget {
             padding: const EdgeInsets.only(top: 4),
             child: Text('Sobra do mês: ${brl(r.sobra)}', style: TextStyle(color: GH.texto2, fontSize: 13)),
           ),
-        const SizedBox(height: 16),
+        Builder(builder: (context) {
+          final pts = sobraDiaADia(r);
+          if (pts.length < 3) return const SizedBox(height: 16);
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(6, 10, 10, 12),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              LinhaMes(pts),
+              const SizedBox(height: 2),
+              Row(children: [
+                Text('dia 1', style: TextStyle(color: GH.apagado, fontSize: 10.5)),
+                Expanded(child: Text('sobra do mês, dia a dia', textAlign: TextAlign.center, style: TextStyle(color: GH.apagado, fontSize: 10.5))),
+                Text(ymDe(hojeIso()) == r.ym ? 'hoje' : 'dia ${pts.length}', style: TextStyle(color: GH.apagado, fontSize: 10.5)),
+              ]),
+            ]),
+          );
+        }),
         Row(children: [
           Expanded(child: _Bloco(rotulo: 'Entrou', valor: r.entrou, claro: true, icone: Icons.south_west_rounded, corIcone: GH.posIcone, onTap: onEntrou)),
           const SizedBox(width: 10),

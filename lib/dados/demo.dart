@@ -68,5 +68,9 @@ List<Doc> dadosDemo() {
       out.add({'kind': 'lanc', 'id': 'l_${id}_$d', 'ativo': id, 'data': d, 'saldo': (v * 100).round() / 100, 'aporte': aporte});
     }
   }
+  // Objetivos
+  out.add({'kind': 'objetivo', 'id': 'ob_demo1', 'nome': 'Reserva de emergência', 'valor': 80000.0, 'fonte': 'total', 'icone': 1, 'criado': 1});
+  out.add({'kind': 'objetivo', 'id': 'ob_demo2', 'nome': 'Viagem para o Chile', 'valor': 14000.0, 'fonte': 'ativo', 'ativo': 'a_demo3', 'prazo': ymAdd(ym, 8), 'icone': 2, 'criado': 2});
+  out.add({'kind': 'objetivo', 'id': 'ob_demo3', 'nome': 'Notebook novo', 'valor': 5000.0, 'fonte': 'manual', 'guardado': 5000.0, 'icone': 0, 'criado': 3});
   return out;
 }

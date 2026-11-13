@@ -14,6 +14,7 @@ import '../widgets/comum.dart';
 import '../widgets/movimento.dart';
 import '../widgets/largo.dart';
 import '../widgets/painel.dart';
+import 'objetivos.dart';
 import '../widgets/formulario.dart';
 import '../widgets/graficos.dart';
 
@@ -165,6 +166,7 @@ class _Resumo extends StatelessWidget {
       ]),
       const SizedBox(height: 16),
       _Pendencias(c: c),
+      CartaoObjetivos(c: c),
     ];
     final chips = ChipsAssunto(
         nomes: [

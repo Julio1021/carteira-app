@@ -42,6 +42,24 @@ Future<void> carregarAparencia() async {
   } catch (_) {}
 }
 
+/// Modo privacidade (esconde os valores). O número em si fica em util/fmt.dart.
+final privacidade = ValueNotifier<bool>(false);
+
+Future<void> carregarPrivacidade() async {
+  try {
+    final sp = await SharedPreferences.getInstance();
+    privacidade.value = sp.getBool('privacidade') ?? false;
+  } catch (_) {}
+}
+
+Future<void> definirPrivacidade(bool v) async {
+  privacidade.value = v;
+  try {
+    final sp = await SharedPreferences.getInstance();
+    await sp.setBool('privacidade', v);
+  } catch (_) {}
+}
+
 Future<void> definirAparencia(String v) async {
   aparencia.value = v;
   try {

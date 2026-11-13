@@ -11,17 +11,22 @@ import '../widgets/comum.dart';
 import '../widgets/formulario.dart';
 import '../widgets/largo.dart';
 import '../widgets/movimento.dart';
+import 'rapido.dart';
 
 /// Menu do botão +: o que você quer registrar?
-Future<void> abrirMenuLancar(BuildContext context) async {
+Future<void> abrirMenuLancar(BuildContext context, {String rapidoInicial = ''}) async {
   final escolha = await folhaOuJanela<String>(
     context: context,
+    isScrollControlled: true,
+    useSafeArea: true,
     builder: (c) => SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      child: SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(16, 0, 16, 16 + MediaQuery.of(c).viewInsets.bottom),
         child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
           const Text('Lançar', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
           Text('O que você quer registrar?', style: TextStyle(color: G.apagado)),
+          const SizedBox(height: 14),
+          CampoRapido(aoSalvar: () => Navigator.pop(c), inicial: rapidoInicial),
           const SizedBox(height: 14),
           Row(children: [
             Expanded(child: _OpcaoMenu(Icons.remove_rounded, 'Gasto', 'Débito, Pix, dinheiro', () => Navigator.pop(c, 'gasto'), destaque: true)),

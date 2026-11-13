@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'dart:ui' as ui;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -30,16 +32,26 @@ import 'telas/importar.dart';
 import 'util/fmt.dart';
 import 'widgets/comum.dart';
 import 'widgets/largo.dart';
+import 'widgets/formulario.dart';
+import 'telas/descobertas.dart';
+import 'telas/objetivos.dart';
+import 'telas/retro.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final demo = kIsWeb && Uri.base.queryParameters['demo'] == '1';
   if (demo) {
     aparencia.value = Uri.base.queryParameters['tema'] ?? 'escuro';
+    if (Uri.base.queryParameters['oculto'] == '1') {
+      privacidade.value = true;
+      valoresOcultos = true;
+    }
     indicesAtuais.value = indicesExemplo(ymDe(hojeIso()));
   } else {
     await carregarAparencia();
     await carregarAbertura();
+    await carregarPrivacidade();
+    valoresOcultos = privacidade.value;
   }
   final repo = demo ? Repo.memoria(dadosDemo()) : Repo();
   if (!demo) {
@@ -77,6 +89,7 @@ class _AppCarteiraState extends State<AppCarteira> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     aparencia.addListener(_aplicar);
+    privacidade.addListener(_privacidade);
     G.claro = resolverClaro(aparencia.value, WidgetsBinding.instance.platformDispatcher.platformBrightness);
     G.linho = aparencia.value == 'linho';
     _barrasDoSistema();
@@ -85,6 +98,7 @@ class _AppCarteiraState extends State<AppCarteira> with WidgetsBindingObserver {
   @override
   void dispose() {
     aparencia.removeListener(_aplicar);
+    privacidade.removeListener(_privacidade);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -104,8 +118,18 @@ class _AppCarteiraState extends State<AppCarteira> with WidgetsBindingObserver {
     G.claro = claro;
     G.linho = linho;
     _barrasDoSistema();
+    _refazerTudo();
+  }
+
+  /// Modo privacidade: os valores vêm de brl() (estático), então redesenha tudo.
+  void _privacidade() {
+    valoresOcultos = privacidade.value;
+    if (mounted) _refazerTudo();
+  }
+
+  void _refazerTudo() {
     setState(() {});
-    // As cores vêm de G (estático): pede para todas as telas abertas se redesenharem.
+    // As cores e os valores vêm de estáticos: pede para todas as telas abertas se redesenharem.
     void refazer(Element e) {
       e.markNeedsBuild();
       e.visitChildren(refazer);
@@ -206,6 +230,9 @@ class _CascaState extends State<Casca> {
             final c = calcularCarteira(RepoScope.ler(context));
             if (c.posicoes.isNotEmpty) Navigator.of(context).push(MaterialPageRoute(builder: (_) => TelaAtivo(id: c.posicoes.first.a.id)));
           }
+          if (tela == 'retro') abrirRetro(context, mesDaRetro(RepoScope.ler(context), ym), inicial: int.tryParse(q['slide'] ?? '') ?? 0, parado: true);
+          if (tela == 'rapido') abrirMenuLancar(context, rapidoInicial: 'superm 86,40 débito');
+          if (tela == 'objetivo') abrirFolha(context, const FormObjetivo());
           if (tela == 'limites') _abrirLimites();
           if (tela == 'ajustes') Navigator.of(context).pushNamed('/ajustes');
           if (tela == 'busca') Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TelaBusca(inicial: 'mercado')));
@@ -285,7 +312,7 @@ class _CascaState extends State<Casca> {
         ? [telas[0], Centralizar(max: 1180, child: telas[1]), Centralizar(child: telas[2]), telas[3]]
         : telas;
     final corpo = Column(children: [
-      _Cabecalho(titulo: _titulos[aba], largo: largo, verCategoria: (c) => _irAba(1, filtro: 'saidas', cat: c)),
+      _Cabecalho(titulo: _titulos[aba], inicio: aba == 0, largo: largo, verCategoria: (c) => _irAba(1, filtro: 'saidas', cat: c)),
       Expanded(child: _Abas(aba: aba, children: telasVisiveis)),
     ]);
     return PopScope(
@@ -319,9 +346,9 @@ class _CascaState extends State<Casca> {
 
 class _Cabecalho extends StatelessWidget {
   final String titulo;
-  final bool largo;
+  final bool largo, inicio;
   final void Function(String cat) verCategoria;
-  const _Cabecalho({required this.titulo, required this.verCategoria, this.largo = false});
+  const _Cabecalho({required this.titulo, required this.verCategoria, this.largo = false, this.inicio = false});
   @override
   Widget build(BuildContext context) {
     final estilo = IconButton.styleFrom(
@@ -333,12 +360,35 @@ class _Cabecalho extends StatelessWidget {
       padding: EdgeInsets.zero,
     );
     void buscar() => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TelaBusca()));
+    // olho: esconde/mostra todos os valores do app
+    final olho = ValueListenableBuilder<bool>(
+      valueListenable: privacidade,
+      builder: (_, oculto, __) => IconButton(
+        tooltip: oculto ? 'Mostrar valores' : 'Esconder valores',
+        onPressed: () {
+          HapticFeedback.selectionClick();
+          definirPrivacidade(!oculto);
+        },
+        style: estilo,
+        icon: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 180),
+          transitionBuilder: (c, a) => ScaleTransition(scale: a, child: FadeTransition(opacity: a, child: c)),
+          child: Icon(oculto ? Icons.visibility_off_outlined : Icons.visibility_outlined, key: ValueKey(oculto), size: 21),
+        ),
+      ),
+    );
+    final agora = DateTime.now();
     if (largo) {
       // computador: título à esquerda, campo de busca e avisos à direita
       return Padding(
         padding: const EdgeInsets.fromLTRB(28, 18, 24, 10),
         child: Row(children: [
-          Expanded(child: Text(titulo, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, letterSpacing: -.5))),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+              Text(inicio ? saudacao(agora) : titulo, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, letterSpacing: -.5)),
+              if (inicio) Text(dataPorExtenso(agora), style: TextStyle(color: G.apagado, fontSize: 13)),
+            ]),
+          ),
           SizedBox(
             width: 300,
             child: Material(
@@ -366,6 +416,8 @@ class _Cabecalho extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 10),
+          olho,
+          const SizedBox(width: 6),
           BotaoAvisos(verCategoria: verCategoria),
         ]),
       );
@@ -375,10 +427,25 @@ class _Cabecalho extends StatelessWidget {
       child: Row(children: [
         ClipRRect(borderRadius: BorderRadius.circular(11), child: Image.asset('assets/icone.png', width: 38, height: 38, errorBuilder: (_, __, ___) => const SizedBox(width: 38, height: 38))),
         Expanded(
-          child: Column(children: [
-            Text(titulo, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, letterSpacing: -.2)),
-          ]),
+          child: inicio
+              ? Padding(
+                  padding: const EdgeInsets.only(left: 10),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+                    Text(saudacao(agora), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, letterSpacing: -.3)),
+                    Text(
+                      '${diasSemana[agora.weekday - 1].toLowerCase()}, ${agora.day} de ${mesesAbr[agora.month - 1]}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: G.apagado, fontSize: 11.5),
+                    ),
+                  ]),
+                )
+              : Column(children: [
+                  Text(titulo, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, letterSpacing: -.2)),
+                ]),
         ),
+        olho,
+        const SizedBox(width: 6),
         IconButton(tooltip: 'Buscar', onPressed: buscar, style: estilo, icon: const Icon(Icons.search_rounded, size: 21)),
         const SizedBox(width: 6),
         BotaoAvisos(verCategoria: verCategoria),
@@ -457,10 +524,19 @@ class _MenuBaixo extends StatelessWidget {
         child: Container(
           height: 62,
           decoration: BoxDecoration(
-            color: G.navFundo,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [BoxShadow(color: G.sombra(0xD9), blurRadius: 34, offset: Offset(0, 16), spreadRadius: -14)],
+          ),
+          // vidro fosco: o conteúdo passa desfocado por trás da barra
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: BackdropFilter(
+              filter: ui.ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+              child: Container(
+          decoration: BoxDecoration(
+            color: G.navFundo.withValues(alpha: G.claro ? .80 : .74),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(color: G.v(0x14)),
-            boxShadow: [BoxShadow(color: G.sombra(0xD9), blurRadius: 34, offset: Offset(0, 16), spreadRadius: -14)],
           ),
           child: Row(children: [
             item(0, Icons.home_outlined, Icons.home_rounded, 'Início'),
@@ -487,6 +563,9 @@ class _MenuBaixo extends StatelessWidget {
             item(2, Icons.event_note_outlined, Icons.event_note_rounded, 'Planejar'),
             item(3, Icons.show_chart_rounded, Icons.show_chart_rounded, 'Patrimônio'),
           ]),
+              ),
+            ),
+          ),
         ),
       ),
     );

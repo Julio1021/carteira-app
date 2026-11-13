@@ -494,6 +494,7 @@ class _RoscaState extends State<Rosca> {
 
 /// Valor curto para eixos: 1,2 mil · 3,4 mi.
 String curto(double v) {
+  if (valoresOcultos) return '•••';
   final a = v.abs();
   String f(double x) => x.toStringAsFixed(x >= 100 ? 0 : 1).replaceAll('.', ',').replaceAll(',0', '');
   if (a >= 1e6) return '${v < 0 ? '-' : ''}${f(a / 1e6)} mi';
