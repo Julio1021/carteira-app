@@ -344,7 +344,7 @@ class _Bloco extends StatelessWidget {
           const SizedBox(width: 9),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(rotulo, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: GH.vidro ? GH.texto2 : const Color(0x9E12131C), fontWeight: FontWeight.w600, fontSize: 12)),
+              FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(rotulo, maxLines: 1, style: TextStyle(color: GH.vidro ? GH.texto2 : const Color(0x9E12131C), fontWeight: FontWeight.w600, fontSize: 12))),
               FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(brl(valor), style: TextStyle(color: GH.vidro ? Colors.white : GE.tinta, fontWeight: FontWeight.w800, fontSize: 15))),
             ]),
           ),

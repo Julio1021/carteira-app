@@ -249,8 +249,9 @@ class _CartaoRetro extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
           borderRadius: r,
-          gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF6C4DE6), Color(0xFF2A52D6), Color(0xFF14B8A6)], stops: [0, .55, 1]),
-          boxShadow: const [BoxShadow(color: Color(0x592A52D6), blurRadius: 22, offset: Offset(0, 10), spreadRadius: -8)],
+          // segue o cartão principal do tema (antes era sempre violeta-azul)
+          gradient: GH.gradHero,
+          boxShadow: [BoxShadow(color: GH.gradHero.colors.last.withValues(alpha: .35), blurRadius: 22, offset: const Offset(0, 10), spreadRadius: -8)],
         ),
         child: Stack(fit: StackFit.expand, children: [
           const Positioned.fill(child: CustomPaint(painter: Aurora(a: Color(0x40FFFFFF), b: Color(0x00FFFFFF)))),

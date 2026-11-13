@@ -308,11 +308,11 @@ class _ChipsAssuntoState extends State<ChipsAssunto> with SingleTickerProviderSt
                         duration: const Duration(milliseconds: 200),
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                         decoration: BoxDecoration(
-                          color: i == mostrado ? G.texto : G.fundo2,
+                          color: i == mostrado ? _chipSel : G.fundo2,
                           borderRadius: BorderRadius.circular(99),
-                          border: Border.all(color: i == mostrado ? G.texto : G.borda),
+                          border: Border.all(color: i == mostrado ? _chipSel : G.borda),
                         ),
-                        child: Text(widget.nomes[i], style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: i == mostrado ? G.fundo : G.texto2)),
+                        child: Text(widget.nomes[i], style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: i == mostrado ? _chipTexto : G.texto2)),
                       ),
                     ),
                   ),
@@ -399,6 +399,12 @@ class _ChipsAssuntoState extends State<ChipsAssunto> with SingleTickerProviderSt
 
 /// Corta embaixo (para a página mais alta não passar por cima do resto) mas deixa
 /// sobrar dos lados e em cima (sombra dos cartões e a página que entra).
+/// Chip escolhido com a mesma cor da aba escolhida (Segmentos), para o tema
+/// falar uma língua só. Nos temas Nuvem a aba é branca sobre trilho cinza, então
+/// o chip fica na cor do texto.
+Color get _chipSel => G.nuvem != null ? G.texto : G.branco;
+Color get _chipTexto => G.nuvem != null ? G.fundo : G.tinta;
+
 class _CorteLateral extends CustomClipper<Rect> {
   @override
   Rect getClip(Size s) => Rect.fromLTRB(-60, -24, s.width + 60, s.height + 2);
