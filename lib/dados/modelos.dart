@@ -82,4 +82,22 @@ class Renda {
   String get regra => str(d['regra'], 'dia');
   int get dia => numI(d['dia']) ?? 1;
   bool get mesSeguinte => d['mesSeg'] == true;
+  /// Recebimento criado no app (os do site são só Salário e Vale, tipo "renda").
+  bool get livre => d['kind'] == 'rendaapp';
+  /// 'mensal', 'anual' (num mês do ano, como o 13º) ou 'unica' (uma data só).
+  String get freq => str(d['freq'], 'mensal');
+  int get mes => (numI(d['mes']) ?? 12).clamp(1, 12).toInt();
+  String get dataUnica => str(d['dataU']);
+  /// Valor muda todo mês: o esperado passa a ser a média do que entrou.
+  bool get variavel => d['var'] == true;
+  String get cat => str(d['cat'], id == 'rd_salario' ? 'salario' : (id == 'rd_va' ? 'beneficios' : 'outros_e'));
+}
+
+/// Limite geral do mês (registro só do app: o site não o conhece e o deixa de lado).
+class LimiteGeral {
+  final Doc d;
+  LimiteGeral(this.d);
+  double get valor => numD(d['valor']);
+  /// Levar para o mês seguinte o que sobrou do limite (vale também para as categorias).
+  bool get acumula => d['acumula'] == true;
 }

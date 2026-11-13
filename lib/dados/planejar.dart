@@ -294,7 +294,7 @@ List<Gasto> gastosParecidos(Repo repo, InstConta it) {
 }
 
 // =====================================================================
-// Recebimentos fixos (salário e vale)
+// Recebimentos (salário, vale e os que a pessoa criar)
 // =====================================================================
 
 class TipoRenda {
@@ -303,12 +303,23 @@ class TipoRenda {
   const TipoRenda(this.id, this.nome, this.cat, this.regra, this.dia);
 }
 
+/// Os dois que o site conhece (registros "renda" com estes ids).
 const tiposRenda = [
   TipoRenda('rd_salario', 'Salário', 'salario', 'util', 30),
   TipoRenda('rd_va', 'Vale alimentação', 'beneficios', 'dia', 20),
 ];
 
-String dataRenda(Renda r, String ym) => r.regra == 'util' ? ultimoDiaUtil(ym) : ymd(ym, r.dia);
+/// Data em que o recebimento cai no mês [ym], ou null se não cai nesse mês
+/// (anual em outro mês, ou o de data única em outra data).
+String? dataRenda(Renda r, String ym) {
+  switch (r.freq) {
+    case 'unica':
+      return r.dataUnica.length == 10 && r.dataUnica.startsWith(ym) ? r.dataUnica : null;
+    case 'anual':
+      if (int.parse(ym.substring(5, 7)) != r.mes) return null;
+  }
+  return r.regra == 'util' ? ultimoDiaUtil(ym) : ymd(ym, r.dia);
+}
 
 class StatusRenda {
   final String data;
@@ -317,15 +328,26 @@ class StatusRenda {
   StatusRenda(this.data, this.rec, this.dias);
 }
 
-StatusRenda statusRenda(Repo repo, Renda r, String ym, {String? hoje}) {
+/// Se o recebimento do mês [ym] já entrou: procura uma entrada perto da data,
+/// marcada com ele, da mesma categoria ou de valor parecido. Null se não cai no mês.
+StatusRenda? statusRenda(Repo repo, Renda r, String ym, {String? hoje}) {
   final data = dataRenda(r, ym);
+  if (data == null) return null;
   final ini = addDias(data, -10), fim = addDias(data, 10);
-  final cat = tiposRenda.where((t) => t.id == r.id).map((t) => t.cat).firstOrNull;
+  final esperado = r.valor;
+  final tol = r.variavel ? .35 : .15;
+  // categorias "genéricas" não bastam para reconhecer um recebimento criado no app
+  final catVale = !r.livre || !const {'outros_e', 'pix', 'proprias', 'reembolso'}.contains(r.cat);
   final cand = repo.entradas.where((e) {
     if (e.data.compareTo(ini) < 0 || e.data.compareTo(fim) > 0 || e.cat == 'proprias') return false;
-    if (e.rd != null && e.rd != r.id) return false;
-    if (r.id == 'rd_va' ? e.cat == 'salario' : e.cat == 'beneficios') return false;
-    return e.rd == r.id || e.cat == cat || (r.valor > 0 && (e.valor - r.valor).abs() <= r.valor * .15);
+    if (e.rd != null) return e.rd == r.id;
+    if (r.id == 'rd_va' && e.cat == 'salario') return false;
+    if (r.id == 'rd_salario' && e.cat == 'beneficios') return false;
+    if (r.livre && (e.cat == 'salario' || e.cat == 'beneficios') && e.cat != r.cat) return false;
+    final perto = esperado > 0 && (e.valor - esperado).abs() <= esperado * tol;
+    // um 13º ou bônus na categoria Salário só casa com valor parecido (senão pegaria o salário do mês)
+    if (r.livre && (r.cat == 'salario' || r.cat == 'beneficios')) return e.cat == r.cat && perto;
+    return (catVale && e.cat == r.cat) || perto;
   }).toList()
     ..sort((a, b) {
       final ra = a.rd == r.id ? 1 : 0, rb = b.rd == r.id ? 1 : 0;
@@ -335,25 +357,71 @@ StatusRenda statusRenda(Repo repo, Renda r, String ym, {String? hoje}) {
   return StatusRenda(data, cand.isEmpty ? null : cand.first, diasEntre(hoje ?? hojeIso(), data) - 1);
 }
 
+/// Um mês no histórico de um recebimento.
+class MesRenda {
+  final String ym, data;
+  final Entrada? rec;
+  MesRenda(this.ym, this.data, this.rec);
+}
+
+/// Ocorrências passadas (até [meses] meses para trás, do mais novo ao mais velho).
+List<MesRenda> historicoRenda(Repo repo, Renda r, {String? hoje, int meses = 12, int max = 6}) {
+  final h = hoje ?? hojeIso();
+  final out = <MesRenda>[];
+  for (var k = 0; k <= meses && out.length < max; k++) {
+    final ym = ymAdd(ymDe(h), -k);
+    final st = statusRenda(repo, r, ym, hoje: h);
+    if (st == null) continue;
+    if (st.rec == null && st.data.compareTo(h) > 0) continue; // ainda vai cair
+    out.add(MesRenda(ym, st.data, st.rec));
+  }
+  return out;
+}
+
+/// Valor esperado: o informado ou, se varia, a média das últimas 3 vezes que entrou.
+double valorEsperado(Repo repo, Renda r, {String? hoje}) {
+  if (!r.variavel) return r.valor;
+  final rec = historicoRenda(repo, r, hoje: hoje).where((m) => m.rec != null).take(3).toList();
+  if (rec.isEmpty) return r.valor;
+  return (rec.fold<double>(0, (a, m) => a + m.rec!.valor) / rec.length * 100).round() / 100;
+}
+
+/// Entrada criada ao confirmar um recebimento.
+Doc docRecebido(Renda r, double valor, String data) => {
+      'kind': 'entrada',
+      'id': novoId('e'),
+      'desc': r.nome,
+      'valor': (valor * 100).round() / 100,
+      'data': data,
+      'cat': r.cat,
+      'rd': r.id,
+      'criado': DateTime.now().millisecondsSinceEpoch,
+    };
+
 /// Item da linha do tempo "Próximos recebimentos".
 class ItemAgenda {
   final String id, data, nome;
   final double valor;
   final bool recebido, atrasado;
-  ItemAgenda(this.id, this.data, this.nome, this.valor, this.recebido, this.atrasado);
+  /// Recebimento (null nas parcelas de empréstimo).
+  final Renda? renda;
+  ItemAgenda(this.id, this.data, this.nome, this.valor, this.recebido, this.atrasado, {this.renda});
 }
 
 List<ItemAgenda> agendaRecebimentos(Repo repo, {String? hoje}) {
   final h = hoje ?? hojeIso(), mA = ymDe(h);
   final it = <ItemAgenda>[];
   for (final r in repo.rendas.where((r) => r.valor > 0)) {
-    final nome = tiposRenda.where((t) => t.id == r.id).map((t) => t.nome).firstOrNull ?? 'Recebimento';
-    for (final ym in [mA, ymAdd(mA, 1)]) {
+    final esp = valorEsperado(repo, r, hoje: h);
+    // mensais: este mês e o próximo; anuais e de data única: até 2 meses à frente
+    final meses = r.freq == 'mensal' ? [mA, ymAdd(mA, 1)] : [mA, ymAdd(mA, 1), ymAdd(mA, 2)];
+    for (final ym in meses) {
       final st = statusRenda(repo, r, ym, hoje: h);
-      final d = st.rec?.data ?? dataRenda(r, ym);
+      if (st == null) continue;
+      final d = st.rec?.data ?? st.data;
       if (st.rec != null && ymDe(d) != mA) continue;
       if (st.rec == null && ym != mA && it.any((x) => x.id == r.id && !x.recebido)) continue;
-      it.add(ItemAgenda(r.id, d, nome, st.rec?.valor ?? r.valor, st.rec != null, st.rec == null && d.compareTo(h) < 0));
+      it.add(ItemAgenda(r.id, d, r.nome, st.rec?.valor ?? esp, st.rec != null, st.rec == null && d.compareTo(h) < 0, renda: r));
     }
   }
   for (final e in emprestimos(repo)) {
@@ -365,7 +433,7 @@ List<ItemAgenda> agendaRecebimentos(Repo repo, {String? hoje}) {
   it.sort((a, b) => a.data.compareTo(b.data));
   final rec = it.where((x) => x.recebido).toList();
   final fut = it.where((x) => !x.recebido).toList();
-  return [if (rec.isNotEmpty) rec.last, ...fut].take(3).toList();
+  return [if (rec.isNotEmpty) rec.last, ...fut].take(4).toList();
 }
 
 // =====================================================================

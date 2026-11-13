@@ -108,6 +108,10 @@ jobs:
           tirar u5-analise "&tema=oceano&aba=1&analise=1" 2100
           tirar u6-patrimonio "&tema=oceano&aba=3" 1900
           tirar u7-planejar "&tema=floresta&aba=2" 1400
+          tirar l1-limites "&tema=oceano&tela=limites" 2200
+          tirar l2-limites-esm "&tema=esmeralda&tela=limites" 2200
+          tirar l3-receb "&tema=oceano&aba=2" 1500
+          tirar l4-avisos "&tema=oceano&tela=avisos"
           tirar u8-ajustes "&tema=marinho&tela=ajustes" 1100
           tirar u9-lancar "&tema=oceano&tela=rapido" 844
           tirar u10-pc "&tema=oceano" 900 1440 1

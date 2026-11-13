@@ -6,6 +6,7 @@ import '../util/fmt.dart';
 import '../widgets/comum.dart';
 import '../widgets/formulario.dart';
 import 'busca.dart';
+import 'limites.dart';
 
 /// Botão do sininho com o número de avisos novos.
 class BotaoAvisos extends StatelessWidget {
@@ -110,6 +111,14 @@ class _FolhaAvisos extends StatelessWidget {
                               if (context.mounted) avisar(context, '${docs.length} gasto(s) fixo(s) lançado(s).');
                             },
                             child: const Text('Lançar fixos'),
+                          ),
+                        if (RegExp(r'^(limg|projg|quaseg|lim|proj|quase)\+').hasMatch(a.k))
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              Navigator.of(context).push(MaterialPageRoute(builder: (_) => TelaLimites(ym: ymDe(hojeIso()))));
+                            },
+                            child: const Text('ver limites'),
                           ),
                         if (a.cat != null)
                           TextButton(

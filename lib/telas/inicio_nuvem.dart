@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../dados/categorias.dart';
 import '../dados/patrimonio.dart';
+import '../dados/limites.dart';
 import '../dados/resumo.dart';
 import '../tema.dart';
 import '../util/fmt.dart';
@@ -271,13 +272,15 @@ class QuadrosNuvem extends StatelessWidget {
       final restante = r.limiteTotal - r.gastoComLimite;
       final dias = mesAtual ? diasNoMes(r.ym) - int.parse(hoje.substring(8, 10)) + 1 : 0;
       final estourou = restante < 0;
+      final proj = projecaoMes(r.gastoComLimite, r.ym, hoje: hoje);
+      final vaiPassar = proj != null && proj > r.limiteTotal * 1.02;
       esquerda = Cartao(
         onTap: onLimite,
         padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('Limite de gastos', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: G.texto2)),
+          Text(r.temLimiteGeral ? 'Limite do mês' : 'Limite de gastos', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: G.texto2)),
           const SizedBox(height: 8),
-          Medidor(frac: uso, alerta: estourou || uso > .85),
+          Medidor(frac: uso, alerta: estourou || uso > .85 || vaiPassar),
           const SizedBox(height: 2),
           Center(
             child: Text(
@@ -287,6 +290,15 @@ class QuadrosNuvem extends StatelessWidget {
               style: TextStyle(fontSize: 11.5, color: estourou ? G.neg : G.apagado, fontWeight: FontWeight.w600),
             ),
           ),
+          if (proj != null && !estourou)
+            Center(
+              child: Text(
+                vaiPassar ? 'no ritmo, passa ${curtoBr(proj - r.limiteTotal)}' : 'no ritmo, fecha dentro',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontSize: 11, color: vaiPassar ? G.alerta : G.pos, fontWeight: FontWeight.w700),
+              ),
+            ),
         ]),
       );
     } else {

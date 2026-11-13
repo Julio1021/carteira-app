@@ -315,10 +315,12 @@ PlanoImport planoImport(Repo repo, Ofx o, {required String dono, String desde = 
       Renda? melhor;
       var dist = 99;
       for (final r in rendas) {
-        if ((t.valor - r.valor).abs() > r.valor * .15) continue;
+        if ((t.valor - r.valor).abs() > r.valor * (r.variavel ? .35 : .15)) continue;
         final ym = ymDe(t.data);
         for (final m in [ym, ymAdd(ym, 1), ymAdd(ym, -1)]) {
-          final dd = (diasEntre(t.data, dataRenda(r, m)) - 1).abs();
+          final dr = dataRenda(r, m);
+          if (dr == null) continue;
+          final dd = (diasEntre(t.data, dr) - 1).abs();
           if (dd <= 10 && dd < dist) {
             dist = dd;
             melhor = r;
@@ -330,8 +332,7 @@ PlanoImport planoImport(Repo repo, Ofx o, {required String dono, String desde = 
           p.jaImportados++;
           continue;
         }
-        final tipo = tiposRenda.firstWhere((x) => x.id == melhor!.id, orElse: () => tiposRenda.first);
-        p.entradas.add(ItemImport(t: t, ext: ext, ch: '__rd_${melhor.id}', cat: tipo.cat, desc: tipo.nome, valor: (t.valor * 100).round() / 100, rd: melhor.id));
+        p.entradas.add(ItemImport(t: t, ext: ext, ch: '__rd_${melhor.id}', cat: melhor.cat, desc: melhor.nome, valor: (t.valor * 100).round() / 100, rd: melhor.id));
         continue;
       }
       if (ke.acao == 'propria') {

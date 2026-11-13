@@ -1,4 +1,5 @@
 import '../util/fmt.dart';
+import 'limites.dart';
 import 'modelos.dart';
 import 'repo.dart';
 
@@ -57,6 +58,9 @@ class ResumoMes {
   final Map<String, double> porCategoria;
   final Map<String, double> limites; // categoria -> limite mensal
   final double limiteTotal, gastoComLimite;
+  /// Detalhes dos limites do mês (geral, sobra do mês anterior, categorias).
+  final LimitesMes lim;
+  bool get temLimiteGeral => lim.geral != null;
   final double? emConta;
   final bool temContas;
 
@@ -75,6 +79,7 @@ class ResumoMes {
     required this.limites,
     required this.limiteTotal,
     required this.gastoComLimite,
+    required this.lim,
     required this.emConta,
     required this.temContas,
   });
@@ -138,9 +143,11 @@ class ResumoMes {
         aplicou += i.valor;
       }
     }
-    final lim = <String, double>{for (final l in repo.limites) l.cat: l.limite};
-    final limTotal = lim.values.fold<double>(0, (a, b) => a + b);
-    final comLim = lim.keys.fold<double>(0, (a, c) => a + (porCat[c] ?? 0));
+    final lm = limitesDoMes(repo, ym);
+    final lim = lm.cat;
+    // com limite geral, ele é o número principal; sem ele, a soma das categorias
+    final limTotal = lm.geral ?? lim.values.fold<double>(0, (a, b) => a + b);
+    final comLim = lm.geral != null ? saiu : lim.keys.fold<double>(0, (a, c) => a + (porCat[c] ?? 0));
     final contas = repo.contas;
     return ResumoMes._(
       ym: ym,
@@ -157,6 +164,7 @@ class ResumoMes {
       limites: lim,
       limiteTotal: limTotal,
       gastoComLimite: comLim,
+      lim: lm,
       emConta: contas.isEmpty ? null : saldoEmConta(repo),
       temContas: contas.isNotEmpty,
     );

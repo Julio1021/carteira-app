@@ -37,6 +37,7 @@ List<Doc> dadosDemo() {
   out.add({'kind': 'orc', 'id': 'orc_mercado', 'cat': 'mercado', 'limite': 900.0});
   out.add({'kind': 'orc', 'id': 'orc_alimentacao', 'cat': 'alimentacao', 'limite': 300.0});
   out.add({'kind': 'orc', 'id': 'orc_lazer', 'cat': 'lazer', 'limite': 200.0});
+  out.add({'kind': 'limgeral', 'id': 'limgeral', 'valor': 3000.0, 'acumula': true});
   // Planejar
   final criado = DateTime.now().subtract(const Duration(days: 90)).millisecondsSinceEpoch;
   out.add({'kind': 'pagar', 'id': 'pg_demo1', 'nome': 'Aluguel', 'valor': 1300.0, 'rep': 'mensal', 'dia': 10, 'ini': ymAdd(ym, -2), 'cat': 'moradia', 'pag': 'Pix', 'criado': criado});
@@ -47,6 +48,11 @@ List<Doc> dadosDemo() {
   out.add({'kind': 'pagto', 'id': 'pp_pg_demo2_${ymAdd(ym, -2)}', 'conta': 'pg_demo2', 'mes': ymAdd(ym, -2), 'pago': true, 'valor': 120.0, 'data': '${ymAdd(ym, -2)}-15'});
   out.add({'kind': 'renda', 'id': 'rd_salario', 'nome': 'Salário', 'valor': 4800.0, 'regra': 'util', 'mesSeg': false});
   out.add({'kind': 'renda', 'id': 'rd_va', 'nome': 'Vale alimentação', 'valor': 900.0, 'regra': 'dia', 'dia': 20});
+  out.add({'kind': 'rendaapp', 'id': 'rd_demo_freela', 'nome': 'Freela', 'valor': 800.0, 'regra': 'dia', 'dia': 25, 'var': true, 'cat': 'vendas'});
+  out.add({'kind': 'rendaapp', 'id': 'rd_demo_13', 'nome': '13º salário', 'valor': 2400.0, 'regra': 'dia', 'dia': 20, 'freq': 'anual', 'mes': 12, 'cat': 'salario'});
+  for (var k = 1; k <= 3; k++) {
+    out.add({'kind': 'entrada', 'id': 'e_demo_fr$k', 'desc': 'Freela', 'valor': 650.0 + k * 120, 'data': '${ymAdd(ym, -k)}-25', 'cat': 'vendas', 'rd': 'rd_demo_freela', 'criado': 10 + k});
+  }
   out.add({'kind': 'cartao', 'id': 'cc_demo', 'nome': 'Nubank', 'banco': 'Nubank', 'limite': 4000.0, 'fecha': 3, 'vence': 10, 'cor': '#820ad1', 'criado': 1});
   out.add({'kind': 'gasto', 'id': 'g_cc1', 'desc': 'Amazon', 'valor': 189.9, 'data': addDias(h, -1), 'cat': 'compras', 'pag': 'Crédito', 'cartao': 'cc_demo', 'fat': ymAdd(ym, 1), 'criado': 5000});
   for (var i = 0; i < 2; i++) {

@@ -76,10 +76,10 @@ void main() {
         {'kind': 'renda', 'id': 'rd_salario', 'nome': 'Salário', 'valor': 4800, 'regra': 'util'},
         {'kind': 'entrada', 'id': 'e1', 'desc': 'Pix recebido', 'valor': 4800, 'data': '2026-10-30', 'cat': 'pix'},
       ]);
-      final s = statusRenda(r, r.rendas.single, '2026-10', hoje: hoje);
+      final s = statusRenda(r, r.rendas.single, '2026-10', hoje: hoje)!;
       expect(s.data, '2026-10-30');
       expect(s.rec?.id, 'e1');
-      final n = statusRenda(r, r.rendas.single, '2026-11', hoje: hoje);
+      final n = statusRenda(r, r.rendas.single, '2026-11', hoje: hoje)!;
       expect(n.data, '2026-11-30');
       expect(n.rec, isNull);
       expect(n.dias, 23);

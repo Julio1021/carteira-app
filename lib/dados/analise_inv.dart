@@ -130,7 +130,7 @@ RendaPassiva? rendaPassiva(Repo repo, Carteira c, {String? hoje}) {
   final ult = ms.length > 12 ? ms.sublist(ms.length - 12) : ms;
   if (ult.isEmpty) return null;
   final media = ult.fold<double>(0, (t, m) => t + m.ganho) / ult.length;
-  final salario = repo.rendas.fold<double>(0, (t, r) => t + r.valor);
+  final salario = repo.rendas.where((r) => r.freq == 'mensal').fold<double>(0, (t, r) => t + r.valor);
   String? conta;
   double? vc;
   if (media > 0) {

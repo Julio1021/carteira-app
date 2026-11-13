@@ -88,7 +88,11 @@ class Repo extends ChangeNotifier {
   List<Investido> get investidos => doTipo('invest').map(Investido.new).toList();
   List<ContaBancaria> get contas => doTipo('conta').map(ContaBancaria.new).toList();
   List<Limite> get limites => doTipo('orc').map(Limite.new).where((l) => l.cat.isNotEmpty && l.limite > 0).toList();
-  List<Renda> get rendas => doTipo('renda').map(Renda.new).toList();
+  List<Renda> get rendas => [...doTipo('renda'), ...doTipo('rendaapp')].map(Renda.new).toList();
+  LimiteGeral? get limiteGeral {
+    final d = _docs['limgeral'];
+    return d == null ? null : LimiteGeral(d);
+  }
 
   bool get vazio => _docs.values.every((d) => d['kind'] == 'pref');
 

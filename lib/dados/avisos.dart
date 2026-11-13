@@ -1,6 +1,7 @@
 // Avisos do mês (o sininho), com as mesmas regras do site.
 import '../util/fmt.dart';
 import 'categorias.dart';
+import 'limites.dart';
 import 'modelos.dart';
 import 'planejar.dart';
 import 'repo.dart';
@@ -56,7 +57,8 @@ List<Aviso> avisosDoMes(Repo repo, {String? hoje}) {
   for (final g in todos) {
     if (prevs.contains(ymDe(g.data))) media[g.cat] = (media[g.cat] ?? 0) + g.valor / prevs.length;
   }
-  final lim = {for (final l in repo.limites) l.cat: l.limite};
+  final lm = limitesDoMes(repo, ref);
+  final lim = lm.cat;
   final comLimite = <String>{};
   lim.forEach((c, l) {
     final v = cur[c] ?? 0, nome = catGasto(c).nome;
@@ -71,6 +73,19 @@ List<Aviso> avisosDoMes(Repo repo, {String? hoje}) {
       comLimite.add(c);
     }
   });
+  // limite geral: avisa em 80%, quando o ritmo indica que vai passar e em 100%
+  final lg = lm.geral;
+  if (lg != null) {
+    final v = cur.values.fold<double>(0, (a, b) => a + b);
+    final dias = diasNoMes(ref) - int.parse(h.substring(8, 10)) + 1;
+    if (v >= lg) {
+      av.add(Aviso('limg+$ref', 3, 'Você passou ${brl(v - lg)} do seu limite geral do mês (${brl(v)} de ${brl(lg)}).', val: v - lg));
+    } else if (frac >= .16 && frac < .95 && v / frac > lg * 1.05) {
+      av.add(Aviso('projg+$ref', 2, 'No ritmo atual, o mês fecha perto de ${brl(v / frac)}, ${brl(v / frac - lg)} acima do limite geral de ${brl(lg)}.', val: v / frac - lg));
+    } else if (v >= lg * .8) {
+      av.add(Aviso('quaseg+$ref', 2, 'Você já usou ${(v / lg * 100).round()}% do limite geral: restam ${brl(lg - v)}${dias > 1 ? ', cerca de ${brl((lg - v) / dias)} por dia' : ''}.', val: lg - v));
+    }
+  }
   for (final c in {...cur.keys, ...media.keys}) {
     if (comLimite.contains(c) || c == 'cartao') continue;
     final v = cur[c] ?? 0, base = (media[c] ?? 0) * frac, nome = catGasto(c).nome;
@@ -87,7 +102,7 @@ List<Aviso> avisosDoMes(Repo repo, {String? hoje}) {
   var aReceber = 0.0;
   for (final rd in repo.rendas.where((x) => x.valor > 0)) {
     final st = statusRenda(repo, rd, ref, hoje: h);
-    if (st.rec == null && st.data.compareTo(h) >= 0) aReceber += rd.valor;
+    if (st != null && st.rec == null && st.data.compareTo(h) >= 0) aReceber += valorEsperado(repo, rd, hoje: h);
   }
   if (e > 0) {
     if (g > e && aReceber <= 0) {

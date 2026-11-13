@@ -1,6 +1,7 @@
 // Números da aba Análise do Extrato.
 import '../util/fmt.dart';
 import 'categorias.dart';
+import 'limites.dart';
 import 'repo.dart';
 import 'resumo.dart';
 
@@ -68,7 +69,8 @@ Ritmo ritmoDoMes(Repo repo, String ym, {String? hoje}) {
       media[i] += l[i] / prevs.length;
     }
   }
-  final lim = repo.limites.fold<double>(0, (a, l) => a + l.limite);
+  final lm = limitesDoMes(repo, ym);
+  final lim = lm.geral ?? lm.cat.values.fold<double>(0, (a, b) => a + b);
   return Ritmo(ym, atual, ant, prevs.isEmpty ? <double>[] : media, lim, dia);
 }
 
