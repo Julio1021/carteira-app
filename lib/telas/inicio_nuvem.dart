@@ -147,7 +147,7 @@ class HeroNuvem extends StatelessWidget {
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
                 Expanded(
-                  child: Text(principal != null ? 'Em conta' : 'Sobra do mês', style: TextStyle(color: GH.texto2, fontWeight: FontWeight.w600, fontSize: 13.5)),
+                  child: Text(principal != null ? 'Em conta' : 'Sobra do mês', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: GH.texto2, fontWeight: FontWeight.w600, fontSize: 13.5)),
                 ),
                 // seletor de mês compacto
                 Container(
@@ -182,9 +182,13 @@ class HeroNuvem extends StatelessWidget {
                         child: Row(mainAxisSize: MainAxisSize.min, children: [
                           Icon(r.sobra >= 0 ? Icons.north_east_rounded : Icons.south_east_rounded, size: 15, color: r.sobra >= 0 ? Colors.white : const Color(0xFFFFC2B8)),
                           const SizedBox(width: 5),
-                          Text(
-                            r.sobra >= 0 ? 'Sobraram ${brl(r.sobra)} ${atual ? 'este mês' : 'no mês'}' : 'Faltaram ${brl(-r.sobra)} ${atual ? 'este mês' : 'no mês'}',
-                            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: r.sobra >= 0 ? Colors.white : const Color(0xFFFFC2B8)),
+                          Flexible(
+                            child: Text(
+                              r.sobra >= 0 ? 'Sobraram ${brl(r.sobra)} ${atual ? 'este mês' : 'no mês'}' : 'Faltaram ${brl(-r.sobra)} ${atual ? 'este mês' : 'no mês'}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: r.sobra >= 0 ? Colors.white : const Color(0xFFFFC2B8)),
+                            ),
                           ),
                         ]),
                       ),
