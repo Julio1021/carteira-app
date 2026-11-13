@@ -53,12 +53,12 @@ class TelaLimites extends StatelessWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        const Text('Teto para todos os gastos', style: TextStyle(fontWeight: FontWeight.w700)),
+                        const Text('Teto do mês', style: TextStyle(fontWeight: FontWeight.w700)),
                         const SizedBox(height: 2),
                         Text(
                           lm.geral == null
                               ? (med.total > 0 ? 'Você gasta em média ${brl(med.total)} por mês' : 'Toque para definir quanto quer gastar no mês')
-                              : (lm.sobraGeral > 0 ? '${brl(lm.geralBase)} + ${brl(lm.sobraGeral)} que sobrou do mês passado' : 'Vale para tudo o que sair no mês'),
+                              : (lm.sobraGeral > 0 ? 'Mais ${brl(lm.sobraGeral)} que sobrou do mês passado' : 'Vale para tudo o que sair no mês'),
                           style: TextStyle(fontSize: 12.5, color: G.apagado),
                         ),
                       ]),
@@ -76,7 +76,7 @@ class TelaLimites extends StatelessWidget {
                 onChanged: (v) => _salvarGeral(context, acumula: v),
                 contentPadding: const EdgeInsets.fromLTRB(14, 2, 10, 2),
                 title: const Text('Levar a sobra para o mês seguinte', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                subtitle: Text('O que você não gastar do limite (geral e de cada categoria) soma no mês seguinte.', style: TextStyle(fontSize: 12, color: G.apagado)),
+                subtitle: Text('O que não gastar do limite (geral e de cada categoria) soma no mês seguinte, até metade do limite.', style: TextStyle(fontSize: 12, color: G.apagado)),
               ),
             ]),
           ),
@@ -84,10 +84,12 @@ class TelaLimites extends StatelessWidget {
             Dica('A soma dos limites por categoria (${brl(lm.somaCategorias)}) passa do limite geral (${brl(lm.geralBase)}).', icone: Icons.warning_amber_rounded),
           const SizedBox(height: 18),
           TituloSecao('Por categoria', direita: lm.catBase.isEmpty ? null : Text('${lm.catBase.length} com limite', style: TextStyle(fontSize: 11.5, color: G.apagado))),
-          CaixaLista([
-            for (final c in cats)
-              _LinhaLimite(cat: c, gasto: r.porCategoria[c.id] ?? 0, limite: lm.cat[c.id], base: lm.catBase[c.id], media: med.cat[c.id] ?? 0, ym: ym),
-          ]),
+          _ListaCategorias(
+            linhas: [
+              for (final c in cats)
+                _LinhaLimite(cat: c, gasto: r.porCategoria[c.id] ?? 0, limite: lm.cat[c.id], base: lm.catBase[c.id], media: med.cat[c.id] ?? 0, ym: ym),
+            ],
+          ),
           if (hist.isNotEmpty) ...[
             const SizedBox(height: 18),
             TituloSecao(lm.geral != null ? 'Histórico · limite geral' : 'Histórico · categorias com limite'),
@@ -102,6 +104,39 @@ class TelaLimites extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+/// Categorias com limite ou com gastos primeiro; as paradas ficam num "mostrar mais".
+class _ListaCategorias extends StatefulWidget {
+  final List<_LinhaLimite> linhas;
+  const _ListaCategorias({required this.linhas});
+  @override
+  State<_ListaCategorias> createState() => _ListaCategoriasState();
+}
+
+class _ListaCategoriasState extends State<_ListaCategorias> {
+  bool todas = false;
+  @override
+  Widget build(BuildContext context) {
+    bool ativa(_LinhaLimite l) => l.limite != null || l.gasto > 0 || l.media > 0;
+    final principais = widget.linhas.where(ativa).toList();
+    final resto = widget.linhas.where((l) => !ativa(l)).toList();
+    return CaixaLista([
+      ...principais,
+      if (todas) ...resto,
+      if (resto.isNotEmpty)
+        InkWell(
+          onTap: () => setState(() => todas = !todas),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 13),
+            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Text(todas ? 'Mostrar menos' : 'Outras ${resto.length} categorias sem gastos', style: TextStyle(color: G.lavanda, fontWeight: FontWeight.w700, fontSize: 13)),
+              Icon(todas ? Icons.expand_less_rounded : Icons.expand_more_rounded, color: G.lavanda, size: 20),
+            ]),
+          ),
+        ),
+    ]);
   }
 }
 
@@ -150,9 +185,9 @@ class _Resumo extends StatelessWidget {
           Barra(uso, cor: uso > 1 ? const Color(0xFFFF9C8A) : branco, trilho: const Color(0x33FFFFFF)),
           const SizedBox(height: 12),
           Row(children: [
-            _Num(resta >= 0 ? 'Ainda pode gastar' : 'Passou', brl(resta.abs())),
-            if (dias > 0 && resta > 0) _Num('Por dia, até o fim do mês', brl(resta / dias)),
-            if (proj != null) _Num('No ritmo, o mês fecha em', brl(proj)),
+            _Num(resta >= 0 ? 'Pode gastar' : 'Passou', brl(resta.abs())),
+            if (dias > 0 && resta > 0) _Num('Por dia', brl(resta / dias)),
+            if (proj != null) _Num('No ritmo, fecha em', brl(proj)),
           ]),
           if (proj != null) ...[
             const SizedBox(height: 10),

@@ -146,8 +146,8 @@ class CartaoRecebimentos extends StatelessWidget {
       if (dias >= 1) {
         final quem = '${prox.nome} (${dataCurta(prox.data)})';
         ateLa = saldo > 0
-            ? 'Faltam $dias dia${dias == 1 ? '' : 's'} até $quem: com o que está em conta, dá ${brl(saldo / dias)} por dia.'
-            : 'Faltam $dias dia${dias == 1 ? '' : 's'} até $quem e o saldo em conta está zerado.';
+            ? '$dias dia${dias == 1 ? '' : 's'} até $quem: com o saldo em conta, dá ${brl(saldo / dias)}/dia.'
+            : '$dias dia${dias == 1 ? '' : 's'} até $quem, e o saldo em conta está zerado.';
       }
     }
     return Cartao(

@@ -41,16 +41,20 @@ LimitesMes limitesDoMes(Repo repo, String ym) {
     if (g.isNotEmpty) {
       if (geralBase > 0) {
         final total = g.values.fold<double>(0, (a, b) => a + b);
-        if (total < geralBase) sobraG = geralBase - total;
+        if (total < geralBase) sobraG = _teto(geralBase - total, geralBase);
       }
       base.forEach((c, l) {
         final v = g[c] ?? 0;
-        if (v < l) cat[c] = l + (l - v);
+        if (v < l) cat[c] = l + _teto(l - v, l);
       });
     }
   }
   return LimitesMes(geralBase > 0 ? geralBase + sobraG : null, geralBase, sobraG, cat, base, acumula);
 }
+
+/// A sobra que passa para o mês seguinte vai até metade do limite: um mês
+/// muito econômico (ou com gastos não lançados) não dobra o teto do seguinte.
+double _teto(double sobra, double base) => sobra > base / 2 ? base / 2 : sobra;
 
 /// Média de gasto por mês (por categoria e total) nos até 3 meses anteriores com gastos.
 ({Map<String, double> cat, double total, int meses}) mediaGastos(Repo repo, String ym) {
