@@ -152,6 +152,16 @@ class _AppCarteiraState extends State<AppCarteira> with WidgetsBindingObserver {
           TargetPlatform.iOS: _TransicaoEstreita(),
           TargetPlatform.fuchsia: _TransicaoEstreita(),
         })),
+        // Tela cheia (esconder a barra de cima): o app usa também a faixa onde ela ficava.
+        builder: (context, child) => ListenableBuilder(
+          listenable: Listenable.merge([telaCheia, telaCheiaTipo]),
+          builder: (context, _) {
+            final mq = MediaQuery.of(context);
+            final semTopo = !kIsWeb && telaCheia.value && telaCheiaTipo.value != 'transparente';
+            if (!semTopo) return child!;
+            return MediaQuery(data: mq.copyWith(padding: mq.padding.copyWith(top: 0), viewPadding: mq.viewPadding.copyWith(top: 0)), child: child!);
+          },
+        ),
         locale: const Locale('pt', 'BR'),
         supportedLocales: const [Locale('pt', 'BR')],
         localizationsDelegates: const [
@@ -177,6 +187,9 @@ class Casca extends StatefulWidget {
 
 class _CascaState extends State<Casca> {
   int aba = 0;
+  // cabeçalho e menu de baixo se recolhem ao rolar para baixo e voltam ao rolar para cima
+  bool recolhido = false;
+  double _acumulado = 0;
   String ym = ymDe(hojeIso());
   String filtroExtrato = 'tudo';
   String? catExtrato;
@@ -258,9 +271,32 @@ class _CascaState extends State<Casca> {
     HapticFeedback.selectionClick();
     setState(() {
       aba = i;
+      recolhido = false;
+      _acumulado = 0;
       filtroExtrato = filtro;
       catExtrato = cat;
     });
+  }
+
+  bool _rolou(ScrollNotification n) {
+    if (n.metrics.axis != Axis.vertical) return false;
+    if (n is ScrollUpdateNotification) {
+      final d = n.scrollDelta ?? 0;
+      // no topo da lista, sempre mostra
+      if (n.metrics.pixels <= 8) {
+        _acumulado = 0;
+        if (recolhido) setState(() => recolhido = false);
+        return false;
+      }
+      // soma o movimento no mesmo sentido; trocar de sentido zera a conta
+      _acumulado = (d > 0) == (_acumulado > 0) ? _acumulado + d : d;
+      if (!recolhido && _acumulado > 28 && n.metrics.pixels > 70) {
+        setState(() => recolhido = true);
+      } else if (recolhido && _acumulado < -14) {
+        setState(() => recolhido = false);
+      }
+    }
+    return false;
   }
 
   /// Atalhos do teclado (computador). Não atrapalham quem está digitando num campo.
@@ -311,9 +347,11 @@ class _CascaState extends State<Casca> {
     final telasVisiveis = largo
         ? [telas[0], Centralizar(max: 1180, child: telas[1]), Centralizar(child: telas[2]), telas[3]]
         : telas;
+    final some = recolhido && !largo;
+    final cabecalho = _Cabecalho(titulo: _titulos[aba], inicio: aba == 0, largo: largo, verCategoria: (c) => _irAba(1, filtro: 'saidas', cat: c));
     final corpo = Column(children: [
-      _Cabecalho(titulo: _titulos[aba], inicio: aba == 0, largo: largo, verCategoria: (c) => _irAba(1, filtro: 'saidas', cat: c)),
-      Expanded(child: _Abas(aba: aba, children: telasVisiveis)),
+      largo ? cabecalho : _Recolhe(recolhido: some, child: cabecalho),
+      Expanded(child: NotificationListener<ScrollNotification>(onNotification: largo ? null : _rolou, child: _Abas(aba: aba, children: telasVisiveis))),
     ]);
     return PopScope(
       canPop: aba == 0,
@@ -333,13 +371,46 @@ class _CascaState extends State<Casca> {
               : Scaffold(
                   extendBody: true,
                   body: SafeArea(bottom: false, child: corpo),
-                  bottomNavigationBar: _MenuBaixo(aba: aba, onAba: _irAba, onMais: () => abrirMenuLancar(context)),
+                  // some deslizando para baixo; volta com um pequeno "pulo"
+                  bottomNavigationBar: AnimatedSlide(
+                    offset: some ? const Offset(0, 1.25) : Offset.zero,
+                    duration: Duration(milliseconds: some ? 240 : 420),
+                    curve: some ? Curves.easeInCubic : Curves.easeOutBack,
+                    child: AnimatedOpacity(
+                      opacity: some ? 0 : 1,
+                      duration: Duration(milliseconds: some ? 200 : 260),
+                      child: IgnorePointer(ignoring: some, child: _MenuBaixo(aba: aba, onAba: _irAba, onMais: () => abrirMenuLancar(context))),
+                    ),
+                  ),
                 ),
       ),
     ).envolverAbertura(
       abrindo,
       congelarAbertura,
       () => setState(() => abrindo = false),
+    );
+  }
+}
+
+/// Recolhe o cabeçalho para cima (encolhendo o espaço) e o traz de volta descendo.
+class _Recolhe extends StatelessWidget {
+  final bool recolhido;
+  final Widget child;
+  const _Recolhe({required this.recolhido, required this.child});
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(end: recolhido ? 0 : 1),
+      duration: Duration(milliseconds: semAnimacao(context) ? 0 : (recolhido ? 220 : 320)),
+      curve: recolhido ? Curves.easeInCubic : Curves.easeOutCubic,
+      child: child,
+      builder: (_, v, filho) => ClipRect(
+        child: Align(
+          alignment: Alignment.bottomCenter,
+          heightFactor: v.clamp(0.0, 1.0).toDouble(),
+          child: Opacity(opacity: v.clamp(0.0, 1.0).toDouble(), child: filho),
+        ),
+      ),
     );
   }
 }
