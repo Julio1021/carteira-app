@@ -80,7 +80,13 @@ class ValorPartido extends StatelessWidget {
         i < 0
             ? TextSpan(text: s, style: base)
             : TextSpan(children: [
-                TextSpan(text: s.substring(0, i), style: base),
+                // "R$" menor e mais leve, como nos outros valores grandes do app
+                if (s.contains(r'R$')) ...[
+                  TextSpan(text: s.substring(0, s.indexOf(r'R$')), style: base),
+                  TextSpan(text: r'R$ ', style: base.copyWith(fontSize: tam * .5, fontWeight: FontWeight.w600, color: corCentavos, letterSpacing: 0)),
+                  TextSpan(text: s.substring(s.indexOf(r'R$') + 2, i).trimLeft(), style: base),
+                ] else
+                  TextSpan(text: s.substring(0, i), style: base),
                 TextSpan(text: s.substring(i), style: base.copyWith(fontSize: tam * .52, color: corCentavos, letterSpacing: -.4)),
               ]),
         maxLines: 1,
