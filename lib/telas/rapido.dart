@@ -87,7 +87,7 @@ class _CampoRapidoState extends State<CampoRapido> {
         child: r == null || cat == null
             ? Padding(
                 padding: const EdgeInsets.fromLTRB(4, 6, 4, 0),
-                child: Text('A categoria é escolhida sozinha. Use “+” na frente para entrada e “ontem” para a data.', style: TextStyle(color: G.apagado, fontSize: 12)),
+                child: Text('A categoria é escolhida sozinha. Use “+” na frente para entrada e “ontem” para a data.', style: TextStyle(color: G.apagado, fontSize: 12.5)),
               )
             : Padding(
                 padding: const EdgeInsets.only(top: 8),
@@ -104,7 +104,7 @@ class _CampoRapidoState extends State<CampoRapido> {
                           [cat.nome, if (!r.entrada) r.pag, rotuloDia(r.data)].join(' · '),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(color: G.apagado, fontSize: 12),
+                          style: TextStyle(color: G.apagado, fontSize: 12.5),
                         ),
                       ]),
                     ),

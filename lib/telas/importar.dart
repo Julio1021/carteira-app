@@ -167,7 +167,7 @@ class _TelaImportarExtratoState extends State<TelaImportarExtrato> {
         Cartao(
           gradiente: G.gradHero,
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(nomeBanco(o), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+            Text(nomeBanco(o), style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
             Text('${o.inicio != null ? dataBr(o.inicio!) : '?'} a ${o.fim != null ? dataBr(o.fim!) : '?'} · ${o.tx.length} movimentações', style: TextStyle(color: G.texto2)),
             if (o.saldo != null) Text('Saldo em ${dataBr(o.saldoData!)}: ${brl(o.saldo!)} (atualiza "Em conta")', style: TextStyle(color: G.texto2, fontSize: 12.5)),
             const SizedBox(height: 12),
@@ -220,7 +220,7 @@ class _TelaImportarExtratoState extends State<TelaImportarExtrato> {
                 onTap: () => _trocarCat(x, false),
                 leading: IconeCategoria(catGasto(x.cat), tam: 36),
                 title: Text(x.desc, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w600, color: x.dup && pularDup ? G.apagado : G.texto)),
-                subtitle: Text('${dataCurta(x.t.data)} · ${catGasto(x.cat).nome}${x.dup ? ' · já lançado?' : ''}', style: TextStyle(color: x.dup ? G.alerta : G.apagado, fontSize: 12)),
+                subtitle: Text('${dataCurta(x.t.data)} · ${catGasto(x.cat).nome}${x.dup ? ' · já lançado?' : ''}', style: TextStyle(color: x.dup ? G.alerta : G.apagado, fontSize: 12.5)),
                 trailing: Text(brl(-x.valor), style: TextStyle(fontWeight: FontWeight.w700, decoration: x.dup && pularDup ? TextDecoration.lineThrough : null)),
               ),
           ]),
@@ -233,7 +233,7 @@ class _TelaImportarExtratoState extends State<TelaImportarExtrato> {
                 onTap: x.ch.startsWith('__') ? null : () => _trocarCat(x, true),
                 leading: IconeCategoria(catEntrada(x.cat), tam: 36),
                 title: Text(x.desc, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600)),
-                subtitle: Text('${dataCurta(x.t.data)} · ${catEntrada(x.cat).nome}', style: TextStyle(color: G.apagado, fontSize: 12)),
+                subtitle: Text('${dataCurta(x.t.data)} · ${catEntrada(x.cat).nome}', style: TextStyle(color: G.apagado, fontSize: 12.5)),
                 trailing: Text(brl(x.valor, sinal: true), style: TextStyle(fontWeight: FontWeight.w700, color: G.pos)),
               ),
           ]),
@@ -254,7 +254,7 @@ class _TelaImportarExtratoState extends State<TelaImportarExtrato> {
               ListTile(
                 leading: IconeCategoria(x.cat == 'resgate' ? catResgate : catInvestido, tam: 36),
                 title: Text(x.desc, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600)),
-                subtitle: Text('${dataCurta(x.t.data)} · ${x.cat == 'resgate' ? 'Resgate' : 'Aplicação'}', style: TextStyle(color: G.apagado, fontSize: 12)),
+                subtitle: Text('${dataCurta(x.t.data)} · ${x.cat == 'resgate' ? 'Resgate' : 'Aplicação'}', style: TextStyle(color: G.apagado, fontSize: 12.5)),
                 trailing: Text('${x.cat == 'resgate' ? '←' : '→'} ${brl(x.valor)}', style: TextStyle(fontWeight: FontWeight.w700, color: G.lavanda)),
               ),
           ]),
@@ -294,7 +294,7 @@ class _Num extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(children: [
         Text(n, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
-        Text(t, style: TextStyle(color: G.texto2, fontSize: 12)),
+        Text(t, style: TextStyle(color: G.texto2, fontSize: 12.5)),
       ]);
 }
 
@@ -434,7 +434,7 @@ class _TelaImportarInterState extends State<TelaImportarInter> {
           Cartao(
             gradiente: G.gradHero,
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('${e.rows.length} movimentações', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+              Text('${e.rows.length} movimentações', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
               Text('${e.inicio != null ? dataBr(e.inicio!) : '?'} a ${e.fim != null ? dataBr(e.fim!) : '?'}${e.posicaoTotal != null && e.posicaoTotal!.isFinite ? ' · posição total ${brl(e.posicaoTotal!)}' : ''}',
                   style: TextStyle(color: G.texto2)),
             ]),
@@ -465,14 +465,14 @@ class _TelaImportarInterState extends State<TelaImportarInter> {
           if (modo == 'junto') ...[
             const SizedBox(height: 12),
             CampoValor(saldoC, rotulo: 'Saldo no fim do período (opcional)'),
-            Text('Com o saldo atual do app do Inter, o rendimento do período fica certo.', style: TextStyle(color: G.apagado, fontSize: 12)),
+            Text('Com o saldo atual do app do Inter, o rendimento do período fica certo.', style: TextStyle(color: G.apagado, fontSize: 12.5)),
           ],
           const SizedBox(height: 16),
           FilledButton(onPressed: ocupado ? null : _importar, child: Text(ocupado ? 'Importando…' : 'Importar')),
           const SizedBox(height: 8),
           OutlinedButton(onPressed: ocupado ? null : () => setState(() => ex = null), child: const Text('Cancelar')),
           const SizedBox(height: 8),
-          Text('Dias em que você já lançou um saldo à mão não são sobrescritos.', style: TextStyle(color: G.apagado, fontSize: 12)),
+          Text('Dias em que você já lançou um saldo à mão não são sobrescritos.', style: TextStyle(color: G.apagado, fontSize: 12.5)),
         ],
       ]),
     );

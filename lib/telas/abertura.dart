@@ -136,7 +136,7 @@ class _AberturaState extends State<Abertura> with SingleTickerProviderStateMixin
                     if (mostrarValor)
                       Text(brl(total * fase(.5, .72, Curves.easeOutCubic)), style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: G.pos, fontFeatures: const [FontFeature.tabularFigures()]))
                     else
-                      Text('seu patrimônio em evolução', style: TextStyle(fontSize: 13.5, color: G.apagado, fontWeight: FontWeight.w600)),
+                      Text('seu patrimônio em evolução', style: TextStyle(fontSize: 14, color: G.apagado, fontWeight: FontWeight.w600)),
                   ]),
                 ),
               ),

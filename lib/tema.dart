@@ -51,21 +51,21 @@ const _baseNuvem = <String, int>{
 const paletasNuvem = <PaletaNuvem>[
   PaletaNuvem('oceano', 'Oceano', {
     ..._baseNuvem,
-    'fundo': 0xFFEEF3F4, 'branco': 0xFF0E7C8F, 'texto': 0xFF13283A, 'texto2': 0xFF46596A, 'apagado': 0xFF80919C,
+    'fundo': 0xFFEEF3F4, 'branco': 0xFF0E7C8F, 'texto': 0xFF13283A, 'texto2': 0xFF46596A, 'apagado': 0xFF5F717D,
     'lavanda': 0xFF0E7C8F, 'lavandaIcone': 0xFF0E7C8F, 'lavandaFundo': 0xFFDCEEF0, 'borda': 0xFFDDE7EA,
     'navApagado': 0x99FFFFFF, 'navFundo': 0xFF0F2A36, 'dica': 0xF20F2A36, 'abasFundo': 0xFFE1EAEC, 'tintaBase': 0xFF13283A,
   }, [Color(0xFF117083), Color(0xFF0E5E70), Color(0xFF0A4757)], Color(0xFFD5ECF0),
       [Color(0xFF0E7C8F), Color(0xFFF0A23B), Color(0xFF2FA26F), Color(0xFFE5704F), Color(0xFF4A78D6), Color(0xFF27B3A3), Color(0xFFB3648F), Color(0xFF8A9AA8)]),
   PaletaNuvem('floresta', 'Floresta', {
     ..._baseNuvem,
-    'fundo': 0xFFEFF1EC, 'branco': 0xFF2F7A52, 'texto': 0xFF1C2A21, 'texto2': 0xFF4A584E, 'apagado': 0xFF848F87,
+    'fundo': 0xFFEFF1EC, 'branco': 0xFF2F7A52, 'texto': 0xFF1C2A21, 'texto2': 0xFF4A584E, 'apagado': 0xFF646F67,
     'lavanda': 0xFF2F7A52, 'lavandaIcone': 0xFF2F7A52, 'lavandaFundo': 0xFFDCEADF, 'borda': 0xFFDFE4DB,
     'navApagado': 0x99FFFFFF, 'navFundo': 0xFF1C2A21, 'dica': 0xF21C2A21, 'abasFundo': 0xFFE3E7DF, 'tintaBase': 0xFF1C2A21,
   }, [Color(0xFF367555), Color(0xFF2B6145), Color(0xFF1F4A34)], Color(0xFFDCEFE2),
       [Color(0xFF2F7A52), Color(0xFFDDA034), Color(0xFF4A93C4), Color(0xFFD86C4A), Color(0xFF8569C0), Color(0xFF58AE87), Color(0xFFBF6585), Color(0xFF8E978F)]),
   PaletaNuvem('marinho', 'Marinho', {
     ..._baseNuvem,
-    'fundo': 0xFFEEF1F6, 'branco': 0xFF2F5BD3, 'texto': 0xFF141B2A, 'texto2': 0xFF465066, 'apagado': 0xFF838CA0,
+    'fundo': 0xFFEEF1F6, 'branco': 0xFF2F5BD3, 'texto': 0xFF141B2A, 'texto2': 0xFF465066, 'apagado': 0xFF636D82,
     'lavanda': 0xFF2F5BD3, 'lavandaIcone': 0xFF2F5BD3, 'lavandaFundo': 0xFFDFE7FA, 'borda': 0xFFDDE2EC,
     'navApagado': 0x99FFFFFF, 'navFundo': 0xFF141B2A, 'dica': 0xF2141B2A, 'abasFundo': 0xFFE2E7F0, 'tintaBase': 0xFF141B2A,
   }, [Color(0xFF26458A), Color(0xFF1E3A6E), Color(0xFF152A52)], Color(0xFFDCE5FA),
@@ -154,7 +154,7 @@ class G {
   static Color get tinta => _p('tinta') ?? _c(0xFFFFFFFF, GE.tinta, 0xFFFFFFFF, 0xFF04231B, 0xFFFFFFFF);
   static Color get texto => _p('texto') ?? _c(0xFF12131C, GE.texto, 0xFF161C2D, 0xFFEAF6F2, 0xFF1E1633);
   static Color get texto2 => _p('texto2') ?? _c(0xFF4A4E63, GE.texto2, 0xFF454C5E, 0xFFB7CDC6, 0xFF4D4466);
-  static Color get apagado => _p('apagado') ?? _c(0xFF7A7E93, GE.apagado, 0xFF6B7183, 0xFF7E9A92, 0xFF7C7394);
+  static Color get apagado => _p('apagado') ?? _c(0xFF666A7E, GE.apagado, 0xFF5F6576, 0xFF7E9A92, 0xFF7C7394);
   static Color get lavanda => _p('lavanda') ?? _c(0xFF4F57D6, GE.lavanda, 0xFF2448C8, 0xFF4FE3C1, 0xFF6B3FD4);
   static Color get pos => _p('pos') ?? _c(0xFF12935A, GE.pos, 0xFF11764A, 0xFF7BE8A4, 0xFF12885A);
   static Color get neg => _p('neg') ?? _c(0xFFE0445E, GE.neg, 0xFFC23B2A);
@@ -314,7 +314,7 @@ ThemeData temaGrafite() {
       elevation: 0,
       centerTitle: true,
       foregroundColor: G.texto,
-      titleTextStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, letterSpacing: -.2, color: G.texto, fontFeatures: const [FontFeature.tabularFigures()]),
+      titleTextStyle: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, letterSpacing: -.2, color: G.texto, fontFeatures: const [FontFeature.tabularFigures()]),
     ),
     dividerTheme: DividerThemeData(color: G.borda, thickness: 1, space: 1),
     inputDecorationTheme: InputDecorationTheme(
@@ -332,7 +332,7 @@ ThemeData temaGrafite() {
         backgroundColor: G.branco,
         foregroundColor: G.tinta,
         minimumSize: const Size(48, 50),
-        textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+        textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
     ),

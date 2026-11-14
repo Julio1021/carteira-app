@@ -106,9 +106,9 @@ class _TelaBuscaState extends State<TelaBusca> {
           Cartao(
             gradiente: G.gradHero,
             child: Row(children: [
-              Expanded(child: Column(children: [Text('${res.length}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)), Text('lançamentos', style: TextStyle(color: G.texto2, fontSize: 12))])),
-              Expanded(child: Column(children: [FittedBox(child: Text(brl(totG), style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: G.neg))), Text('em gastos', style: TextStyle(color: G.texto2, fontSize: 12))])),
-              Expanded(child: Column(children: [FittedBox(child: Text(brl(totE), style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: G.pos))), Text('em entradas', style: TextStyle(color: G.texto2, fontSize: 12))])),
+              Expanded(child: Column(children: [Text('${res.length}', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800)), Text('lançamentos', style: TextStyle(color: G.texto2, fontSize: 12.5))])),
+              Expanded(child: Column(children: [FittedBox(child: Text(brl(totG), style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: G.neg))), Text('em gastos', style: TextStyle(color: G.texto2, fontSize: 12.5))])),
+              Expanded(child: Column(children: [FittedBox(child: Text(brl(totE), style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: G.pos))), Text('em entradas', style: TextStyle(color: G.texto2, fontSize: 12.5))])),
             ]),
           ),
           const SizedBox(height: 12),

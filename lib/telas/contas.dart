@@ -7,6 +7,7 @@ import '../dados/planejar.dart';
 import '../tema.dart';
 import '../util/fmt.dart';
 import '../widgets/comum.dart';
+import '../widgets/movimento.dart';
 import '../widgets/formulario.dart';
 
 /// Cartão "Contas a pagar" da aba Planejar.
@@ -48,11 +49,11 @@ class _CartaoContasState extends State<CartaoContas> {
         else ...[
           SeletorMes(ym: ym, onMudar: (v) => setState(() => ym = v)),
           const SizedBox(height: 14),
-          Text('Falta pagar', style: TextStyle(color: G.apagado, fontWeight: FontWeight.w600, fontSize: 13)),
+          Text('Falta pagar', style: TextStyle(color: G.apagado, fontWeight: FontWeight.w600, fontSize: 12.5)),
           FittedBox(
             alignment: Alignment.centerLeft,
             fit: BoxFit.scaleDown,
-            child: Text(brl(m.falta), style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, letterSpacing: -.8, color: m.nAtrasadas > 0 ? G.neg : G.texto)),
+            child: ValorBrl(m.falta, estilo: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, letterSpacing: -.8, color: m.nAtrasadas > 0 ? G.neg : G.texto)),
           ),
           const SizedBox(height: 8),
           Barra(pct, cor: G.pos),
@@ -97,7 +98,7 @@ class _TituloGrupo extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
         padding: semPadding ? EdgeInsets.zero : const EdgeInsets.only(bottom: 8, left: 2),
-        child: Text('$nome  ·  ${l.length} · ${brl(l.fold<double>(0, (a, i) => a + i.valor))}', style: TextStyle(fontWeight: FontWeight.w600, color: G.texto2, fontSize: 13)),
+        child: Text('$nome  ·  ${l.length} · ${brl(l.fold<double>(0, (a, i) => a + i.valor))}', style: TextStyle(fontWeight: FontWeight.w600, color: G.texto2, fontSize: 12.5)),
       );
 }
 
@@ -135,7 +136,7 @@ class _BlocoAtrasadas extends StatelessWidget {
                     TextSpan(text: '${lista.length} atrasada${lista.length > 1 ? 's' : ''} · '),
                     TextSpan(text: brl(lista.fold<double>(0, (a, i) => a + i.valor)), style: TextStyle(color: G.negTexto)),
                   ]), style: const TextStyle(fontWeight: FontWeight.w700)),
-                  Text(nomes, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: G.apagado, fontSize: 12)),
+                  Text(nomes, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: G.apagado, fontSize: 12.5)),
                 ]),
               ),
               Container(
@@ -177,9 +178,9 @@ class LinhaConta extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(i.b.nome, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                Text(i.b.nome, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
                 Text(i.statusTexto, style: TextStyle(color: corSt, fontSize: 12.5, fontWeight: FontWeight.w600)),
-                Text(meta, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: G.apagado, fontSize: 12)),
+                Text(meta, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: G.apagado, fontSize: 12.5)),
               ]),
             ),
             const SizedBox(width: 8),
@@ -189,7 +190,7 @@ class LinhaConta extends StatelessWidget {
               if (!pago)
                 FilledButton(
                   onPressed: () => abrirFolha(context, FolhaPagar(i)),
-                  style: FilledButton.styleFrom(minimumSize: const Size(10, 32), padding: const EdgeInsets.symmetric(horizontal: 14), textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                  style: FilledButton.styleFrom(minimumSize: const Size(10, 32), padding: const EdgeInsets.symmetric(horizontal: 14), textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5)),
                   child: const Text('Pagar'),
                 )
               else if (i.fonte != 'extrato')

@@ -181,7 +181,7 @@ class _CardAtivos extends StatelessWidget {
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text(lista[i].a.nome, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600)),
-                    Text('${brl(lista[i].saldo)} · ${brl(lista[i].ganho, sinal: true)}', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: G.apagado, fontSize: 12)),
+                    Text('${brl(lista[i].saldo)} · ${brl(lista[i].ganho, sinal: true)}', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: G.apagado, fontSize: 12.5)),
                   ]),
                 ),
                 const SizedBox(width: 8),
@@ -195,7 +195,7 @@ class _CardAtivos extends StatelessWidget {
                         margin: const EdgeInsets.only(top: 2),
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                         decoration: BoxDecoration(color: cor.withValues(alpha: .14), borderRadius: BorderRadius.circular(99)),
-                        child: Text('${(q * 100).round()}% CDI', style: TextStyle(color: cor, fontSize: 10.5, fontWeight: FontWeight.w700)),
+                        child: Text('${(q * 100).round()}% CDI', style: TextStyle(color: cor, fontSize: 11, fontWeight: FontWeight.w700)),
                       );
                     }),
                 ]),
@@ -290,8 +290,8 @@ class _CardDiversificacao extends StatelessWidget {
                   child: Row(children: [
                     Container(width: 10, height: 10, decoration: BoxDecoration(color: cores[i], borderRadius: BorderRadius.circular(3))),
                     const SizedBox(width: 8),
-                    Expanded(child: Text(fatias[i].nome, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13))),
-                    Text('${(fatias[i].valor / tot * 100).toStringAsFixed(0)}%', style: TextStyle(color: G.texto2, fontWeight: FontWeight.w700, fontSize: 13)),
+                    Expanded(child: Text(fatias[i].nome, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12.5))),
+                    Text('${(fatias[i].valor / tot * 100).toStringAsFixed(0)}%', style: TextStyle(color: G.texto2, fontWeight: FontWeight.w700, fontSize: 12.5)),
                   ]),
                 ),
             ]),

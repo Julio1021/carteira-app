@@ -466,8 +466,8 @@ class _Cabecalho extends StatelessWidget {
         child: Row(children: [
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-              Text(inicio ? saudacao(agora) : titulo, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, letterSpacing: -.5)),
-              if (inicio) Text(dataPorExtenso(agora), style: TextStyle(color: G.apagado, fontSize: 13)),
+              Text(inicio ? saudacao(agora) : titulo, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, letterSpacing: -.5)),
+              if (inicio) Text(dataPorExtenso(agora), style: TextStyle(color: G.apagado, fontSize: 12.5)),
             ]),
           ),
           SizedBox(
@@ -485,11 +485,11 @@ class _Cabecalho extends StatelessWidget {
                   child: Row(children: [
                     Icon(Icons.search_rounded, size: 19, color: G.apagado),
                     const SizedBox(width: 8),
-                    Expanded(child: Text('Buscar lançamentos', style: TextStyle(color: G.apagado, fontSize: 13.5))),
+                    Expanded(child: Text('Buscar lançamentos', style: TextStyle(color: G.apagado, fontSize: 14))),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                       decoration: BoxDecoration(borderRadius: BorderRadius.circular(5), border: Border.all(color: G.borda)),
-                      child: Text('/', style: TextStyle(color: G.apagado, fontSize: 11.5, fontWeight: FontWeight.w700)),
+                      child: Text('/', style: TextStyle(color: G.apagado, fontSize: 11, fontWeight: FontWeight.w700)),
                     ),
                   ]),
                 ),
@@ -519,9 +519,9 @@ class _Cabecalho extends StatelessWidget {
                     nome.isEmpty ? '${diasSemana[agora.weekday - 1]}, ${agora.day} de ${mesesAbr[agora.month - 1]}' : saudacao(agora),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: G.apagado, fontSize: 13, fontWeight: FontWeight.w500),
+                    style: TextStyle(color: G.apagado, fontSize: 12.5, fontWeight: FontWeight.w500),
                   ),
-                  Text(nome.isEmpty ? saudacao(agora) : 'Olá, ${nome.split(' ').first}', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800, letterSpacing: -.4)),
+                  Text(nome.isEmpty ? saudacao(agora) : 'Olá, ${nome.split(' ').first}', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, letterSpacing: -.4)),
                 ]),
               ),
             ),
@@ -553,12 +553,12 @@ class _Cabecalho extends StatelessWidget {
                       '${diasSemana[agora.weekday - 1].toLowerCase()}, ${agora.day} de ${mesesAbr[agora.month - 1]}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: G.apagado, fontSize: 11.5),
+                      style: TextStyle(color: G.apagado, fontSize: 11),
                     ),
                   ]),
                 )
               : Column(children: [
-                  Text(titulo, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, letterSpacing: -.2)),
+                  Text(titulo, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, letterSpacing: -.2)),
                 ]),
         ),
         olho,

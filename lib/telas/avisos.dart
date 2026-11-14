@@ -80,7 +80,7 @@ class _FolhaAvisos extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
       child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        const Text('Avisos do mês', style: TextStyle(fontSize: 21, fontWeight: FontWeight.w800)),
+        const Text('Avisos do mês', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
         Text(l.isEmpty ? 'Nada pedindo atenção agora.' : '${l.length} ${l.length > 1 ? 'coisas merecem' : 'coisa merece'} sua atenção', style: TextStyle(color: G.apagado)),
         const SizedBox(height: 12),
         Flexible(

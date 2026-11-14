@@ -187,3 +187,48 @@ List<Widget> emSequencia(List<Widget> itens) {
   var o = 0;
   return [for (final w in itens) w is SizedBox || w is Divider ? w : Surge(ordem: o++, child: w)];
 }
+
+/// Valor em reais com o "R$" e os centavos menores e mais leves, para o número
+/// em si se destacar. Anima de um valor ao outro quando muda (ex.: troca de mês).
+class ValorBrl extends StatelessWidget {
+  final double valor;
+  final TextStyle estilo;
+  final bool animado;
+  const ValorBrl(this.valor, {super.key, required this.estilo, this.animado = true});
+
+  Widget _texto(double v) {
+    final s = brl(v);
+    final tam = estilo.fontSize ?? 22;
+    final cor = estilo.color;
+    final iR = s.indexOf(r'R$');
+    final iC = s.lastIndexOf(',');
+    final leve = estilo.copyWith(fontSize: tam * .6, fontWeight: FontWeight.w600, letterSpacing: 0, color: cor?.withValues(alpha: (cor.a * .62)));
+    final spans = <TextSpan>[];
+    if (iR < 0) {
+      spans.add(TextSpan(text: s));
+    } else {
+      if (iR > 0) spans.add(TextSpan(text: s.substring(0, iR)));
+      spans.add(TextSpan(text: r'R$ ', style: leve));
+      final resto = s.substring(iR + 2).trimLeft();
+      final c = resto.lastIndexOf(',');
+      if (iC < 0 || c < 0) {
+        spans.add(TextSpan(text: resto));
+      } else {
+        spans.add(TextSpan(text: resto.substring(0, c)));
+        spans.add(TextSpan(text: resto.substring(c), style: estilo.copyWith(fontSize: tam * .7, letterSpacing: 0)));
+      }
+    }
+    return Text.rich(TextSpan(children: spans, style: estilo.copyWith(fontFeatures: const [FontFeature.tabularFigures()])), maxLines: 1);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!animado || semAnimacao(context)) return _texto(valor);
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(end: valor),
+      duration: const Duration(milliseconds: 650),
+      curve: Curves.easeOutCubic,
+      builder: (_, v, __) => _texto(v),
+    );
+  }
+}

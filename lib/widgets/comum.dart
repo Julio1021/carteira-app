@@ -59,7 +59,7 @@ class CabecalhoCartao extends StatelessWidget {
       child: Row(children: [
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(titulo, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, letterSpacing: -.2)),
+            Text(titulo, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, letterSpacing: -.2)),
             if (sub != null) Padding(padding: const EdgeInsets.only(top: 2), child: Text(sub!, style: TextStyle(color: G.apagado, fontSize: 12.5))),
           ]),
         ),
@@ -67,7 +67,7 @@ class CabecalhoCartao extends StatelessWidget {
           OutlinedButton(
             onPressed: onAcao,
             style: OutlinedButton.styleFrom(minimumSize: const Size(10, 32), padding: const EdgeInsets.symmetric(horizontal: 10), visualDensity: VisualDensity.compact),
-            child: Row(mainAxisSize: MainAxisSize.min, children: [Text(acao!, style: const TextStyle(fontSize: 13)), const SizedBox(width: 2), const Icon(Icons.chevron_right_rounded, size: 18)]),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [Text(acao!, style: const TextStyle(fontSize: 12.5)), const SizedBox(width: 2), const Icon(Icons.chevron_right_rounded, size: 18)]),
           ),
       ]),
     );
@@ -78,23 +78,35 @@ class CabecalhoCartao extends StatelessWidget {
 class IconeCategoria extends StatelessWidget {
   final Categoria cat;
   final double tam;
-  const IconeCategoria(this.cat, {super.key, this.tam = 36});
+  /// Bloco cheio em degradê (para destaques). O padrão, usado nas listas, é
+  /// suave: fundo claro na cor da categoria e o ícone colorido.
+  final bool forte;
+  const IconeCategoria(this.cat, {super.key, this.tam = 36, this.forte = false});
   @override
   Widget build(BuildContext context) {
     final c = cat.cor;
-    {
-      // bloco preenchido em degradê, com o ícone branco
+    if (!forte) {
+      final claro = G.claro;
       return Container(
         width: tam,
         height: tam,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(tam * .36),
-          gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color.lerp(c, Colors.white, .18)!, Color.lerp(c, Colors.black, .10)!]),
-          boxShadow: [BoxShadow(color: c.withValues(alpha: .28), blurRadius: 10, offset: const Offset(0, 4), spreadRadius: -4)],
+          color: c.withValues(alpha: claro ? .13 : .2),
         ),
-        child: Icon(cat.icone, color: Colors.white, size: tam * .5),
+        child: Icon(cat.icone, color: claro ? Color.lerp(c, Colors.black, .12) : Color.lerp(c, Colors.white, .15), size: tam * .5),
       );
     }
+    return Container(
+      width: tam,
+      height: tam,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(tam * .36),
+        gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color.lerp(c, Colors.white, .18)!, Color.lerp(c, Colors.black, .10)!]),
+        boxShadow: [BoxShadow(color: c.withValues(alpha: .28), blurRadius: 10, offset: const Offset(0, 4), spreadRadius: -4)],
+      ),
+      child: Icon(cat.icone, color: Colors.white, size: tam * .5),
+    );
   }
 }
 
@@ -123,7 +135,7 @@ class LinhaLanc extends StatelessWidget {
           const SizedBox(width: 13),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(l.desc, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+              Text(l.desc, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
               const SizedBox(height: 2),
               Text(sub, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: G.apagado, fontSize: 12.5)),
             ]),
@@ -133,7 +145,7 @@ class LinhaLanc extends StatelessWidget {
             inv != null ? '${inv.resgate ? '←' : '→'} ${brl(l.valor)}' : (l.ehEntrada ? brl(l.valor, sinal: true) : brl(-l.valor)),
             style: TextStyle(
               fontWeight: FontWeight.w800,
-              fontSize: 15,
+              fontSize: 14,
               color: inv != null ? G.lavanda : (entreContas ? G.apagado : (l.ehEntrada ? G.pos : G.texto)),
               fontFeatures: const [FontFeature.tabularFigures()],
             ),

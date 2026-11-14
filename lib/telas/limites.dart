@@ -7,6 +7,7 @@ import '../dados/resumo.dart';
 import '../tema.dart';
 import '../util/fmt.dart';
 import '../widgets/comum.dart';
+import '../widgets/movimento.dart';
 import '../widgets/painel.dart';
 
 /// Limites de gastos: um teto geral para o mês e limites por categoria
@@ -76,20 +77,21 @@ class TelaLimites extends StatelessWidget {
                 onChanged: (v) => _salvarGeral(context, acumula: v),
                 contentPadding: const EdgeInsets.fromLTRB(14, 2, 10, 2),
                 title: const Text('Levar a sobra para o mês seguinte', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                subtitle: Text('O que não gastar do limite (geral e de cada categoria) soma no mês seguinte, até metade do limite.', style: TextStyle(fontSize: 12, color: G.apagado)),
+                subtitle: Text('O que não gastar do limite (geral e de cada categoria) soma no mês seguinte, até metade do limite.', style: TextStyle(fontSize: 12.5, color: G.apagado)),
               ),
             ]),
           ),
           if (lm.categoriasPassamGeral)
             Dica('A soma dos limites por categoria (${brl(lm.somaCategorias)}) passa do limite geral (${brl(lm.geralBase)}).', icone: Icons.warning_amber_rounded),
           const SizedBox(height: 18),
-          TituloSecao('Por categoria', direita: lm.catBase.isEmpty ? null : Text('${lm.catBase.length} com limite', style: TextStyle(fontSize: 11.5, color: G.apagado))),
+          TituloSecao('Por categoria', direita: lm.catBase.isEmpty ? null : Text('${lm.catBase.length} com limite', style: TextStyle(fontSize: 11, color: G.apagado))),
           _ListaCategorias(
             linhas: [
               for (final c in cats)
                 _LinhaLimite(cat: c, gasto: r.porCategoria[c.id] ?? 0, limite: lm.cat[c.id], base: lm.catBase[c.id], media: med.cat[c.id] ?? 0, ym: ym),
             ],
           ),
+          const Rodape('Toque numa categoria para definir ou mudar o limite.'),
           if (hist.isNotEmpty) ...[
             const SizedBox(height: 18),
             TituloSecao(lm.geral != null ? 'Histórico · limite geral' : 'Histórico · categorias com limite'),
@@ -131,7 +133,7 @@ class _ListaCategoriasState extends State<_ListaCategorias> {
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 13),
             child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Text(todas ? 'Mostrar menos' : 'Outras ${resto.length} categorias sem gastos', style: TextStyle(color: G.lavanda, fontWeight: FontWeight.w700, fontSize: 13)),
+              Text(todas ? 'Mostrar menos' : 'Outras ${resto.length} categorias sem gastos', style: TextStyle(color: G.lavanda, fontWeight: FontWeight.w700, fontSize: 12.5)),
               Icon(todas ? Icons.expand_less_rounded : Icons.expand_more_rounded, color: G.lavanda, size: 20),
             ]),
           ),
@@ -164,22 +166,22 @@ class _Resumo extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(color: const Color(0x26FFFFFF), borderRadius: BorderRadius.circular(99)),
-              child: Text(r.temLimiteGeral ? 'Limite geral' : 'Soma das categorias', style: const TextStyle(color: branco, fontSize: 11.5, fontWeight: FontWeight.w700)),
+              child: Text(r.temLimiteGeral ? 'Limite geral' : 'Soma das categorias', style: const TextStyle(color: branco, fontSize: 11, fontWeight: FontWeight.w700)),
             ),
         ]),
         const SizedBox(height: 6),
         if (!tem) ...[
           const Text('Nenhum limite definido', style: TextStyle(color: branco, fontSize: 22, fontWeight: FontWeight.w800)),
           const SizedBox(height: 6),
-          Text('Defina um teto para o mês inteiro, limites por categoria ou os dois.', style: TextStyle(color: t2, fontSize: 13)),
+          Text('Defina um teto para o mês inteiro, limites por categoria ou os dois.', style: TextStyle(color: t2, fontSize: 12.5)),
         ] else ...[
           FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
-            child: Text.rich(TextSpan(children: [
-              TextSpan(text: brl(gasto), style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800, letterSpacing: -.8)),
-              TextSpan(text: '  de ${brl(lim)}', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: t2)),
-            ]), style: const TextStyle(color: branco)),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
+              ValorBrl(gasto, estilo: const TextStyle(fontSize: 28, fontWeight: FontWeight.w800, letterSpacing: -.8, color: branco)),
+              Text('  de ${brl(lim)}', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: t2)),
+            ]),
           ),
           const SizedBox(height: 10),
           Barra(uso, cor: uso > 1 ? const Color(0xFFFF9C8A) : branco, trilho: const Color(0x33FFFFFF)),
@@ -200,7 +202,7 @@ class _Resumo extends StatelessWidget {
           ],
           if (r.lim.sobraGeral > 0 && r.temLimiteGeral) ...[
             const SizedBox(height: 6),
-            Text('Inclui ${brl(r.lim.sobraGeral)} que sobrou de ${mesLongo(ymAdd(r.ym, -1)).split(' ').first.toLowerCase()}.', style: TextStyle(color: t2, fontSize: 12)),
+            Text('Inclui ${brl(r.lim.sobraGeral)} que sobrou de ${mesLongo(ymAdd(r.ym, -1)).split(' ').first.toLowerCase()}.', style: TextStyle(color: t2, fontSize: 12.5)),
           ],
         ],
       ]),
@@ -216,7 +218,7 @@ class _Num extends StatelessWidget {
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(rotulo, maxLines: 2, style: TextStyle(color: GH.texto2, fontSize: 11, height: 1.2)),
           const SizedBox(height: 2),
-          FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(valor, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15))),
+          FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(valor, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 14))),
         ]),
       );
 }
@@ -231,12 +233,12 @@ class _LinhaHistorico extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(children: [
-        SizedBox(width: 74, child: Text('${nome.substring(0, 3)}/${m.ym.substring(2, 4)}', style: TextStyle(fontWeight: FontWeight.w600, color: G.texto2, fontSize: 13))),
+        SizedBox(width: 74, child: Text('${nome.substring(0, 3)}/${m.ym.substring(2, 4)}', style: TextStyle(fontWeight: FontWeight.w600, color: G.texto2, fontSize: 12.5))),
         Expanded(child: Barra(frac, cor: m.dentro ? G.pos : G.neg, altura: 6)),
         const SizedBox(width: 10),
         SizedBox(
           width: 96,
-          child: Text(brl(m.gasto), textAlign: TextAlign.right, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+          child: Text(brl(m.gasto), textAlign: TextAlign.right, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5)),
         ),
         const SizedBox(width: 6),
         Icon(m.dentro ? Icons.check_circle_rounded : Icons.cancel_rounded, size: 17, color: m.dentro ? G.pos : G.neg),
@@ -276,7 +278,7 @@ Future<double?> pedirLimite(BuildContext context, {required String titulo, doubl
     builder: (d) => AlertDialog(
       title: Text(titulo),
       content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-        if (explica != null) ...[Text(explica, style: TextStyle(color: G.apagado, fontSize: 13)), const SizedBox(height: 12)],
+        if (explica != null) ...[Text(explica, style: TextStyle(color: G.apagado, fontSize: 12.5)), const SizedBox(height: 12)],
         TextField(
           controller: c,
           autofocus: true,
@@ -335,7 +337,7 @@ class _LinhaLimite extends StatelessWidget {
     String sub;
     Color corSub = G.apagado;
     if (l == null) {
-      sub = media > 0 ? 'Sem limite · média de ${brl(media)}/mês' : (gasto > 0 ? 'Sem limite · ${brl(gasto)} no mês' : 'Sem limite');
+      sub = ''; // sem limite: o nome e o valor bastam
     } else if (passou) {
       sub = 'Passou ${brl(gasto - l)}';
       corSub = G.neg;
@@ -360,13 +362,15 @@ class _LinhaLimite extends StatelessWidget {
                 Barra(gasto / l, cor: passou ? G.neg : (gasto / l >= .8 ? G.alerta : cat.cor), altura: 5),
                 const SizedBox(height: 4),
               ],
-              Text(sub, style: TextStyle(fontSize: 12, color: corSub)),
+              if (sub.isNotEmpty) Text(sub, style: TextStyle(fontSize: 12.5, color: corSub)),
             ]),
           ),
           const SizedBox(width: 10),
           Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
             Text(brl(gasto), style: const TextStyle(fontWeight: FontWeight.w700)),
-            if (l != null) Text('de ${brl(l)}', style: TextStyle(fontSize: 12, color: G.apagado)),
+            if (l != null) Text('de ${brl(l)}', style: TextStyle(fontSize: 12.5, color: G.apagado)),
+            if (l == null && media > 0 && (gasto - media).abs() > media * .25)
+              Text('média ${brl(media)}', style: TextStyle(fontSize: 11, color: G.apagado)),
           ]),
         ]),
       ),

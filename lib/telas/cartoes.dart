@@ -6,6 +6,7 @@ import '../dados/planejar.dart';
 import '../tema.dart';
 import '../util/fmt.dart';
 import '../widgets/comum.dart';
+import '../widgets/movimento.dart';
 import '../widgets/formulario.dart';
 
 const coresCartao = ['#820ad1', '#ff7a00', '#00a868', '#1f6feb', '#cc092f', '#3a3f5e', '#c9a227', '#e8467c'];
@@ -67,12 +68,12 @@ class _ResumoCartaoWidget extends StatelessWidget {
           Row(children: [
             const Icon(Icons.credit_card_rounded, color: Colors.white),
             const SizedBox(width: 8),
-            Expanded(child: Text(c.nome, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: Colors.white))),
+            Expanded(child: Text(c.nome, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17, color: Colors.white))),
             _Selo(f.stTexto),
           ]),
           const SizedBox(height: 14),
           Text('Fatura de ${mesLongo(f.ym).toLowerCase()}', style: const TextStyle(color: Color(0xCCFFFFFF), fontSize: 12.5)),
-          Text(brl(f.total), style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: Colors.white)),
+          ValorBrl(f.total, estilo: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: Colors.white)),
           Text('Fecha ${dataCurta(f.fech)} · vence ${dataCurta(f.venc)}', style: const TextStyle(color: Color(0xCCFFFFFF), fontSize: 12.5)),
           if (r.disponivel != null) ...[
             const SizedBox(height: 12),
@@ -94,7 +95,7 @@ class _Selo extends StatelessWidget {
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(color: tema ? G.v(0x14) : const Color(0x33FFFFFF), borderRadius: BorderRadius.circular(99)),
-        child: Text(t, style: TextStyle(color: tema ? G.texto : Colors.white, fontWeight: FontWeight.w700, fontSize: 12)),
+        child: Text(t, style: TextStyle(color: tema ? G.texto : Colors.white, fontWeight: FontWeight.w700, fontSize: 12.5)),
       );
 }
 
@@ -154,10 +155,10 @@ class _TelaCartaoState extends State<TelaCartao> {
               _Selo(sel.stTexto, tema: true),
             ]),
             const SizedBox(height: 4),
-            Text(brl(sel.total), style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w800)),
-            Text('Fecha ${dataBr(sel.fech)} · vence ${dataBr(sel.venc)}', style: TextStyle(color: G.texto2, fontSize: 13)),
-            if (sel.pago > 0) Text('Pago ${brl(sel.pago)} · falta ${brl(sel.falta)}', style: TextStyle(color: G.pos, fontSize: 13, fontWeight: FontWeight.w600)),
-            if (sel.itens.any((i) => i.prevista)) Text('Inclui parcelas previstas, que ainda vão entrar.', style: TextStyle(color: G.apagado, fontSize: 12)),
+            ValorBrl(sel.total, estilo: TextStyle(fontSize: 30, fontWeight: FontWeight.w800, color: G.texto)),
+            Text('Fecha ${dataBr(sel.fech)} · vence ${dataBr(sel.venc)}', style: TextStyle(color: G.texto2, fontSize: 12.5)),
+            if (sel.pago > 0) Text('Pago ${brl(sel.pago)} · falta ${brl(sel.falta)}', style: TextStyle(color: G.pos, fontSize: 12.5, fontWeight: FontWeight.w600)),
+            if (sel.itens.any((i) => i.prevista)) Text('Inclui parcelas previstas, que ainda vão entrar.', style: TextStyle(color: G.apagado, fontSize: 12.5)),
             if (sel.falta > 0 && sel.st != 'futura') ...[
               const SizedBox(height: 12),
               FilledButton.icon(

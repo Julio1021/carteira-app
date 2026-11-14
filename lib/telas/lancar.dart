@@ -49,7 +49,7 @@ Future<void> abrirMenuLancar(BuildContext context, {String rapidoInicial = ''}) 
               const SizedBox(width: 12),
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  const Text('Investido', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                  const Text('Investido', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
                   Text('Dinheiro que foi para investir (ou voltou de um resgate)', style: TextStyle(color: G.apagado, fontSize: 12.5)),
                 ]),
               ),
@@ -95,7 +95,7 @@ class _OpcaoMenu extends StatelessWidget {
           child: Icon(ic, color: destaque ? G.tinta : (corIcone ?? G.texto)),
         ),
         const SizedBox(height: 14),
-        Text(t, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+        Text(t, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
         Text(sub, style: TextStyle(color: G.apagado, fontSize: 12.5)),
       ]),
     );
@@ -357,7 +357,7 @@ class _FormLancState extends State<FormLanc> {
         padding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Row(children: [
-            Expanded(child: Text(editando ? 'Editar lançamento' : (invest ? 'Investido' : (entrada ? 'Nova entrada' : 'Novo gasto')), style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w800))),
+            Expanded(child: Text(editando ? 'Editar lançamento' : (invest ? 'Investido' : (entrada ? 'Nova entrada' : 'Novo gasto')), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800))),
             if (editando) IconButton(tooltip: 'Excluir', onPressed: _excluir, icon: Icon(Icons.delete_outline_rounded, color: G.neg)),
           ]),
           const SizedBox(height: 12),
@@ -523,7 +523,7 @@ class _FormLancState extends State<FormLanc> {
           ],
           const SizedBox(height: 18),
           FilledButton(onPressed: _salvar, child: Text(editando ? 'Salvar alterações' : (invest ? (resgate ? 'Registrar resgate' : 'Registrar investimento') : (entrada ? 'Lançar entrada' : 'Lançar gasto')))),
-          if (telaLarga(context)) Padding(padding: const EdgeInsets.only(top: 8), child: Text(widget.aoFechar == null ? 'Enter salva · Esc fecha' : 'Enter salva', textAlign: TextAlign.center, style: TextStyle(color: G.apagado, fontSize: 11.5))),
+          if (telaLarga(context)) Padding(padding: const EdgeInsets.only(top: 8), child: Text(widget.aoFechar == null ? 'Enter salva · Esc fecha' : 'Enter salva', textAlign: TextAlign.center, style: TextStyle(color: G.apagado, fontSize: 11))),
         ]),
       ),
     ),

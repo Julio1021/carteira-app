@@ -114,7 +114,7 @@ class _EntrouSaiu extends StatelessWidget {
               foregroundColor: G.texto2,
               side: BorderSide(color: G.borda),
               visualDensity: VisualDensity.compact,
-              textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+              textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12.5),
             ),
             onSelectionChanged: (s) => onN(s.first),
           ),
@@ -303,7 +303,7 @@ class _Comparativo extends StatelessWidget {
                 const SizedBox(height: 6),
                 _BarraDupla(atual: c.atual / mx, media: c.media / mx, cor: catGasto(c.cat).cor),
                 const SizedBox(height: 4),
-                Text('${brl(c.atual)} agora · média ${brl(c.media)}', style: TextStyle(color: G.apagado, fontSize: 11.5)),
+                Text('${brl(c.atual)} agora · média ${brl(c.media)}', style: TextStyle(color: G.apagado, fontSize: 11)),
               ]),
             ),
           ),
@@ -322,7 +322,7 @@ class _Seta extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(color: G.v(0x14), borderRadius: BorderRadius.circular(99)),
-        child: Text('novo', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: G.texto2)),
+        child: Text('novo', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: G.texto2)),
       );
     }
     final sobe = v > .03, desce = v < -.03;
@@ -333,7 +333,7 @@ class _Seta extends StatelessWidget {
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         Icon(sobe ? Icons.arrow_upward_rounded : (desce ? Icons.arrow_downward_rounded : Icons.remove_rounded), size: 13, color: cor),
         const SizedBox(width: 2),
-        Text('${(v.abs() * 100).round()}%', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: cor)),
+        Text('${(v.abs() * 100).round()}%', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: cor)),
       ]),
     );
   }

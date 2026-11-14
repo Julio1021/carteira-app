@@ -136,7 +136,7 @@ class _TelaExtratoState extends State<TelaExtrato> {
                     child: Row(children: [
                       Icon(Icons.savings_rounded, size: 18, color: G.lavanda),
                       const SizedBox(width: 8),
-                      Expanded(child: Text(r.investiu >= 0 ? 'Investiu no mês' : 'Resgatou no mês', style: TextStyle(color: G.texto2, fontWeight: FontWeight.w600, fontSize: 13))),
+                      Expanded(child: Text(r.investiu >= 0 ? 'Investiu no mês' : 'Resgatou no mês', style: TextStyle(color: G.texto2, fontWeight: FontWeight.w600, fontSize: 12.5))),
                       Text(brl(r.investiu.abs()), style: TextStyle(color: G.lavanda, fontWeight: FontWeight.w700)),
                       if (r.pctInvestido != null && r.investiu > 0) Text('  ·  ${(r.pctInvestido! * 100).round()}%', style: TextStyle(color: G.apagado, fontSize: 12.5, fontWeight: FontWeight.w600)),
                     ]),
@@ -262,7 +262,7 @@ class _TelaExtratoState extends State<TelaExtrato> {
         )
       else
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(12, 0, 12, 120),
+          padding: const EdgeInsets.fromLTRB(12, 0, 12, 150),
           sliver: SliverList.builder(
             itemCount: grupos.length,
             itemBuilder: (c, i) {
@@ -279,7 +279,7 @@ class _TelaExtratoState extends State<TelaExtrato> {
                     padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
                     child: Row(children: [
                       Expanded(child: Text(rotuloDia(dia), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700))),
-                      Text(brl(tot, sinal: true), style: TextStyle(color: tot < 0 ? G.apagado : G.pos, fontWeight: FontWeight.w600, fontSize: 13)),
+                      Text(brl(tot, sinal: true), style: TextStyle(color: tot < 0 ? G.apagado : G.pos, fontWeight: FontWeight.w600, fontSize: 12.5)),
                     ]),
                   ),
                   CaixaLista([for (final l in ls) LinhaLanc(l, selecionado: aberto?['id'] == l.doc['id'], onTap: () => abrir(l))]),
@@ -302,7 +302,7 @@ class _Resumo extends StatelessWidget {
     return Column(children: [
       Text(t, style: TextStyle(color: G.texto2, fontSize: 12.5, fontWeight: FontWeight.w600)),
       const SizedBox(height: 2),
-      FittedBox(fit: BoxFit.scaleDown, child: Text(brl(v), style: TextStyle(color: cor, fontWeight: FontWeight.w800, fontSize: 15))),
+      FittedBox(fit: BoxFit.scaleDown, child: Text(brl(v), style: TextStyle(color: cor, fontWeight: FontWeight.w800, fontSize: 14))),
     ]);
   }
 }
@@ -334,8 +334,8 @@ class _PainelMes extends StatelessWidget {
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Row(children: [
-                      Expanded(child: Text(catGasto(e.key).nome, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5))),
-                      Text(brl(e.value), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5)),
+                      Expanded(child: Text(catGasto(e.key).nome, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14))),
+                      Text(brl(e.value), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
                     ]),
                     const SizedBox(height: 5),
                     ClipRRect(
@@ -348,7 +348,7 @@ class _PainelMes extends StatelessWidget {
             ),
           ),
         const SizedBox(height: 8),
-        Text('Clique num lançamento para ver e editar aqui.', textAlign: TextAlign.center, style: TextStyle(color: G.apagado, fontSize: 12)),
+        Text('Clique num lançamento para ver e editar aqui.', textAlign: TextAlign.center, style: TextStyle(color: G.apagado, fontSize: 12.5)),
       ]),
     );
   }

@@ -26,7 +26,7 @@ class TelaPlanejar extends StatelessWidget {
     final emAberto = emps.where((e) => !dadosEmprestimo(repo, e).quitado).toList();
     final meta = repo.metaSobra;
     final r = ResumoMes.de(repo, ymDe(hojeIso()));
-    return ListView(padding: const EdgeInsets.fromLTRB(12, 4, 12, 120), children: emSequencia([
+    return ListView(padding: const EdgeInsets.fromLTRB(12, 4, 12, 150), children: emSequencia([
       const CartaoRecebimentos(),
       const SizedBox(height: 14),
       const CartaoContas(),
@@ -108,7 +108,7 @@ class _Link extends StatelessWidget {
         const SizedBox(width: 12),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(titulo, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
+            Text(titulo, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
             const SizedBox(height: 2),
             Text(sub, style: TextStyle(color: G.apagado, fontSize: 12.5)),
             if (progresso != null) ...[
@@ -123,75 +123,52 @@ class _Link extends StatelessWidget {
   }
 }
 
-/// Próximos recebimentos: linha do tempo, quanto dá por dia até o próximo e a
-/// lista dos recebimentos (Salário, Vale e os que a pessoa criar).
+/// Próximos recebimentos: uma lista só, em ordem de data, com o próximo em
+/// destaque e quanto dá por dia até ele.
 class CartaoRecebimentos extends StatelessWidget {
   const CartaoRecebimentos({super.key});
   @override
   Widget build(BuildContext context) {
     final repo = RepoScope.of(context);
     final h = hojeIso();
-    final ag = agendaRecebimentos(repo);
-    final lista = [...repo.rendas.where((r) => r.valor > 0)]..sort((a, b) {
-        int ordem(Renda r) => r.id == 'rd_salario' ? 0 : (r.id == 'rd_va' ? 1 : 2);
-        final c = ordem(a).compareTo(ordem(b));
-        return c != 0 ? c : a.nome.compareTo(b.nome);
-      });
-    // até o próximo dinheiro: quanto dá por dia com o que está em conta
-    final prox = ag.where((x) => !x.recebido && x.renda != null && x.data.compareTo(h) >= 0).firstOrNull;
+    final linhas = <_ItemReceb>[];
+    for (final r in repo.rendas.where((r) => r.valor > 0)) {
+      // ocorrência deste mês ou a próxima (anuais e de data única)
+      StatusRenda? st;
+      for (var k = 0; k <= 12 && st == null; k++) {
+        final x = statusRenda(repo, r, ymAdd(ymDe(h), k));
+        if (x != null && (k == 0 || x.rec == null)) st = x;
+        if (r.freq == 'mensal') break;
+      }
+      linhas.add(_ItemReceb(renda: r, st: st, valor: st?.rec?.valor ?? valorEsperado(repo, r)));
+    }
+    for (final x in agendaRecebimentos(repo).where((x) => x.renda == null)) {
+      linhas.add(_ItemReceb(parcela: x, valor: x.valor));
+    }
+    int grupo(_ItemReceb i) => i.recebido ? 1 : (i.data == null ? 2 : 0);
+    linhas.sort((a, b) {
+      final g = grupo(a).compareTo(grupo(b));
+      return g != 0 ? g : (a.data ?? '').compareTo(b.data ?? '');
+    });
+    final prox = linhas.where((i) => !i.recebido && i.data != null && i.data!.compareTo(h) >= 0).firstOrNull;
     String? ateLa;
-    if (prox != null && repo.contas.isNotEmpty) {
-      final dias = diasEntre(h, prox.data) - 1;
+    if (prox != null && prox.renda != null && repo.contas.isNotEmpty) {
+      final dias = diasEntre(h, prox.data!) - 1;
       final saldo = saldoEmConta(repo);
       if (dias >= 1) {
-        final quem = '${prox.nome} (${dataCurta(prox.data)})';
         ateLa = saldo > 0
-            ? '$dias dia${dias == 1 ? '' : 's'} até $quem: com o saldo em conta, dá ${brl(saldo / dias)}/dia.'
-            : '$dias dia${dias == 1 ? '' : 's'} até $quem, e o saldo em conta está zerado.';
+            ? '$dias dia${dias == 1 ? '' : 's'} até ${prox.nome}: com o saldo em conta, dá ${brl(saldo / dias)}/dia.'
+            : '$dias dia${dias == 1 ? '' : 's'} até ${prox.nome}, e o saldo em conta está zerado.';
       }
     }
     return Cartao(
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         CabecalhoCartao('Próximos recebimentos', acao: 'Adicionar', onAcao: () => abrirFolha(context, const FormRenda())),
-        if (ag.isNotEmpty) ...[
-          Row(children: [
-            for (final x in ag)
-              Expanded(
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(14),
-                  onTap: x.renda == null
-                      ? null
-                      : () => x.recebido ? abrirFolha(context, FormRenda(r: x.renda)) : confirmarRecebido(context, x.renda!, x.data, x.valor),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
-                    child: Column(children: [
-                      Text(dataCurta(x.data), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
-                      Text(x.nome, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: G.apagado, fontSize: 11.5)),
-                      const SizedBox(height: 8),
-                      Icon(x.recebido ? Icons.check_circle_rounded : (x.atrasado ? Icons.error_rounded : Icons.radio_button_unchecked_rounded),
-                          color: x.recebido ? G.pos : (x.atrasado ? G.neg : G.lavanda), size: 20),
-                      const SizedBox(height: 8),
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                          decoration: BoxDecoration(color: G.v(0x14), borderRadius: BorderRadius.circular(99)),
-                          child: Text(brl(x.valor), style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: x.recebido ? G.pos : G.lavanda)),
-                        ),
-                      ),
-                    ]),
-                  ),
-                ),
-              ),
-          ]),
-          if (ateLa != null) Dica(ateLa, icone: Icons.calendar_today_rounded, cor: G.lavanda),
-          const SizedBox(height: 14),
-        ],
-        if (lista.isEmpty)
+        if (linhas.isEmpty)
           Padding(
             padding: const EdgeInsets.only(bottom: 4),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Cadastre o que você recebe todo mês para o app avisar quando cair e marcar como recebido.', style: TextStyle(color: G.apagado, fontSize: 13)),
+              Text('Cadastre o que você recebe para o app avisar quando cair e marcar como recebido.', style: TextStyle(color: G.apagado, fontSize: 12.5)),
               const SizedBox(height: 10),
               Wrap(spacing: 8, runSpacing: 8, children: [
                 for (final p in presetsRenda.take(3))
@@ -203,11 +180,25 @@ class CartaoRecebimentos extends StatelessWidget {
               ]),
             ]),
           )
-        else
-          CaixaLista([for (final r in lista) _LinhaRenda(r: r)]),
+        else ...[
+          if (ateLa != null) ...[Dica(ateLa, icone: Icons.calendar_today_rounded, cor: G.lavanda), const SizedBox(height: 6)],
+          for (final i in linhas) _LinhaReceb(i: i, destaque: identical(i, prox)),
+        ],
       ]),
     );
   }
+}
+
+class _ItemReceb {
+  final Renda? renda;
+  final StatusRenda? st;
+  final ItemAgenda? parcela;
+  final double valor;
+  _ItemReceb({this.renda, this.st, this.parcela, required this.valor});
+  bool get recebido => st?.rec != null;
+  String? get data => parcela?.data ?? st?.rec?.data ?? st?.data;
+  String get nome => renda?.nome ?? parcela!.nome;
+  bool get atrasado => parcela?.atrasado ?? (st != null && st!.rec == null && st!.dias < 0);
 }
 
 /// Pergunta valor e data e lança a entrada do recebimento.
@@ -239,7 +230,7 @@ class _FolhaReceberState extends State<_FolhaReceber> {
   Widget build(BuildContext context) => CorpoFolha([
         TituloFolha('Recebi: ${widget.r.nome}'),
         const SizedBox(height: 4),
-        Text(widget.r.variavel ? 'O valor varia: confira o que entrou de fato.' : 'Confira o valor e o dia; vira uma entrada no extrato.', style: TextStyle(color: G.apagado, fontSize: 13)),
+        Text(widget.r.variavel ? 'O valor varia: confira o que entrou de fato.' : 'Confira o valor e o dia; vira uma entrada no extrato.', style: TextStyle(color: G.apagado, fontSize: 12.5)),
         const SizedBox(height: 12),
         CampoValor(c, rotulo: 'Valor recebido', grande: true),
         const Rotulo('Quando entrou'),
@@ -254,71 +245,88 @@ class _FolhaReceberState extends State<_FolhaReceber> {
               return;
             }
             await RepoScope.ler(context).salvar(docRecebido(widget.r, v, data));
-            if (context.mounted) Navigator.pop(context, true);
+            if (!context.mounted) return;
+            mostrarConfirmacao(context);
+            Navigator.pop(context, true);
           },
           label: const Text('Confirmar recebimento'),
         ),
       ]);
 }
 
-class _LinhaRenda extends StatelessWidget {
-  final Renda r;
-  const _LinhaRenda({required this.r});
+class _LinhaReceb extends StatelessWidget {
+  final _ItemReceb i;
+  final bool destaque;
+  const _LinhaReceb({required this.i, this.destaque = false});
 
   @override
   Widget build(BuildContext context) {
-    final repo = RepoScope.of(context);
-    final h = hojeIso();
-    // ocorrência deste mês (ou a próxima, para anuais e de data única)
-    StatusRenda? st;
-    for (var k = 0; k <= 12 && st == null; k++) {
-      final s = statusRenda(repo, r, ymAdd(ymDe(h), k));
-      if (s != null && (k == 0 || s.rec == null)) st = s;
-      if (r.freq == 'mensal') break;
-    }
-    final esp = valorEsperado(repo, r);
-    final quando = r.freq == 'unica'
-        ? 'em ${r.dataUnica.length == 10 ? dataBr(r.dataUnica) : '?'}'
-        : (r.freq == 'anual' ? 'todo ano em ${mesesLongos[r.mes - 1].toLowerCase()}' : (r.regra == 'util' ? 'último dia útil' : 'todo dia ${r.dia}'));
+    final r = i.renda;
+    final st = i.st;
+    final quando = r == null
+        ? ''
+        : (r.freq == 'unica'
+            ? 'só uma vez'
+            : (r.freq == 'anual' ? 'todo ano' : (r.regra == 'util' ? 'último dia útil' : 'todo dia ${r.dia}')));
     String linha;
     Color cor = G.apagado;
-    if (st == null) {
-      linha = r.freq == 'unica' ? 'Já passou · $quando' : 'Cai $quando';
+    if (r == null) {
+      linha = i.atrasado ? 'Parcela atrasada' : 'Parcela a receber';
+      if (i.atrasado) cor = G.alerta;
+    } else if (st == null) {
+      linha = 'Já passou';
     } else if (st.rec != null) {
-      linha = 'Recebido em ${dataCurta(st.rec!.data)} · $quando';
+      linha = 'Recebido · $quando';
+      cor = G.pos;
     } else if (st.dias < 0) {
-      linha = 'Ainda não recebido (era ${dataCurta(st.data)})';
+      linha = 'Ainda não recebido';
       cor = G.alerta;
     } else {
-      linha = 'Cai em ${dataCurta(st.data)} · $quando';
+      linha = st.dias == 0 ? 'Cai hoje · $quando' : (st.dias == 1 ? 'Cai amanhã · $quando' : 'Em ${st.dias} dias · $quando');
     }
-    final pode = st != null && st.rec == null && st.dias <= 0;
-    return InkWell(
-      onTap: () => abrirFolha(context, FormRenda(r: r)),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        child: Row(children: [
-          Icon(iconeRenda(r), color: G.lavanda),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(r.nome, style: const TextStyle(fontWeight: FontWeight.w600)),
-              Text(linha, style: TextStyle(color: cor, fontSize: 12.5)),
-              if (r.variavel) Text('Valor varia · média de ${brl(esp)}', style: TextStyle(color: G.lavanda, fontSize: 12)),
-              if (r.id == 'rd_salario' && r.mesSeguinte) Text('Conta como dinheiro do mês seguinte', style: TextStyle(color: G.lavanda, fontSize: 12)),
+    if (r != null && r.variavel) linha += ' · valor varia';
+    final pode = r != null && st != null && st.rec == null && st.dias <= 0;
+    final d = i.data;
+    return Material(
+      color: destaque ? G.lavandaFundo : Colors.transparent,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: r == null ? null : () => abrirFolha(context, FormRenda(r: r)),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+          child: Row(children: [
+            SizedBox(
+              width: 42,
+              child: Column(children: [
+                Text(d == null ? '—' : d.substring(8, 10), style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17, height: 1.1, color: i.recebido ? G.apagado : G.texto)),
+                if (d != null)
+                  Text(mesesLongos[int.parse(d.substring(5, 7)) - 1].substring(0, 3).toUpperCase(),
+                      style: TextStyle(fontSize: 11, letterSpacing: .6, fontWeight: FontWeight.w700, color: G.apagado)),
+              ]),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(i.nome, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600)),
+                const SizedBox(height: 1),
+                Text(linha, style: TextStyle(color: cor, fontSize: 12.5)),
+              ]),
+            ),
+            const SizedBox(width: 8),
+            Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+              Text(brl(i.valor), style: TextStyle(fontWeight: FontWeight.w700, color: i.recebido ? G.apagado : G.texto)),
+              if (pode)
+                GestureDetector(
+                  onTap: () => confirmarRecebido(context, r!, st!.data, i.valor),
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 3),
+                    child: Text('Marcar recebido', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: G.lavanda)),
+                  ),
+                ),
             ]),
-          ),
-          const SizedBox(width: 8),
-          Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            Text(brl(esp), style: const TextStyle(fontWeight: FontWeight.w700)),
-            if (pode)
-              TextButton(
-                style: TextButton.styleFrom(minimumSize: const Size(10, 28), padding: const EdgeInsets.symmetric(horizontal: 6)),
-                onPressed: () => confirmarRecebido(context, r, st!.data, esp),
-                child: const Text('Marcar recebido', style: TextStyle(fontSize: 12.5)),
-              ),
           ]),
-        ]),
+        ),
       ),
     );
   }
@@ -530,7 +538,7 @@ class _FormRendaState extends State<FormRenda> {
                 const SizedBox(width: 10),
                 Expanded(child: Text(mesLongo(m.ym), style: const TextStyle(fontWeight: FontWeight.w600))),
                 Text(m.rec != null ? '${brl(m.rec!.valor)} · ${dataCurta(m.rec!.data)}' : 'não encontrado',
-                    style: TextStyle(color: m.rec != null ? G.texto2 : G.apagado, fontSize: 13)),
+                    style: TextStyle(color: m.rec != null ? G.texto2 : G.apagado, fontSize: 12.5)),
               ]),
             ),
         ]),

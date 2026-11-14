@@ -114,7 +114,7 @@ class _TelaInicioState extends State<TelaInicio> {
         );
       }
       return ListView(
-        padding: const EdgeInsets.fromLTRB(12, 4, 12, 120),
+        padding: const EdgeInsets.fromLTRB(12, 4, 12, 150),
         children: [
           if (boasVindas != null) ...[boasVindas, const SizedBox(height: 16)],
           hero,
@@ -177,7 +177,7 @@ class _OndeFoi extends StatelessWidget {
             return Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: Row(children: [
-                IconeCategoria(cat, tam: 34),
+                IconeCategoria(cat, tam: 34, forte: true),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -192,7 +192,7 @@ class _OndeFoi extends StatelessWidget {
                         padding: const EdgeInsets.only(top: 4),
                         child: Text(
                           e.value > lim ? 'Passou ${brl(e.value - lim)} do limite de ${brl(lim)}' : 'Restam ${brl(lim - e.value)} de ${brl(lim)}',
-                          style: TextStyle(fontSize: 11.5, color: e.value > lim ? G.neg : G.apagado),
+                          style: TextStyle(fontSize: 11, color: e.value > lim ? G.neg : G.apagado),
                         ),
                       ),
                   ]),

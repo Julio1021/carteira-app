@@ -313,7 +313,7 @@ class _GraficoLinhaState extends State<GraficoLinha> {
                   for (var k = 0; k < spots.length; k++)
                     LineTooltipItem(
                       '${k == 0 && rotuloToque != null ? '${rotuloToque!(spots[k].x.round())}\n' : ''}${spots[k].barIndex < nomes.length ? '${nomes[spots[k].barIndex]}: ' : ''}${brl(spots[k].y)}',
-                      TextStyle(color: Color.lerp(cores[spots[k].barIndex % cores.length], Colors.white, .35), fontWeight: FontWeight.w700, fontSize: 12),
+                      TextStyle(color: Color.lerp(cores[spots[k].barIndex % cores.length], Colors.white, .35), fontWeight: FontWeight.w700, fontSize: 12.5),
                     ),
                 ],
               ),
@@ -478,7 +478,7 @@ class _GraficoBarrasState extends State<GraficoBarras> {
                 fitInsideVertically: true,
                 getTooltipItem: (group, gi, rod, ri) => BarTooltipItem(
                   '${ri == 0 ? '${rotulos[gi]}\n' : ''}${ri < nomes.length ? '${nomes[ri]}: ' : ''}${brl(valores[gi][ri])}',
-                  TextStyle(color: Color.lerp(cores[ri % cores.length], Colors.white, .35), fontWeight: FontWeight.w700, fontSize: 12),
+                  TextStyle(color: Color.lerp(cores[ri % cores.length], Colors.white, .35), fontWeight: FontWeight.w700, fontSize: 12.5),
                 ),
               ),
             ),
@@ -577,7 +577,7 @@ class _RoscaState extends State<Rosca> {
                   Text('do total', style: TextStyle(color: G.apagado, fontSize: 11.5)),
                 ])
               : Column(key: const ValueKey('c'), mainAxisSize: MainAxisSize.min, children: [
-                  Text(widget.centro, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+                  Text(widget.centro, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
                   if (widget.sub.isNotEmpty) Text(widget.sub, textAlign: TextAlign.center, style: TextStyle(color: G.apagado, fontSize: 11.5)),
                 ]),
         ),
@@ -608,6 +608,6 @@ class Legenda extends StatelessWidget {
             ? SizedBox(width: 14, height: 3, child: Row(children: [Container(width: 5, color: cor), const SizedBox(width: 3), Container(width: 5, color: cor)]))
             : Container(width: 10, height: 10, decoration: BoxDecoration(color: cor, borderRadius: BorderRadius.circular(3))),
         const SizedBox(width: 6),
-        Text(t, style: TextStyle(color: G.apagado, fontSize: 12)),
+        Text(t, style: TextStyle(color: G.apagado, fontSize: 12.5)),
       ]);
 }

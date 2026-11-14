@@ -59,12 +59,12 @@ class _CartaoEmpState extends State<_CartaoEmp> {
             width: 42,
             height: 42,
             decoration: BoxDecoration(color: G.lavandaFundo, borderRadius: BorderRadius.circular(14)),
-            child: Center(child: Text(e.pessoa.isEmpty ? '?' : e.pessoa[0].toUpperCase(), style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: G.lavandaIcone))),
+            child: Center(child: Text(e.pessoa.isEmpty ? '?' : e.pessoa[0].toUpperCase(), style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17, color: G.lavandaIcone))),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(e.pessoa, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+              Text(e.pessoa, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
               Text('${brl(e.valor)} em ${dataBr(e.data)}${e.obs.isNotEmpty ? ' · ${e.obs}' : ''}', style: TextStyle(color: G.apagado, fontSize: 12.5)),
             ]),
           ),
@@ -74,8 +74,8 @@ class _CartaoEmpState extends State<_CartaoEmp> {
         Barra(e.valor > 0 ? d.recebido / e.valor : 0, cor: G.pos),
         const SizedBox(height: 6),
         Row(children: [
-          Expanded(child: Text('Recebido ${brl(d.recebido)}', style: TextStyle(color: G.pos, fontWeight: FontWeight.w600, fontSize: 13))),
-          Text(d.quitado ? 'Quitado 🎉' : 'Falta ${brl(d.falta)}', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+          Expanded(child: Text('Recebido ${brl(d.recebido)}', style: TextStyle(color: G.pos, fontWeight: FontWeight.w600, fontSize: 12.5))),
+          Text(d.quitado ? 'Quitado 🎉' : 'Falta ${brl(d.falta)}', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5)),
         ]),
         if (!d.quitado && d.prox != null) ...[
           const SizedBox(height: 8),

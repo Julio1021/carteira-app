@@ -140,7 +140,7 @@ class _TelaAjustesState extends State<TelaAjustes> {
           item(Icons.delete_forever_outlined, 'Apagar dados deste aparelho', 'Não mexe no Drive nem em backups salvos', _apagarTudo, cor: G.neg),
         ]),
         const SizedBox(height: 24),
-        Center(child: Text('Diário da Carteira · versão 0.1', style: TextStyle(color: G.apagado, fontSize: 12))),
+        Center(child: Text('Diário da Carteira · versão 0.1', style: TextStyle(color: G.apagado, fontSize: 12.5))),
       ]),
     );
   }
@@ -194,7 +194,7 @@ class _Aparencia extends StatelessWidget {
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(4, 10, 4, 0),
-            child: Text(texto, style: TextStyle(color: G.apagado, fontSize: 12)),
+            child: Text(texto, style: TextStyle(color: G.apagado, fontSize: 12.5)),
           ),
         ]);
       },
@@ -314,12 +314,12 @@ class _CartaoTema extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(color: t.destaque, borderRadius: BorderRadius.circular(99)),
-                    child: const Text('novo', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800)),
+                    child: const Text('novo', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800)),
                   ),
                 ),
             ]),
             const SizedBox(height: 7),
-            Text(t.nome, textAlign: TextAlign.center, maxLines: 2, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12, height: 1.15, color: ligado ? G.lavanda : G.texto2)),
+            Text(t.nome, textAlign: TextAlign.center, maxLines: 2, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, height: 1.15, color: ligado ? G.lavanda : G.texto2)),
           ]),
         ),
       ),
@@ -407,9 +407,9 @@ class _CartaoDrive extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  const Text('Google Drive', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15.5)),
+                  const Text('Google Drive', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 17)),
                   Text(status, style: TextStyle(color: cor, fontSize: 12.5, fontWeight: FontWeight.w600)),
-                  if (sd.email != null && sd.ligado) Text(sd.email!, style: TextStyle(color: G.apagado, fontSize: 12)),
+                  if (sd.email != null && sd.ligado) Text(sd.email!, style: TextStyle(color: G.apagado, fontSize: 12.5)),
                 ]),
               ),
             ]),
@@ -497,7 +497,7 @@ class _TelaCheiaAjuste extends StatelessWidget {
                     Expanded(
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         Text(nome, style: TextStyle(fontWeight: FontWeight.w600, color: telaCheiaTipo.value == id ? G.lavanda : G.texto)),
-                        Text(sub, style: TextStyle(color: G.apagado, fontSize: 12, height: 1.3)),
+                        Text(sub, style: TextStyle(color: G.apagado, fontSize: 12.5, height: 1.3)),
                       ]),
                     ),
                     const SizedBox(width: 8),

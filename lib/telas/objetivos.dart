@@ -120,7 +120,7 @@ class CartaoObjetivos extends StatelessWidget {
             const SizedBox(width: 14),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Text('Crie seu primeiro objetivo', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                const Text('Crie seu primeiro objetivo', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
                 const SizedBox(height: 2),
                 Text('Reserva, viagem, carro… veja quanto falta e quando chega lá.', style: TextStyle(color: G.apagado, fontSize: 12.5, height: 1.3)),
               ]),
@@ -169,7 +169,7 @@ class _LinhaObjetivo extends StatelessWidget {
           cor: cor,
           centro: p.concluido
               ? const Icon(Icons.check_rounded, color: ouro, size: 26)
-              : Text('${(p.frac * 100).floor()}%', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5, color: G.texto)),
+              : Text('${(p.frac * 100).floor()}%', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: G.texto)),
         ),
         const SizedBox(width: 14),
         Expanded(
@@ -177,7 +177,7 @@ class _LinhaObjetivo extends StatelessWidget {
             Row(children: [
               Icon(iconeObjetivo(o.icone), size: 15, color: cor),
               const SizedBox(width: 6),
-              Expanded(child: Text(o.nome, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15))),
+              Expanded(child: Text(o.nome, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14))),
             ]),
             const SizedBox(height: 3),
             Text.rich(
@@ -187,12 +187,12 @@ class _LinhaObjetivo extends StatelessWidget {
               ]),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 13),
+              style: const TextStyle(fontSize: 12.5),
             ),
             const SizedBox(height: 3),
             Row(children: [
               if (atrasado) ...[Icon(Icons.schedule_rounded, size: 13, color: G.alerta), const SizedBox(width: 4)],
-              Expanded(child: Text(linha, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: p.concluido ? ouro : (atrasado ? G.alerta : G.apagado), fontWeight: p.concluido ? FontWeight.w700 : FontWeight.w500))),
+              Expanded(child: Text(linha, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12.5, color: p.concluido ? ouro : (atrasado ? G.alerta : G.apagado), fontWeight: p.concluido ? FontWeight.w700 : FontWeight.w500))),
             ]),
           ]),
         ),

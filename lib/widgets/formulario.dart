@@ -138,7 +138,7 @@ class TituloFolha extends StatelessWidget {
   const TituloFolha(this.t, {super.key, this.onExcluir});
   @override
   Widget build(BuildContext context) => Row(children: [
-        Expanded(child: Text(t, style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w800))),
+        Expanded(child: Text(t, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800))),
         if (onExcluir != null) IconButton(tooltip: 'Excluir', onPressed: onExcluir, icon: Icon(Icons.delete_outline_rounded, color: G.neg)),
       ]);
 }
@@ -227,8 +227,8 @@ class CaixaData extends StatelessWidget {
       height: 46,
       decoration: BoxDecoration(color: fundo, borderRadius: BorderRadius.circular(14)),
       child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Text(iso.substring(8, 10), style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: txt, height: 1)),
-        Text(mesesAbr[int.parse(iso.substring(5, 7)) - 1].toUpperCase(), style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700, color: txt.withValues(alpha: .7))),
+        Text(iso.substring(8, 10), style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: txt, height: 1)),
+        Text(mesesAbr[int.parse(iso.substring(5, 7)) - 1].toUpperCase(), style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: txt.withValues(alpha: .7))),
       ]),
     );
   }

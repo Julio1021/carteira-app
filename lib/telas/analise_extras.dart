@@ -136,8 +136,8 @@ class _PintorFluxo extends CustomPainter {
   void _rotulo(Canvas c, String a, String b, Offset pos, {bool direita = false, double maxW = 120}) {
     final tp = TextPainter(
       text: TextSpan(children: [
-        TextSpan(text: '$a\n', style: TextStyle(color: texto, fontSize: 11.5, fontWeight: FontWeight.w600)),
-        TextSpan(text: b, style: TextStyle(color: apagado, fontSize: 10.5)),
+        TextSpan(text: '$a\n', style: TextStyle(color: texto, fontSize: 11, fontWeight: FontWeight.w600)),
+        TextSpan(text: b, style: TextStyle(color: apagado, fontSize: 11)),
       ]),
       textDirection: TextDirection.ltr,
       maxLines: 2,
@@ -298,7 +298,7 @@ class _CalendarioCalorState extends State<CalendarioCalor> {
                                   borderRadius: BorderRadius.circular(9),
                                   border: Border.all(color: marcado ? G.texto : (iso == hoje ? G.lavanda : Colors.transparent), width: marcado ? 2 : 1.4),
                                 ),
-                                child: Text('$i', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: a > .55 ? Colors.white : (futuro ? G.apagado.withValues(alpha: .6) : G.texto2))),
+                                child: Text('$i', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: a > .55 ? Colors.white : (futuro ? G.apagado.withValues(alpha: .6) : G.texto2))),
                               ),
                             ),
                           ),
@@ -328,8 +328,8 @@ class _CalendarioCalorState extends State<CalendarioCalor> {
                           child: Row(children: [
                             Icon(catGasto(g.cat).icone, size: 16, color: catGasto(g.cat).cor),
                             const SizedBox(width: 8),
-                            Expanded(child: Text(g.desc, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: G.texto2, fontSize: 13))),
-                            Text(brl(g.valor), style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                            Expanded(child: Text(g.desc, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: G.texto2, fontSize: 12.5))),
+                            Text(brl(g.valor), style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12.5)),
                           ]),
                         ),
                     ]),

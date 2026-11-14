@@ -29,7 +29,7 @@ class KpiTile extends StatelessWidget {
     final cor = k.cor ?? G.texto;
     // a cor fica no ícone; o número só ganha cor quando pede atenção
     final alerta = k.cor == G.neg || k.cor == G.alerta;
-    final estilo = TextStyle(fontSize: 20, fontWeight: FontWeight.w800, letterSpacing: -.5, color: alerta ? cor : G.texto);
+    final estilo = TextStyle(fontSize: 22, fontWeight: FontWeight.w800, letterSpacing: -.5, color: alerta ? cor : G.texto);
     return Cartao(
       onTap: k.onTap,
       padding: const EdgeInsets.fromLTRB(13, 12, 13, 12),
@@ -38,7 +38,7 @@ class KpiTile extends StatelessWidget {
         Row(children: [
           Icon(k.icone, size: 15, color: cor),
           const SizedBox(width: 5),
-          Expanded(child: Text(k.rotulo, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: G.apagado, fontSize: 12, fontWeight: FontWeight.w600))),
+          Expanded(child: Text(k.rotulo, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: G.apagado, fontSize: 12.5, fontWeight: FontWeight.w600))),
           if (k.onTap != null) Icon(Icons.chevron_right_rounded, size: 16, color: G.apagado),
         ]),
         const SizedBox(height: 4),
@@ -47,7 +47,7 @@ class KpiTile extends StatelessWidget {
           alignment: Alignment.centerLeft,
           child: k.valor != null ? ValorAnimado(k.valor!, formato: k.formato, estilo: estilo) : Text(k.texto ?? '—', style: estilo),
         ),
-        if (k.sub.isNotEmpty) Text(k.sub, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: G.apagado, fontSize: 11.5)),
+        if (k.sub.isNotEmpty) Text(k.sub, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: G.apagado, fontSize: 11)),
       ]),
     );
   }
@@ -107,7 +107,7 @@ class Segmentos extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 9),
                 decoration: BoxDecoration(color: sel == i ? G.branco : Colors.transparent, borderRadius: BorderRadius.circular(11)),
                 child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  Flexible(child: Text(nomes[i], maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: sel == i ? G.tinta : G.texto2))),
+                  Flexible(child: Text(nomes[i], maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: sel == i ? G.tinta : G.texto2))),
                   if (marcas != null && i < marcas!.length && marcas![i] != null) ...[
                     const SizedBox(width: 5),
                     Container(
@@ -478,9 +478,10 @@ class TituloSecao extends StatelessWidget {
   const TituloSecao(this.texto, {super.key, this.direita});
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.fromLTRB(4, 4, 2, 8),
+        // mesmo estilo do título dentro dos cartões (CabecalhoCartao): um padrão só
+        padding: const EdgeInsets.fromLTRB(4, 6, 2, 10),
         child: Row(children: [
-          Expanded(child: Text(texto.toUpperCase(), style: TextStyle(fontSize: 11, letterSpacing: 1.1, fontWeight: FontWeight.w700, color: G.apagado))),
+          Expanded(child: Text(texto, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, letterSpacing: -.2))),
           if (direita != null) direita!,
         ]),
       );
@@ -505,12 +506,12 @@ class FaixaNumeros extends StatelessWidget {
             if (i > 0) VerticalDivider(width: 20, thickness: 1, color: G.borda),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(itens[i].$1, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: G.apagado, fontSize: 11.5, fontWeight: FontWeight.w600)),
+                Text(itens[i].$1, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: G.apagado, fontSize: 11, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 3),
                 FittedBox(
                   fit: BoxFit.scaleDown,
                   alignment: Alignment.centerLeft,
-                  child: Text(itens[i].$2, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5, color: _cor(itens[i].$3))),
+                  child: Text(itens[i].$2, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: _cor(itens[i].$3))),
                 ),
               ]),
             ),
@@ -579,10 +580,10 @@ class Vazio extends StatelessWidget {
           ]),
         ),
         const SizedBox(height: 14),
-        Text(titulo, textAlign: TextAlign.center, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+        Text(titulo, textAlign: TextAlign.center, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
         if (texto != null) ...[
           const SizedBox(height: 4),
-          Text(texto!, textAlign: TextAlign.center, style: TextStyle(color: G.apagado, fontSize: 13, height: 1.35)),
+          Text(texto!, textAlign: TextAlign.center, style: TextStyle(color: G.apagado, fontSize: 12.5, height: 1.35)),
         ],
         if (acao != null && onAcao != null) ...[
           const SizedBox(height: 16),

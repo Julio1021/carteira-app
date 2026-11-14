@@ -145,7 +145,7 @@ class HeroNuvem extends StatelessWidget {
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
                 Expanded(
-                  child: Text(principal != null ? 'Em conta' : 'Sobra do mês', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: GH.texto2, fontWeight: FontWeight.w600, fontSize: 13.5)),
+                  child: Text(principal != null ? 'Em conta' : 'Sobra do mês', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: GH.texto2, fontWeight: FontWeight.w600, fontSize: 14)),
                 ),
                 // seletor de mês compacto
                 Container(
@@ -157,7 +157,7 @@ class HeroNuvem extends StatelessWidget {
                       onTap: atual ? null : () => onMes(ymDe(hojeIso())),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 2),
-                        child: Text('$nomeMes${atual ? '' : ' ${r.ym.substring(0, 4)}'}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
+                        child: Text('$nomeMes${atual ? '' : ' ${r.ym.substring(0, 4)}'}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12.5)),
                       ),
                     ),
                     seta(Icons.chevron_right_rounded, 1, 'Próximo mês'),
@@ -239,11 +239,11 @@ class _Fluxo extends StatelessWidget {
               const SizedBox(width: 9),
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(rotulo, style: TextStyle(color: GH.texto2, fontWeight: FontWeight.w600, fontSize: 11.5)),
+                  Text(rotulo, style: TextStyle(color: GH.texto2, fontWeight: FontWeight.w600, fontSize: 11)),
                   FittedBox(
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerLeft,
-                    child: Text(brl(valor).replaceFirst('R\$ ', ''), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15.5)),
+                    child: Text(brl(valor).replaceFirst('R\$ ', ''), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 17)),
                   ),
                 ]),
               ),
@@ -287,7 +287,7 @@ class QuadrosNuvem extends StatelessWidget {
               estourou ? 'passou ${brl(-restante)}' : (mesAtual && dias > 0 ? '${brl(restante / dias)}/dia livre' : '${brl(restante)} livres'),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 11.5, color: estourou ? G.neg : G.apagado, fontWeight: FontWeight.w600),
+              style: TextStyle(fontSize: 11, color: estourou ? G.neg : G.apagado, fontWeight: FontWeight.w600),
             ),
           ),
           if (proj != null && !estourou)
@@ -309,7 +309,7 @@ class QuadrosNuvem extends StatelessWidget {
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(r.investiu < 0 ? 'Resgatou no mês' : 'Investiu no mês', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: G.texto2)),
           const SizedBox(height: 10),
-          FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(brl(r.investiu.abs()), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 21, letterSpacing: -.6))),
+          FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: ValorBrl(r.investiu.abs(), estilo: TextStyle(fontWeight: FontWeight.w800, fontSize: 22, letterSpacing: -.6, color: G.texto))),
           const SizedBox(height: 8),
           _Pilula(r.investimentos.isEmpty ? 'toque para lançar' : (pct != null && pct > 0 && pct <= 1 ? '${(pct * 100).round()}% da renda' : 'neste mês')),
         ]),
@@ -332,7 +332,7 @@ class _Pilula extends StatelessWidget {
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
         decoration: BoxDecoration(color: G.lavandaFundo, borderRadius: BorderRadius.circular(99)),
-        child: Text(t, style: TextStyle(color: G.lavanda, fontWeight: FontWeight.w700, fontSize: 11.5)),
+        child: Text(t, style: TextStyle(color: G.lavanda, fontWeight: FontWeight.w700, fontSize: 11)),
       );
 }
 
@@ -350,7 +350,7 @@ class Medidor extends StatelessWidget {
             height: 70,
             child: Align(
               alignment: Alignment.bottomCenter,
-              child: Text('${(frac * 100).round()}%', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 21, letterSpacing: -.6, color: alerta ? G.neg : G.texto)),
+              child: Text('${(frac * 100).round()}%', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 22, letterSpacing: -.6, color: alerta ? G.neg : G.texto)),
             ),
           ),
         );
@@ -426,16 +426,16 @@ class _Investido extends StatelessWidget {
         FittedBox(
           fit: BoxFit.scaleDown,
           alignment: Alignment.centerLeft,
-          child: Text(total >= 100000 ? 'R\$ ${curtoBr(total)}' : brl(total), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 21, letterSpacing: -.6)),
+          child: total >= 100000 ? Text('R\$ ${curtoBr(total)}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 22, letterSpacing: -.6)) : ValorBrl(total, estilo: TextStyle(fontWeight: FontWeight.w800, fontSize: 22, letterSpacing: -.6, color: G.texto)),
         ),
         const Spacer(),
         if (pts.length >= 2) SizedBox(height: 34, width: double.infinity, child: CustomPaint(painter: _Faisca(pts, G.lavanda))),
         const SizedBox(height: 4),
         if (var30 != null)
           Text('${var30 >= 0 ? '+' : '−'}${(var30.abs() * 100).toStringAsFixed(1).replaceAll('.', ',')}% em 30 dias',
-              style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: var30 >= 0 ? G.pos : G.neg))
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: var30 >= 0 ? G.pos : G.neg))
         else
-          Text(dias.isEmpty ? 'toque para começar' : 'seu patrimônio', style: TextStyle(fontSize: 11.5, color: G.apagado)),
+          Text(dias.isEmpty ? 'toque para começar' : 'seu patrimônio', style: TextStyle(fontSize: 11, color: G.apagado)),
       ]),
     );
   }
@@ -500,7 +500,7 @@ class HistoriasGastos extends StatelessWidget {
           InkWell(
             borderRadius: BorderRadius.circular(8),
             onTap: onAnalise,
-            child: Padding(padding: const EdgeInsets.all(4), child: Text('Ver extrato', style: TextStyle(color: G.lavanda, fontWeight: FontWeight.w700, fontSize: 13))),
+            child: Padding(padding: const EdgeInsets.all(4), child: Text('Ver extrato', style: TextStyle(color: G.lavanda, fontWeight: FontWeight.w700, fontSize: 12.5))),
           ),
         ]),
       ),

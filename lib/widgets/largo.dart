@@ -68,7 +68,7 @@ class MenuLateral extends StatelessWidget {
               child: Row(children: [
                 Icon(on ? icOn : ic, size: 21, color: on ? G.lavanda : G.texto2),
                 const SizedBox(width: 12),
-                Expanded(child: Text(t, style: TextStyle(fontSize: 14.5, fontWeight: on ? FontWeight.w700 : FontWeight.w600, color: on ? G.texto : G.texto2))),
+                Expanded(child: Text(t, style: TextStyle(fontSize: 14, fontWeight: on ? FontWeight.w700 : FontWeight.w600, color: on ? G.texto : G.texto2))),
                 Text(atalho, style: TextStyle(fontSize: 11, color: G.apagado, fontWeight: FontWeight.w600)),
               ]),
             ),
@@ -85,7 +85,7 @@ class MenuLateral extends StatelessWidget {
         Row(children: [
           ClipRRect(borderRadius: BorderRadius.circular(10), child: Image.asset('assets/icone.png', width: 34, height: 34, errorBuilder: (_, __, ___) => const SizedBox(width: 34, height: 34))),
           const SizedBox(width: 10),
-          const Expanded(child: Text('Diário da Carteira', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, letterSpacing: -.2))),
+          const Expanded(child: Text('Diário da Carteira', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, letterSpacing: -.2))),
         ]),
         const SizedBox(height: 22),
         Toque(
@@ -100,7 +100,7 @@ class MenuLateral extends StatelessWidget {
               foregroundColor: G.tinta,
               padding: const EdgeInsets.symmetric(vertical: 15),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-              textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5),
+              textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
             ),
             icon: const Icon(Icons.add_rounded),
             label: const Text('Novo lançamento'),
@@ -127,7 +127,7 @@ class MenuLateral extends StatelessWidget {
               child: Row(children: [
                 Icon(Icons.settings_outlined, size: 21, color: G.texto2),
                 const SizedBox(width: 12),
-                Text('Ajustes', style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w600, color: G.texto2)),
+                Text('Ajustes', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: G.texto2)),
               ]),
             ),
           ),
@@ -169,8 +169,8 @@ class _StatusDrive extends StatelessWidget {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(t, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-                    if (sub.isNotEmpty) Text(sub, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: G.apagado, fontSize: 11.5)),
+                    Text(t, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5)),
+                    if (sub.isNotEmpty) Text(sub, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: G.apagado, fontSize: 11)),
                   ]),
                 ),
               ]),

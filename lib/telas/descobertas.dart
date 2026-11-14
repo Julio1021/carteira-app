@@ -221,7 +221,7 @@ class FaixaDescobertas extends StatelessWidget {
                           ]),
                           maxLines: 3,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(color: G.texto2, fontSize: 13, height: 1.3),
+                          style: TextStyle(color: G.texto2, fontSize: 12.5, height: 1.3),
                         ),
                       ),
                     ]),
@@ -279,7 +279,7 @@ class _CartaoRetro extends StatelessWidget {
                         fit: BoxFit.scaleDown,
                         alignment: Alignment.bottomLeft,
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-                          const Text('Retrospectiva', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16, letterSpacing: -.3)),
+                          const Text('Retrospectiva', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 17, letterSpacing: -.3)),
                           Text('Como foi $mes', style: const TextStyle(color: Color(0xD9FFFFFF), fontSize: 12.5)),
                         ]),
                       ),
