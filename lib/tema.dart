@@ -51,7 +51,7 @@ const _baseNuvem = <String, int>{
 const paletasNuvem = <PaletaNuvem>[
   // Leve: branco, cinza bem claro e verde (o padrão)
   PaletaNuvem('leve', 'Leve', {
-    ..._baseNuvem,
+    'fundo2': 0xFFFFFFFF, 'tinta': 0xFFFFFFFF, 'campo': 0xFFFFFFFF, 'alerta': 0xFFC27C14,
     'fundo': 0xFFF5F6F8, 'branco': 0xFF15A05A, 'texto': 0xFF1D2433, 'texto2': 0xFF4B5466, 'apagado': 0xFF677083,
     'lavanda': 0xFF15A05A, 'lavandaIcone': 0xFF128A4E, 'lavandaFundo': 0xFFE3F5EB, 'borda': 0xFFE7E9EE,
     'navApagado': 0xFF8A92A3, 'navFundo': 0xFFFFFFFF, 'dica': 0xF21D2433, 'abasFundo': 0xFFEDEFF3, 'tintaBase': 0xFF1D2433,
