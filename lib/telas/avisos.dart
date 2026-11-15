@@ -29,7 +29,7 @@ class BotaoAvisos extends StatelessWidget {
         },
         style: true
             ? IconButton.styleFrom(
-                backgroundColor: G.fundo2,
+                foregroundColor: G.texto2,
                 shape: const CircleBorder(),
                 fixedSize: const Size(42, 42),
                 minimumSize: const Size(42, 42),

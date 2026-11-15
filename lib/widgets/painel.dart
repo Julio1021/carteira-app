@@ -402,8 +402,8 @@ class _ChipsAssuntoState extends State<ChipsAssunto> with SingleTickerProviderSt
 /// Chip escolhido com a mesma cor da aba escolhida (Segmentos), para o tema
 /// falar uma língua só. Nos temas Nuvem a aba é branca sobre trilho cinza, então
 /// o chip fica na cor do texto.
-Color get _chipSel => G.nuvem != null ? G.texto : G.branco;
-Color get _chipTexto => G.nuvem != null ? G.fundo : G.tinta;
+Color get _chipSel => G.branco;
+Color get _chipTexto => G.tinta;
 
 class _CorteLateral extends CustomClipper<Rect> {
   @override

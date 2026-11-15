@@ -57,15 +57,15 @@ class CabecalhoCartao extends StatelessWidget {
       child: Row(children: [
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(titulo, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, letterSpacing: -.2)),
+            Text(titulo, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
             if (sub != null) Padding(padding: const EdgeInsets.only(top: 2), child: Text(sub!, style: TextStyle(color: G.apagado, fontSize: 12.5))),
           ]),
         ),
         if (acao != null)
-          OutlinedButton(
+          TextButton(
             onPressed: onAcao,
-            style: OutlinedButton.styleFrom(minimumSize: const Size(10, 32), padding: const EdgeInsets.symmetric(horizontal: 10), visualDensity: VisualDensity.compact),
-            child: Row(mainAxisSize: MainAxisSize.min, children: [Text(acao!, style: const TextStyle(fontSize: 12.5)), const SizedBox(width: 2), const Icon(Icons.chevron_right_rounded, size: 18)]),
+            style: TextButton.styleFrom(foregroundColor: G.lavanda, minimumSize: const Size(10, 30), padding: const EdgeInsets.symmetric(horizontal: 6), visualDensity: VisualDensity.compact),
+            child: Text(acao!, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
           ),
       ]),
     );
