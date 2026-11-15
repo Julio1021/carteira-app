@@ -615,7 +615,9 @@ class _MenuBaixo extends StatelessWidget {
       decoration: BoxDecoration(color: G.fundo2, border: Border(top: BorderSide(color: G.borda))),
       child: SafeArea(
         top: false,
-        child: Row(children: [
+        child: SizedBox(
+          height: 62,
+          child: Row(children: [
           item(0, Icons.home_outlined, Icons.home_rounded, 'Início'),
           item(1, Icons.receipt_long_outlined, Icons.receipt_long_rounded, 'Lançamentos'),
           Expanded(
@@ -639,7 +641,8 @@ class _MenuBaixo extends StatelessWidget {
           ),
           item(2, Icons.event_note_outlined, Icons.event_note_rounded, 'Planejar'),
           item(3, Icons.menu_rounded, Icons.menu_rounded, 'Mais'),
-        ]),
+          ]),
+        ),
       ),
     );
   }
