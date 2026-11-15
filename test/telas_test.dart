@@ -15,11 +15,11 @@ void main() {
 
     expect(find.text('Início'), findsWidgets);
     expect(find.text('Receitas'), findsOneWidget);
-    await t.scrollUntilVisible(find.text('Últimos lançamentos'), 300, scrollable: find.byType(Scrollable).first);
+    await t.dragUntilVisible(find.text('Últimos lançamentos'), find.byType(ListView).first, const Offset(0, -300));
     expect(find.text('Últimos lançamentos'), findsOneWidget);
 
     // ao rolar para baixo o menu se recolhe; rolar um pouco para cima traz de volta
-    await t.drag(find.byType(Scrollable).first, const Offset(0, 160));
+    await t.drag(find.byType(ListView).first, const Offset(0, 160));
     await t.pumpAndSettle();
     await t.tap(find.text('Mais').last);
     await t.pumpAndSettle();
