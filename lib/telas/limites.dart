@@ -66,7 +66,7 @@ class TelaLimites extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Text(lm.geral == null ? 'Definir' : brl(lm.geralBase),
-                        style: TextStyle(fontWeight: FontWeight.w800, color: lm.geral == null ? G.lavanda : G.texto)),
+                        style: TextStyle(fontWeight: FontWeight.w700, color: lm.geral == null ? G.lavanda : G.texto)),
                     Icon(Icons.chevron_right_rounded, color: G.apagado),
                   ]),
                 ),
@@ -148,48 +148,42 @@ class _Resumo extends StatelessWidget {
   const _Resumo({required this.r});
   @override
   Widget build(BuildContext context) {
-    const branco = Colors.white;
-    final t2 = GH.texto2;
+    final t2 = G.apagado;
     final lim = r.limiteTotal, gasto = r.gastoComLimite;
     final tem = lim > 0;
     final resta = lim - gasto;
     final dias = diasRestantes(r.ym);
     final proj = tem ? projecaoMes(gasto, r.ym) : null;
     final uso = tem ? gasto / lim : 0.0;
-    return Container(
+    final cor = uso > 1 ? G.neg : (uso >= .8 ? G.alerta : G.lavanda);
+    return Cartao(
       padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
-      decoration: BoxDecoration(gradient: GH.gradHero, borderRadius: BorderRadius.circular(26)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          Expanded(child: Text(mesLongo(r.ym), style: TextStyle(color: t2, fontWeight: FontWeight.w600))),
-          if (tem)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(color: const Color(0x26FFFFFF), borderRadius: BorderRadius.circular(99)),
-              child: Text(r.temLimiteGeral ? 'Limite geral' : 'Soma das categorias', style: const TextStyle(color: branco, fontSize: 11, fontWeight: FontWeight.w700)),
-            ),
+          Expanded(child: Text(mesLongo(r.ym), style: TextStyle(color: t2, fontSize: 12.5))),
+          if (tem) Text(r.temLimiteGeral ? 'Limite geral' : 'Soma das categorias', style: TextStyle(color: t2, fontSize: 12.5)),
         ]),
         const SizedBox(height: 6),
         if (!tem) ...[
-          const Text('Nenhum limite definido', style: TextStyle(color: branco, fontSize: 22, fontWeight: FontWeight.w800)),
+          const Text('Nenhum limite definido', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
           const SizedBox(height: 6),
-          Text('Defina um teto para o mês inteiro, limites por categoria ou os dois.', style: TextStyle(color: t2, fontSize: 12.5)),
+          Text('Defina um teto para o mês inteiro, limites por categoria ou os dois.', style: TextStyle(color: t2, fontSize: 13)),
         ] else ...[
           FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
             child: Row(crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
-              ValorBrl(gasto, estilo: const TextStyle(fontSize: 28, fontWeight: FontWeight.w800, letterSpacing: -.8, color: branco)),
-              Text('  de ${brl(lim)}', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: t2)),
+              ValorBrl(gasto, estilo: TextStyle(fontSize: 28, fontWeight: FontWeight.w700, letterSpacing: -.8, color: G.texto)),
+              Text('  de ${brl(lim)}', style: TextStyle(fontSize: 14, color: t2)),
             ]),
           ),
           const SizedBox(height: 10),
-          Barra(uso, cor: uso > 1 ? const Color(0xFFFF9C8A) : branco, trilho: const Color(0x33FFFFFF)),
+          Barra(uso, cor: cor, altura: 6),
           const SizedBox(height: 12),
           Row(children: [
-            _Num(resta >= 0 ? 'Pode gastar' : 'Passou', brl(resta.abs())),
+            _Num(resta >= 0 ? 'Pode gastar' : 'Passou', brl(resta.abs()), cor: resta < 0 ? G.negTexto : null),
             if (dias > 0 && resta > 0) _Num('Por dia', brl(resta / dias)),
-            if (proj != null) _Num('No ritmo, fecha em', brl(proj)),
+            if (proj != null) _Num('No ritmo, fecha em', brl(proj), cor: proj > lim * 1.005 ? G.alerta : null),
           ]),
           if (proj != null) ...[
             const SizedBox(height: 10),
@@ -201,8 +195,8 @@ class _Resumo extends StatelessWidget {
             ),
           ],
           if (r.lim.sobraGeral > 0 && r.temLimiteGeral) ...[
-            const SizedBox(height: 6),
-            Text('Inclui ${brl(r.lim.sobraGeral)} que sobrou de ${mesLongo(ymAdd(r.ym, -1)).split(' ').first.toLowerCase()}.', style: TextStyle(color: t2, fontSize: 12.5)),
+            const SizedBox(height: 4),
+            Text('Inclui ${brl(r.lim.sobraGeral)} que sobrou do mês passado.', style: TextStyle(color: t2, fontSize: 12.5)),
           ],
         ],
       ]),
@@ -212,13 +206,14 @@ class _Resumo extends StatelessWidget {
 
 class _Num extends StatelessWidget {
   final String rotulo, valor;
-  const _Num(this.rotulo, this.valor);
+  final Color? cor;
+  const _Num(this.rotulo, this.valor, {this.cor});
   @override
   Widget build(BuildContext context) => Expanded(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(rotulo, maxLines: 2, style: TextStyle(color: GH.texto2, fontSize: 11, height: 1.2)),
+          Text(rotulo, maxLines: 2, style: TextStyle(color: G.apagado, fontSize: 11, height: 1.2)),
           const SizedBox(height: 2),
-          FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(valor, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 14))),
+          FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(valor, style: TextStyle(color: cor ?? G.texto, fontWeight: FontWeight.w600, fontSize: 15))),
         ]),
       );
 }

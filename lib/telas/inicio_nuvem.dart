@@ -56,7 +56,7 @@ class AvatarNuvem extends StatelessWidget {
             alignment: Alignment.center,
             child: nome.isEmpty
                 ? Icon(Icons.account_balance_wallet_rounded, size: tam * .44, color: G.lavanda)
-                : Text(nome.characters.first.toUpperCase(), style: TextStyle(fontWeight: FontWeight.w800, fontSize: tam * .38, color: G.lavanda)),
+                : Text(nome.characters.first.toUpperCase(), style: TextStyle(fontWeight: FontWeight.w700, fontSize: tam * .38, color: G.lavanda)),
           ),
         ),
       ),
@@ -75,7 +75,7 @@ class ValorPartido extends StatelessWidget {
     Widget texto(double v) {
       final s = brl(v);
       final i = s.lastIndexOf(',');
-      final base = TextStyle(fontSize: tam, fontWeight: FontWeight.w800, letterSpacing: -tam * .045, color: cor, height: 1.05);
+      final base = TextStyle(fontSize: tam, fontWeight: FontWeight.w700, letterSpacing: -tam * .045, color: cor, height: 1.05);
       return Text.rich(
         i < 0
             ? TextSpan(text: s, style: base)
@@ -249,7 +249,7 @@ class _Fluxo extends StatelessWidget {
                   FittedBox(
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerLeft,
-                    child: Text(brl(valor).replaceFirst('R\$ ', ''), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 17)),
+                    child: Text(brl(valor).replaceFirst('R\$ ', ''), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 17)),
                   ),
                 ]),
               ),
@@ -315,7 +315,7 @@ class QuadrosNuvem extends StatelessWidget {
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(r.investiu < 0 ? 'Resgatou no mês' : 'Investiu no mês', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: G.texto2)),
           const SizedBox(height: 10),
-          FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: ValorBrl(r.investiu.abs(), estilo: TextStyle(fontWeight: FontWeight.w800, fontSize: 22, letterSpacing: -.6, color: G.texto))),
+          FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: ValorBrl(r.investiu.abs(), estilo: TextStyle(fontWeight: FontWeight.w700, fontSize: 22, letterSpacing: -.6, color: G.texto))),
           const SizedBox(height: 8),
           _Pilula(r.investimentos.isEmpty ? 'toque para lançar' : (pct != null && pct > 0 && pct <= 1 ? '${(pct * 100).round()}% da renda' : 'neste mês')),
         ]),
@@ -356,7 +356,7 @@ class Medidor extends StatelessWidget {
             height: 70,
             child: Align(
               alignment: Alignment.bottomCenter,
-              child: Text('${(frac * 100).round()}%', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 22, letterSpacing: -.6, color: alerta ? G.neg : G.texto)),
+              child: Text('${(frac * 100).round()}%', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 22, letterSpacing: -.6, color: alerta ? G.neg : G.texto)),
             ),
           ),
         );
@@ -432,7 +432,7 @@ class _Investido extends StatelessWidget {
         FittedBox(
           fit: BoxFit.scaleDown,
           alignment: Alignment.centerLeft,
-          child: total >= 100000 ? Text('R\$ ${curtoBr(total)}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 22, letterSpacing: -.6)) : ValorBrl(total, estilo: TextStyle(fontWeight: FontWeight.w800, fontSize: 22, letterSpacing: -.6, color: G.texto)),
+          child: total >= 100000 ? Text('R\$ ${curtoBr(total)}', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 22, letterSpacing: -.6)) : ValorBrl(total, estilo: TextStyle(fontWeight: FontWeight.w700, fontSize: 22, letterSpacing: -.6, color: G.texto)),
         ),
         const Spacer(),
         if (pts.length >= 2) SizedBox(height: 34, width: double.infinity, child: CustomPaint(painter: _Faisca(pts, G.lavanda))),
@@ -502,7 +502,7 @@ class HistoriasGastos extends StatelessWidget {
       Padding(
         padding: const EdgeInsets.fromLTRB(4, 0, 2, 10),
         child: Row(children: [
-          const Expanded(child: Text('Seus gastos', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, letterSpacing: -.3))),
+          const Expanded(child: Text('Seus gastos', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, letterSpacing: -.3))),
           InkWell(
             borderRadius: BorderRadius.circular(8),
             onTap: onAnalise,
@@ -546,7 +546,7 @@ class HistoriasGastos extends StatelessWidget {
                       ]),
                     ),
                     const SizedBox(height: 6),
-                    Text(valoresOcultos ? '•••' : _semCentavos(e.value), style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5, color: passou ? G.neg : G.texto)),
+                    Text(valoresOcultos ? '•••' : _semCentavos(e.value), style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: passou ? G.neg : G.texto)),
                     Text(cat.nome, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 11, color: G.apagado, fontWeight: FontWeight.w600)),
                   ]),
                 ),

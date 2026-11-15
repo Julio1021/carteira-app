@@ -85,7 +85,7 @@ class MenuLateral extends StatelessWidget {
         Row(children: [
           ClipRRect(borderRadius: BorderRadius.circular(10), child: Image.asset('assets/icone.png', width: 34, height: 34, errorBuilder: (_, __, ___) => const SizedBox(width: 34, height: 34))),
           const SizedBox(width: 10),
-          const Expanded(child: Text('Diário da Carteira', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, letterSpacing: -.2))),
+          const Expanded(child: Text('Diário da Carteira', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, letterSpacing: -.2))),
         ]),
         const SizedBox(height: 22),
         Toque(
@@ -110,9 +110,9 @@ class MenuLateral extends StatelessWidget {
         Center(child: Text('ou aperte N', style: TextStyle(color: G.apagado, fontSize: 11))),
         const SizedBox(height: 18),
         item(0, Icons.home_outlined, Icons.home_rounded, 'Início', '1'),
-        item(1, Icons.receipt_long_outlined, Icons.receipt_long_rounded, 'Extrato', '2'),
+        item(1, Icons.receipt_long_outlined, Icons.receipt_long_rounded, 'Lançamentos', '2'),
         item(2, Icons.event_note_outlined, Icons.event_note_rounded, 'Planejar', '3'),
-        item(3, Icons.show_chart_rounded, Icons.show_chart_rounded, 'Patrimônio', '4'),
+        item(3, Icons.menu_rounded, Icons.menu_rounded, 'Mais', '4'),
         const Spacer(),
         const _StatusDrive(),
         const SizedBox(height: 6),

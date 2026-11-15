@@ -123,7 +123,7 @@ class _TelaImportarExtratoState extends State<TelaImportarExtrato> {
     return ListView(padding: const EdgeInsets.fromLTRB(14, 4, 14, 40), children: [
       Cartao(
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          const Text('Traga os gastos e entradas do banco de uma vez', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+          const Text('Traga os gastos e entradas do banco de uma vez', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
           const SizedBox(height: 6),
           Text(
               'No app do banco (Inter, Nubank, Mercado Pago…), exporte o extrato da conta no formato OFX e escolha o arquivo aqui. O app separa gastos e entradas, sugere a categoria, reconhece salário e vale, pagamento de fatura e transferências entre suas contas, e não duplica o que já foi importado ou lançado à mão.',
@@ -167,7 +167,7 @@ class _TelaImportarExtratoState extends State<TelaImportarExtrato> {
         Cartao(
           gradiente: G.gradHero,
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(nomeBanco(o), style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+            Text(nomeBanco(o), style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
             Text('${o.inicio != null ? dataBr(o.inicio!) : '?'} a ${o.fim != null ? dataBr(o.fim!) : '?'} · ${o.tx.length} movimentações', style: TextStyle(color: G.texto2)),
             if (o.saldo != null) Text('Saldo em ${dataBr(o.saldoData!)}: ${brl(o.saldo!)} (atualiza "Em conta")', style: TextStyle(color: G.texto2, fontSize: 12.5)),
             const SizedBox(height: 12),
@@ -293,7 +293,7 @@ class _Num extends StatelessWidget {
   const _Num(this.n, this.t);
   @override
   Widget build(BuildContext context) => Column(children: [
-        Text(n, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
+        Text(n, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
         Text(t, style: TextStyle(color: G.texto2, fontSize: 12.5)),
       ]);
 }
@@ -404,7 +404,7 @@ class _TelaImportarInterState extends State<TelaImportarInter> {
         if (e == null) ...[
           Cartao(
             child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              const Text('Importe o extrato de movimentações', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+              const Text('Importe o extrato de movimentações', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
               const SizedBox(height: 6),
               Text('No app do Inter: Investimentos → Extrato de movimentações → escolha o período → exportar PDF. O app lê as aplicações e os resgates e monta o histórico de cada tipo (CDB, LCI/LCA, Tesouro…).',
                   style: TextStyle(color: G.texto2, height: 1.4)),
@@ -434,7 +434,7 @@ class _TelaImportarInterState extends State<TelaImportarInter> {
           Cartao(
             gradiente: G.gradHero,
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('${e.rows.length} movimentações', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+              Text('${e.rows.length} movimentações', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
               Text('${e.inicio != null ? dataBr(e.inicio!) : '?'} a ${e.fim != null ? dataBr(e.fim!) : '?'}${e.posicaoTotal != null && e.posicaoTotal!.isFinite ? ' · posição total ${brl(e.posicaoTotal!)}' : ''}',
                   style: TextStyle(color: G.texto2)),
             ]),

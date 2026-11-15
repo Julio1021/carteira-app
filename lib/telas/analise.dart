@@ -103,7 +103,7 @@ class _EntrouSaiu extends StatelessWidget {
     return Cartao(
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Row(children: [
-          Expanded(child: Text(temInv ? 'Entrou × Saiu × Investiu' : 'Entrou × Saiu', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800))),
+          Expanded(child: Text(temInv ? 'Entrou × Saiu × Investiu' : 'Entrou × Saiu', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700))),
           SegmentedButton<int>(
             segments: const [ButtonSegment(value: 6, label: Text('6m')), ButtonSegment(value: 12, label: Text('12m'))],
             selected: {nMeses},
@@ -165,7 +165,7 @@ class _RitmoCard extends StatelessWidget {
     }
     return Cartao(
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        const Text('Ritmo dos gastos', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+        const Text('Ritmo dos gastos', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
         const SizedBox(height: 2),
         Text(frase, style: TextStyle(color: G.texto2, fontSize: 12.5)),
         const SizedBox(height: 14),
@@ -280,7 +280,7 @@ class _Comparativo extends StatelessWidget {
     final mx = itens.fold<double>(1, (a, c) => [a, c.atual, c.media].reduce((x, y) => x > y ? x : y));
     return Cartao(
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        const Text('Este mês × sua média', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+        const Text('Este mês × sua média', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
         const SizedBox(height: 2),
         Text(
           atual ? 'Do dia 1 ao dia ${comp.ateDia}, comparado ao mesmo trecho ${comp.nMeses == 1 ? 'do mês anterior' : 'dos ${comp.nMeses} meses anteriores'}.' : 'Comparado ${comp.nMeses == 1 ? 'ao mês anterior' : 'à média dos ${comp.nMeses} meses anteriores'}.',

@@ -158,9 +158,10 @@ class _Aparencia extends StatelessWidget {
           'auto' => kIsWeb ? 'Segue o tema do computador: Pérola de dia, Grafite quando ele estiver no modo escuro.' : 'Segue o tema do celular: Pérola de dia, Grafite quando o celular estiver no modo escuro.',
           'claro' => 'Pérola: fundo claro com o cartão principal grafite.',
           'linho' => 'Linho & Safira: fundo cor de linho e cartão principal azul safira, igual ao site.',
-          'oceano' => 'Nuvem · Oceano: claro e limpo, cartão principal azul-petróleo e menu escuro flutuante.',
-          'floresta' => 'Nuvem · Floresta: claro, cartão principal verde-escuro e detalhes em verde.',
-          'marinho' => 'Nuvem · Marinho: claro, cartão principal azul-marinho e detalhes em azul vivo.',
+          'leve' => 'Leve: branco e cinza bem claro, detalhes em verde. O mais limpo.',
+          'oceano' => 'Oceano: claro, com detalhes em azul-petróleo.',
+          'floresta' => 'Floresta: claro, com fundo esverdeado e detalhes em verde-escuro.',
+          'marinho' => 'Marinho: claro, com detalhes em azul vivo.',
           'esmeralda' => 'Noite & Esmeralda: escuro em verde-petróleo, cartão principal esmeralda e detalhes em menta e ouro.',
           _ => 'Grafite: tudo escuro, com detalhes em lavanda.',
         };
@@ -314,7 +315,7 @@ class _CartaoTema extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(color: t.destaque, borderRadius: BorderRadius.circular(99)),
-                    child: const Text('novo', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800)),
+                    child: const Text('novo', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
                   ),
                 ),
             ]),

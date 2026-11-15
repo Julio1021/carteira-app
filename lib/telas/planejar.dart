@@ -108,7 +108,7 @@ class _Link extends StatelessWidget {
         const SizedBox(width: 12),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(titulo, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+            Text(titulo, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
             const SizedBox(height: 2),
             Text(sub, style: TextStyle(color: G.apagado, fontSize: 12.5)),
             if (progresso != null) ...[
@@ -299,7 +299,7 @@ class _LinhaReceb extends StatelessWidget {
             SizedBox(
               width: 42,
               child: Column(children: [
-                Text(d == null ? '—' : d.substring(8, 10), style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17, height: 1.1, color: i.recebido ? G.apagado : G.texto)),
+                Text(d == null ? '—' : d.substring(8, 10), style: TextStyle(fontWeight: FontWeight.w700, fontSize: 17, height: 1.1, color: i.recebido ? G.apagado : G.texto)),
                 if (d != null)
                   Text(mesesLongos[int.parse(d.substring(5, 7)) - 1].substring(0, 3).toUpperCase(),
                       style: TextStyle(fontSize: 11, letterSpacing: .6, fontWeight: FontWeight.w700, color: G.apagado)),

@@ -302,7 +302,7 @@ class _Resumo extends StatelessWidget {
     return Column(children: [
       Text(t, style: TextStyle(color: G.texto2, fontSize: 12.5, fontWeight: FontWeight.w600)),
       const SizedBox(height: 2),
-      FittedBox(fit: BoxFit.scaleDown, child: Text(brl(v), style: TextStyle(color: cor, fontWeight: FontWeight.w800, fontSize: 14))),
+      FittedBox(fit: BoxFit.scaleDown, child: Text(brl(v), style: TextStyle(color: cor, fontWeight: FontWeight.w700, fontSize: 14))),
     ]);
   }
 }

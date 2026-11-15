@@ -111,7 +111,7 @@ class _CampoRapidoState extends State<CampoRapido> {
                     const SizedBox(width: 8),
                     Text(
                       r.pronto ? '${r.entrada ? '+ ' : '− '}${brlSempre(r.valor!)}' : 'falta o valor',
-                      style: TextStyle(fontWeight: r.pronto ? FontWeight.w800 : FontWeight.w500, fontSize: r.pronto ? 15 : 12.5, color: r.pronto ? (r.entrada ? G.pos : G.texto) : G.alerta),
+                      style: TextStyle(fontWeight: r.pronto ? FontWeight.w700 : FontWeight.w500, fontSize: r.pronto ? 15 : 12.5, color: r.pronto ? (r.entrada ? G.pos : G.texto) : G.alerta),
                     ),
                   ]),
                 ),

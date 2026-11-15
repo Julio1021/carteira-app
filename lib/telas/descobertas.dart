@@ -279,7 +279,7 @@ class _CartaoRetro extends StatelessWidget {
                         fit: BoxFit.scaleDown,
                         alignment: Alignment.bottomLeft,
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-                          const Text('Retrospectiva', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 17, letterSpacing: -.3)),
+                          const Text('Retrospectiva', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 17, letterSpacing: -.3)),
                           Text('Como foi $mes', style: const TextStyle(color: Color(0xD9FFFFFF), fontSize: 12.5)),
                         ]),
                       ),

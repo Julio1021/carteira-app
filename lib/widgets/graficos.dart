@@ -459,7 +459,7 @@ class _GraficoBarrasState extends State<GraficoBarras> {
                     return Padding(
                       padding: const EdgeInsets.only(top: 6),
                       child: Column(mainAxisSize: MainAxisSize.min, children: [
-                        Text(rotulos[i], style: _estiloEixo.copyWith(color: sel ? G.branco : G.apagado, fontWeight: sel ? FontWeight.w800 : FontWeight.w600)),
+                        Text(rotulos[i], style: _estiloEixo.copyWith(color: sel ? G.branco : G.apagado, fontWeight: sel ? FontWeight.w700 : FontWeight.w600)),
                         if (rodape != null)
                           Text(rodape![i], style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700, color: coresRodape?[i] ?? G.apagado)),
                       ]),
@@ -573,11 +573,11 @@ class _RoscaState extends State<Rosca> {
           transitionBuilder: (c, an) => FadeTransition(opacity: an, child: ScaleTransition(scale: Tween(begin: .85, end: 1.0).animate(an), child: c)),
           child: toc != null && tot > 0 && toc! < widget.valores.length
               ? Column(key: ValueKey(toc), mainAxisSize: MainAxisSize.min, children: [
-                  Text('${(widget.valores[toc!] / tot * 100).toStringAsFixed(0)}%', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: widget.cores[toc! % widget.cores.length])),
+                  Text('${(widget.valores[toc!] / tot * 100).toStringAsFixed(0)}%', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: widget.cores[toc! % widget.cores.length])),
                   Text('do total', style: TextStyle(color: G.apagado, fontSize: 11.5)),
                 ])
               : Column(key: const ValueKey('c'), mainAxisSize: MainAxisSize.min, children: [
-                  Text(widget.centro, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
+                  Text(widget.centro, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
                   if (widget.sub.isNotEmpty) Text(widget.sub, textAlign: TextAlign.center, style: TextStyle(color: G.apagado, fontSize: 11.5)),
                 ]),
         ),

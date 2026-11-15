@@ -29,7 +29,7 @@ class KpiTile extends StatelessWidget {
     final cor = k.cor ?? G.texto;
     // a cor fica no ícone; o número só ganha cor quando pede atenção
     final alerta = k.cor == G.neg || k.cor == G.alerta;
-    final estilo = TextStyle(fontSize: 22, fontWeight: FontWeight.w800, letterSpacing: -.5, color: alerta ? cor : G.texto);
+    final estilo = TextStyle(fontSize: 22, fontWeight: FontWeight.w700, letterSpacing: -.5, color: alerta ? cor : G.texto);
     return Cartao(
       onTap: k.onTap,
       padding: const EdgeInsets.fromLTRB(13, 12, 13, 12),
@@ -113,7 +113,7 @@ class Segmentos extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                       decoration: BoxDecoration(color: G.neg, borderRadius: BorderRadius.circular(99)),
-                      child: Text(marcas![i]!, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800)),
+                      child: Text(marcas![i]!, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
                     ),
                   ],
                 ]),
@@ -481,7 +481,7 @@ class TituloSecao extends StatelessWidget {
         // mesmo estilo do título dentro dos cartões (CabecalhoCartao): um padrão só
         padding: const EdgeInsets.fromLTRB(4, 6, 2, 10),
         child: Row(children: [
-          Expanded(child: Text(texto, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, letterSpacing: -.2))),
+          Expanded(child: Text(texto, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600))),
           if (direita != null) direita!,
         ]),
       );
@@ -511,7 +511,7 @@ class FaixaNumeros extends StatelessWidget {
                 FittedBox(
                   fit: BoxFit.scaleDown,
                   alignment: Alignment.centerLeft,
-                  child: Text(itens[i].$2, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: _cor(itens[i].$3))),
+                  child: Text(itens[i].$2, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: _cor(itens[i].$3))),
                 ),
               ]),
             ),

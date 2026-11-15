@@ -78,104 +78,20 @@ jobs:
               --virtual-time-budget=15000 \
               --screenshot="../../prints/$1.png" "http://localhost:8080/carteira-app/?demo=1$2" || true
           }
-          tirar a1-ativo "&tema=linho&aba=3&tela=ativo" 2300
-          tirar n1-inicio "&tema=linho" 1750
-          tirar n2-inicio-escuro "&tema=escuro" 1750
-          tirar n3-oculto "&tema=linho&oculto=1" 1100
-          tirar n4-rapido "&tema=linho&tela=rapido" 844
-          tirar n5-objetivos "&tema=linho&aba=3" 1500
-          tirar n6-objetivo-form "&tema=linho&aba=3&tela=objetivo" 1100
-          for sl in 0 1 2 3 4 5 6; do tirar "r$sl-retro" "&tema=linho&tela=retro&slide=$sl" 844; done
-          tirar n7-retro-pc "&tema=linho&tela=retro&slide=2" 900 1440 1
-          tirar e1-inicio "&tema=esmeralda" 1750
-          tirar e2-extrato "&tema=esmeralda&aba=1" 1100
-          tirar e3-analise "&tema=esmeralda&aba=1&analise=1" 2100
-          tirar e4-patrimonio "&tema=esmeralda&aba=3" 1900
-          tirar e5-ajustes "&tema=esmeralda&tela=ajustes" 900
-          tirar e6-relatorios "&tema=linho&aba=3&sub=3" 2300
-          tirar e7-planejar "&tema=esmeralda&aba=2" 1400
-          tirar e8-pc "&tema=esmeralda" 900 1440 1
-          tirar e9-pc-analise "&tema=linho&aba=1&analise=1" 1500 1440 1
-          tirar m1-inicio "&tema=ametista" 1750
-          tirar m2-analise "&tema=ametista&aba=1&analise=1" 2100
-          tirar m3-patrimonio "&tema=ametista&aba=3" 1900
-          tirar m4-ajustes "&tema=ametista&tela=ajustes" 1000
-          tirar m5-planejar "&tema=ametista&aba=2" 1400
-          tirar u1-oceano "&tema=oceano" 1750
-          tirar u2-floresta "&tema=floresta" 1750
-          tirar u3-marinho "&tema=marinho" 1750
-          tirar u4-extrato "&tema=oceano&aba=1" 1300
-          tirar u5-analise "&tema=oceano&aba=1&analise=1" 2100
-          tirar u6-patrimonio "&tema=oceano&aba=3" 1900
-          tirar u7-planejar "&tema=floresta&aba=2" 1400
-          tirar l1-limites "&tema=oceano&tela=limites" 2200
-          tirar l2-limites-esm "&tema=esmeralda&tela=limites" 2200
-          tirar l3-receb "&tema=oceano&aba=2" 1500
-          tirar l4-avisos "&tema=oceano&tela=avisos"
-          tirar u8-ajustes "&tema=marinho&tela=ajustes" 1100
-          tirar u9-lancar "&tema=oceano&tela=rapido" 844
-          tirar u10-pc "&tema=oceano" 900 1440 1
-          for tm in linho claro esmeralda escuro; do tirar "t-$tm" "&tema=$tm" 1750; tirar "t-$tm-pat" "&tema=$tm&aba=3" 1500; tirar "t-$tm-an" "&tema=$tm&aba=1&analise=1" 1700; done
-          # computador (tela larga)
-          tirar w1-inicio "&tema=claro" 900 1440 1
-          tirar w2-extrato "&tema=claro&aba=1" 900 1440 1
-          tirar w3-analise "&tema=claro&aba=1&analise=1" 1300 1440 1
-          tirar w3b-analise "&tema=claro&aba=1&analise=1" 900 1440 1
-          google-chrome --headless=new --no-sandbox --disable-gpu --window-size=1440,1300 --virtual-time-budget=15000 \
-            --enable-logging=stderr --v=0 --dump-dom "http://localhost:8080/carteira-app/?demo=1&tema=claro&aba=1&analise=1" \
-            2> ../../prints/w3-console.txt >/dev/null || true
-          tirar w4-patrimonio "&tema=claro&aba=3" 1000 1440 1
-          tirar w5-analise-inv "&tema=claro&aba=3&sub=4" 1100 1440 1
-          tirar w6-planejar "&tema=claro&aba=2" 1000 1440 1
-          tirar w7-lancar "&tema=claro&tela=lancar" 900 1440 1
-          tirar w8-inicio-linho "&tema=linho" 900 1440 1
-          tirar 1-inicio "" 1500
-          tirar 2-extrato "&aba=1"
-          tirar 3-menu-mais "&tela=menu"
-          tirar 4-novo-gasto "&tela=lancar"
-          tirar 5-nova-entrada "&tela=entrada"
-          tirar 6-limites "&tela=limites"
-          tirar 7-ajustes "&tela=ajustes"
-          tirar 8-planejar "&aba=2" 2200
-          tirar 9-cartoes "&tela=cartoes"
-          tirar 10-cartao "&tela=cartao" 1300
-          tirar 11-emprestimos "&tela=emprestimos"
-          tirar 12-patrimonio "&aba=3" 1900
-          tirar 13-lancar "&aba=3&sub=1" 1500
-          tirar 14-ativos "&aba=3&sub=2"
-          tirar 15-relatorios "&aba=3&sub=3" 2600
-          tirar 16-avisos "&tela=avisos"
-          tirar 17-busca "&tela=busca" 1400
-          tirar 18-importar "&tela=importar"
-          tirar 19-analise "&aba=1&analise=1" 2100
-          tirar c1-inicio "&tema=claro" 1500
-          tirar c2-extrato "&tema=claro&aba=1"
-          tirar c3-analise "&tema=claro&aba=1&analise=1" 2100
-          tirar c4-planejar "&tema=claro&aba=2" 2200
-          tirar c5-patrimonio "&tema=claro&aba=3" 1900
-          tirar c6-ajustes "&tema=claro&tela=ajustes"
-          tirar c7-lancar "&tema=claro&tela=lancar"
-          tirar i1-investido "&tela=invest"
-          tirar g1-grafico-cheio "&aba=1&analise=1&tela=grafico"
-          tirar l1-inicio "&tema=linho" 1500
-          tirar l2-extrato "&tema=linho&aba=1"
-          tirar l3-analise "&tema=linho&aba=1&analise=1" 2100
-          tirar l4-planejar "&tema=linho&aba=2" 2200
-          tirar l5-patrimonio "&tema=linho&aba=3" 1900
-          tirar l6-ajustes "&tema=linho&tela=ajustes"
-          tirar l7-lancar "&tema=linho&tela=lancar"
-          tirar p1-analise-inv "&aba=3&sub=4" 1900
-          tirar p2-analise-inv-claro "&tema=linho&aba=3&sub=4" 1900
-          tirar a1-abertura "&abertura=0.2"
-          tirar a2-abertura "&abertura=0.32"
-          tirar a2b-abertura "&abertura=0.55"
-          tirar a3-abertura "&abertura=0.7"
-          tirar a4-abertura-claro "&tema=claro&abertura=0.7"
-          tirar i2-extrato-inv "&aba=1"
-          tirar c8-cartao "&tema=claro&tela=cartao" 1300
-          tirar c9-avisos "&tema=claro&tela=avisos"
-          ls -la ../../prints
-
+          tirar v1-inicio "" 2000
+          tirar v2-lanc "&aba=1" 1700
+          tirar v3-analise "&aba=1&analise=1" 1700
+          tirar v4-planejar "&aba=2" 2200
+          tirar v5-mais "&aba=3" 1500
+          tirar v6-invest "&tela=patrimonio" 1900
+          tirar v7-limites "&tela=limites" 1900
+          tirar v8-lancar "&tela=lancar" 1100
+          tirar v9-ativo "&tela=ativo" 1900
+          tirar v10-cartoes "&tela=cartoes" 1500
+          tirar v11-ajustes "&tela=ajustes" 1900
+          for tm in linho claro esmeralda escuro oceano; do tirar "t-$tm" "&tema=$tm" 2000; done
+          tirar w1-inicio "" 1000 1440 1
+          tirar w2-lanc "&aba=1" 1000 1440 1
       - name: Guardar APK
         uses: actions/upload-artifact@v4
         with:

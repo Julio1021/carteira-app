@@ -21,7 +21,7 @@ class CampoValor extends StatelessWidget {
       autofocus: autofocus,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))],
-      style: grande ? const TextStyle(fontSize: 30, fontWeight: FontWeight.w800, letterSpacing: -1) : null,
+      style: grande ? const TextStyle(fontSize: 30, fontWeight: FontWeight.w700, letterSpacing: -1) : null,
       decoration: InputDecoration(labelText: rotulo, prefixText: 'R\$ ', hintText: '0,00', errorText: erro),
     );
   }
@@ -138,7 +138,7 @@ class TituloFolha extends StatelessWidget {
   const TituloFolha(this.t, {super.key, this.onExcluir});
   @override
   Widget build(BuildContext context) => Row(children: [
-        Expanded(child: Text(t, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800))),
+        Expanded(child: Text(t, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700))),
         if (onExcluir != null) IconButton(tooltip: 'Excluir', onPressed: onExcluir, icon: Icon(Icons.delete_outline_rounded, color: G.neg)),
       ]);
 }
@@ -227,7 +227,7 @@ class CaixaData extends StatelessWidget {
       height: 46,
       decoration: BoxDecoration(color: fundo, borderRadius: BorderRadius.circular(14)),
       child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Text(iso.substring(8, 10), style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: txt, height: 1)),
+        Text(iso.substring(8, 10), style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: txt, height: 1)),
         Text(mesesAbr[int.parse(iso.substring(5, 7)) - 1].toUpperCase(), style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: txt.withValues(alpha: .7))),
       ]),
     );

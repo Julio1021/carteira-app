@@ -49,6 +49,15 @@ const _baseNuvem = <String, int>{
 };
 
 const paletasNuvem = <PaletaNuvem>[
+  // Leve: branco, cinza bem claro e verde (o padrão)
+  PaletaNuvem('leve', 'Leve', {
+    ..._baseNuvem,
+    'fundo': 0xFFF5F6F8, 'branco': 0xFF15A05A, 'texto': 0xFF1D2433, 'texto2': 0xFF4B5466, 'apagado': 0xFF677083,
+    'lavanda': 0xFF15A05A, 'lavandaIcone': 0xFF128A4E, 'lavandaFundo': 0xFFE3F5EB, 'borda': 0xFFE7E9EE,
+    'navApagado': 0xFF8A92A3, 'navFundo': 0xFFFFFFFF, 'dica': 0xF21D2433, 'abasFundo': 0xFFEDEFF3, 'tintaBase': 0xFF1D2433,
+    'pos': 0xFF15A05A, 'neg': 0xFFE5484D, 'negTexto': 0xFFD93D42, 'saida': 0xFFE5484D,
+  }, [Color(0xFF17A65E), Color(0xFF13914F), Color(0xFF0F7A42)], Color(0xFFDDF5E8),
+      [Color(0xFF15A05A), Color(0xFF3B82F6), Color(0xFFF59E0B), Color(0xFFEF4444), Color(0xFF8B5CF6), Color(0xFF06B6D4), Color(0xFFEC4899), Color(0xFF94A3B8)]),
   PaletaNuvem('oceano', 'Oceano', {
     ..._baseNuvem,
     'fundo': 0xFFEEF3F4, 'branco': 0xFF0E7C8F, 'texto': 0xFF13283A, 'texto2': 0xFF46596A, 'apagado': 0xFF5F717D,
@@ -80,18 +89,19 @@ PaletaNuvem? paletaNuvem(String id) {
 }
 
 /// Aparência escolhida em Ajustes: 'auto' (segue o celular), 'claro', 'escuro', 'linho' (Linho & Safira) ou 'esmeralda' (Noite & Esmeralda).
-final aparencia = ValueNotifier<String>('oceano');
+final aparencia = ValueNotifier<String>('leve');
 
 Future<void> carregarAparencia() async {
   try {
     final sp = await SharedPreferences.getInstance();
-    // o visual Nuvem (Oceano) passa a ser o padrão; quem já usava vê ele uma vez
-    if (!(sp.getBool('nuvemApresentado') ?? false)) {
+    // o visual Leve passa a ser o padrão; quem já usava o app vê ele uma vez
+    if (!(sp.getBool('leveApresentado') ?? false)) {
+      await sp.setBool('leveApresentado', true);
       await sp.setBool('nuvemApresentado', true);
-      await sp.setString('aparencia', 'oceano');
+      await sp.setString('aparencia', 'leve');
     }
-    var a = sp.getString('aparencia') ?? 'oceano';
-    if (a == 'ametista') a = 'oceano'; // tema retirado
+    var a = sp.getString('aparencia') ?? 'leve';
+    if (a == 'ametista') a = 'leve'; // tema retirado
     aparencia.value = a;
   } catch (_) {}
 }
@@ -298,7 +308,7 @@ ThemeData temaGrafite() {
   TextStyle? f(TextStyle? e) => e?.copyWith(fontFeatures: tab);
   final t = TextTheme(
     displayLarge: f(t0.displayLarge), displayMedium: f(t0.displayMedium), displaySmall: f(t0.displaySmall),
-    headlineLarge: f(t0.headlineLarge?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -1)),
+    headlineLarge: f(t0.headlineLarge?.copyWith(fontWeight: FontWeight.w700, letterSpacing: -1)),
     headlineMedium: f(t0.headlineMedium), headlineSmall: f(t0.headlineSmall),
     titleLarge: f(t0.titleLarge?.copyWith(fontWeight: FontWeight.w700, letterSpacing: -.3)),
     titleMedium: f(t0.titleMedium?.copyWith(fontWeight: FontWeight.w700)),

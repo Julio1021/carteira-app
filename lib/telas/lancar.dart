@@ -24,7 +24,7 @@ Future<void> abrirMenuLancar(BuildContext context, {String rapidoInicial = ''}) 
       child: SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(16, 0, 16, 16 + MediaQuery.of(c).viewInsets.bottom),
         child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('Lançar', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
+          const Text('Lançar', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
           Text('O que você quer registrar?', style: TextStyle(color: G.apagado)),
           const SizedBox(height: 14),
           CampoRapido(aoSalvar: () => Navigator.pop(c), inicial: rapidoInicial),
@@ -49,7 +49,7 @@ Future<void> abrirMenuLancar(BuildContext context, {String rapidoInicial = ''}) 
               const SizedBox(width: 12),
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  const Text('Investido', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
+                  const Text('Investido', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 17)),
                   Text('Dinheiro que foi para investir (ou voltou de um resgate)', style: TextStyle(color: G.apagado, fontSize: 12.5)),
                 ]),
               ),
@@ -95,7 +95,7 @@ class _OpcaoMenu extends StatelessWidget {
           child: Icon(ic, color: destaque ? G.tinta : (corIcone ?? G.texto)),
         ),
         const SizedBox(height: 14),
-        Text(t, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
+        Text(t, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 17)),
         Text(sub, style: TextStyle(color: G.apagado, fontSize: 12.5)),
       ]),
     );
@@ -357,7 +357,7 @@ class _FormLancState extends State<FormLanc> {
         padding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Row(children: [
-            Expanded(child: Text(editando ? 'Editar lançamento' : (invest ? 'Investido' : (entrada ? 'Nova entrada' : 'Novo gasto')), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800))),
+            Expanded(child: Text(editando ? 'Editar lançamento' : (invest ? 'Investido' : (entrada ? 'Nova entrada' : 'Novo gasto')), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700))),
             if (editando) IconButton(tooltip: 'Excluir', onPressed: _excluir, icon: Icon(Icons.delete_outline_rounded, color: G.neg)),
           ]),
           const SizedBox(height: 12),
@@ -383,7 +383,7 @@ class _FormLancState extends State<FormLanc> {
             focusNode: valorF,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))],
-            style: TextStyle(fontSize: 34, fontWeight: FontWeight.w800, color: invest ? G.lavanda : (entrada ? G.pos : G.texto), letterSpacing: -1),
+            style: TextStyle(fontSize: 34, fontWeight: FontWeight.w700, color: invest ? G.lavanda : (entrada ? G.pos : G.texto), letterSpacing: -1),
             decoration: InputDecoration(prefixText: 'R\$ ', prefixStyle: TextStyle(fontSize: 22, color: G.apagado, fontWeight: FontWeight.w700), hintText: '0,00', errorText: erro),
             onChanged: (_) {
               if (erro != null) setState(() => erro = null);

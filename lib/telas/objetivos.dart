@@ -169,7 +169,7 @@ class _LinhaObjetivo extends StatelessWidget {
           cor: cor,
           centro: p.concluido
               ? const Icon(Icons.check_rounded, color: ouro, size: 26)
-              : Text('${(p.frac * 100).floor()}%', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: G.texto)),
+              : Text('${(p.frac * 100).floor()}%', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: G.texto)),
         ),
         const SizedBox(width: 14),
         Expanded(

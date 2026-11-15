@@ -68,12 +68,12 @@ class _ResumoCartaoWidget extends StatelessWidget {
           Row(children: [
             const Icon(Icons.credit_card_rounded, color: Colors.white),
             const SizedBox(width: 8),
-            Expanded(child: Text(c.nome, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17, color: Colors.white))),
+            Expanded(child: Text(c.nome, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 17, color: Colors.white))),
             _Selo(f.stTexto),
           ]),
           const SizedBox(height: 14),
           Text('Fatura de ${mesLongo(f.ym).toLowerCase()}', style: const TextStyle(color: Color(0xCCFFFFFF), fontSize: 12.5)),
-          ValorBrl(f.total, estilo: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: Colors.white)),
+          ValorBrl(f.total, estilo: const TextStyle(fontSize: 26, fontWeight: FontWeight.w700, color: Colors.white)),
           Text('Fecha ${dataCurta(f.fech)} · vence ${dataCurta(f.venc)}', style: const TextStyle(color: Color(0xCCFFFFFF), fontSize: 12.5)),
           if (r.disponivel != null) ...[
             const SizedBox(height: 12),
@@ -155,7 +155,7 @@ class _TelaCartaoState extends State<TelaCartao> {
               _Selo(sel.stTexto, tema: true),
             ]),
             const SizedBox(height: 4),
-            ValorBrl(sel.total, estilo: TextStyle(fontSize: 30, fontWeight: FontWeight.w800, color: G.texto)),
+            ValorBrl(sel.total, estilo: TextStyle(fontSize: 30, fontWeight: FontWeight.w700, color: G.texto)),
             Text('Fecha ${dataBr(sel.fech)} · vence ${dataBr(sel.venc)}', style: TextStyle(color: G.texto2, fontSize: 12.5)),
             if (sel.pago > 0) Text('Pago ${brl(sel.pago)} · falta ${brl(sel.falta)}', style: TextStyle(color: G.pos, fontSize: 12.5, fontWeight: FontWeight.w600)),
             if (sel.itens.any((i) => i.prevista)) Text('Inclui parcelas previstas, que ainda vão entrar.', style: TextStyle(color: G.apagado, fontSize: 12.5)),

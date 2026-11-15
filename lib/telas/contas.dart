@@ -34,7 +34,7 @@ class _CartaoContasState extends State<CartaoContas> {
     return Cartao(
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Row(children: [
-          const Expanded(child: Text('Contas a pagar', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800))),
+          const Expanded(child: Text('Contas a pagar', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700))),
           FilledButton.icon(
             onPressed: () => abrirFolha(context, const FormConta()),
             style: FilledButton.styleFrom(minimumSize: const Size(10, 38), padding: const EdgeInsets.symmetric(horizontal: 14)),
@@ -53,7 +53,7 @@ class _CartaoContasState extends State<CartaoContas> {
           FittedBox(
             alignment: Alignment.centerLeft,
             fit: BoxFit.scaleDown,
-            child: ValorBrl(m.falta, estilo: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, letterSpacing: -.8, color: m.nAtrasadas > 0 ? G.neg : G.texto)),
+            child: ValorBrl(m.falta, estilo: TextStyle(fontSize: 28, fontWeight: FontWeight.w700, letterSpacing: -.8, color: m.nAtrasadas > 0 ? G.neg : G.texto)),
           ),
           const SizedBox(height: 8),
           Barra(pct, cor: G.pos),

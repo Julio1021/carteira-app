@@ -59,12 +59,12 @@ class _CartaoEmpState extends State<_CartaoEmp> {
             width: 42,
             height: 42,
             decoration: BoxDecoration(color: G.lavandaFundo, borderRadius: BorderRadius.circular(14)),
-            child: Center(child: Text(e.pessoa.isEmpty ? '?' : e.pessoa[0].toUpperCase(), style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17, color: G.lavandaIcone))),
+            child: Center(child: Text(e.pessoa.isEmpty ? '?' : e.pessoa[0].toUpperCase(), style: TextStyle(fontWeight: FontWeight.w700, fontSize: 17, color: G.lavandaIcone))),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(e.pessoa, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
+              Text(e.pessoa, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 17)),
               Text('${brl(e.valor)} em ${dataBr(e.data)}${e.obs.isNotEmpty ? ' · ${e.obs}' : ''}', style: TextStyle(color: G.apagado, fontSize: 12.5)),
             ]),
           ),

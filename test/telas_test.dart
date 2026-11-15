@@ -14,14 +14,17 @@ void main() {
     await t.pumpAndSettle();
 
     expect(find.bySemanticsLabel('Início'), findsWidgets);
-    expect(find.text('Entrou'), findsOneWidget);
+    expect(find.text('Receitas'), findsOneWidget);
     await t.scrollUntilVisible(find.text('Últimos lançamentos'), 300, scrollable: find.byType(Scrollable).first);
     expect(find.text('Últimos lançamentos'), findsOneWidget);
 
     // ao rolar para baixo o menu se recolhe; rolar um pouco para cima traz de volta
     await t.drag(find.byType(Scrollable).first, const Offset(0, 160));
     await t.pumpAndSettle();
-    await t.tap(find.bySemanticsLabel('Extrato').first);
+    await t.tap(find.bySemanticsLabel('Mais').first);
+    await t.pumpAndSettle();
+    expect(find.text('Investimentos'), findsOneWidget);
+    await t.tap(find.bySemanticsLabel('Lançamentos').first);
     await t.pumpAndSettle();
     expect(find.text('Buscar no mês'), findsOneWidget);
 
@@ -43,6 +46,6 @@ void main() {
     expect(find.text('Diário da Carteira'), findsOneWidget);
     await t.pumpAndSettle();
     expect(find.text('Diário da Carteira'), findsNothing);
-    expect(find.text('Entrou'), findsOneWidget);
+    expect(find.text('Receitas'), findsOneWidget);
   });
 }

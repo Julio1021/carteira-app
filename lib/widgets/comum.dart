@@ -25,23 +25,21 @@ class Cartao extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final claro = G.claro;
-    final r = BorderRadius.circular(raio == 20 ? 24 : raio);
+    // visual leve: plano, borda fina e sem sombra
+    final r = BorderRadius.circular(raio == 20 ? 16 : raio);
     final caixa = DecoratedBox(
       decoration: BoxDecoration(
-        gradient: gradiente ?? G.gradCartao,
+        color: gradiente == null ? G.fundo2 : null,
+        gradient: gradiente,
         borderRadius: r,
-        border: Border.all(color: claro ? const Color(0x0A000000) : G.borda),
-        boxShadow: claro
-            ? [BoxShadow(color: G.sombra(0x55), blurRadius: 2, offset: const Offset(0, 1)), BoxShadow(color: G.sombra(0xAA), blurRadius: 24, offset: const Offset(0, 10), spreadRadius: -16)]
-            : [BoxShadow(color: G.sombra(0x66), blurRadius: 20, offset: const Offset(0, 8), spreadRadius: -14)],
+        border: Border.all(color: G.borda),
       ),
       child: Material(
         type: MaterialType.transparency,
         child: InkWell(borderRadius: r, onTap: onTap, child: Padding(padding: padding, child: _DentroDeCartao(child: child))),
       ),
     );
-    return onTap == null ? caixa : Toque(escala: .985, child: caixa);
+    return onTap == null ? caixa : Toque(escala: .99, child: caixa);
   }
 }
 
@@ -144,7 +142,7 @@ class LinhaLanc extends StatelessWidget {
           Text(
             inv != null ? '${inv.resgate ? '←' : '→'} ${brl(l.valor)}' : (l.ehEntrada ? brl(l.valor, sinal: true) : brl(-l.valor)),
             style: TextStyle(
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w700,
               fontSize: 14,
               color: inv != null ? G.lavanda : (entreContas ? G.apagado : (l.ehEntrada ? G.pos : G.texto)),
               fontFeatures: const [FontFeature.tabularFigures()],
@@ -200,7 +198,7 @@ class SeletorMes extends StatelessWidget {
         child: GestureDetector(
           onTap: ym == ymDe(hojeIso()) ? null : () => onMudar(ymDe(hojeIso())),
           child: Column(children: [
-            Text(mesLongo(ym), textAlign: TextAlign.center, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+            Text(mesLongo(ym), textAlign: TextAlign.center, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
             if (ym != ymDe(hojeIso())) Text('toque para voltar ao mês atual', style: TextStyle(fontSize: 11, color: escuro ? GE.apagado : G.apagado)),
           ]),
         ),
