@@ -602,7 +602,7 @@ class _MenuBaixo extends StatelessWidget {
           child: SizedBox(
             height: 58,
             child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Icon(on ? icOn : ic, semanticLabel: t, color: cor, size: 24),
+              Icon(on ? icOn : ic, color: cor, size: 24),
               const SizedBox(height: 3),
               Text(t, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 11, fontWeight: on ? FontWeight.w600 : FontWeight.w500, color: cor)),
             ]),
