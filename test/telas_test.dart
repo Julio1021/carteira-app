@@ -14,25 +14,20 @@ void main() {
     await t.pumpAndSettle();
 
     expect(find.text('Início'), findsWidgets);
-    expect(find.text('Receitas'), findsOneWidget);
+    expect(find.text('Entrou'), findsOneWidget);
     await t.dragUntilVisible(find.text('Últimos lançamentos'), find.byType(ListView).first, const Offset(0, -300));
     expect(find.text('Últimos lançamentos'), findsOneWidget);
 
     // ao rolar para baixo o menu se recolhe; rolar um pouco para cima traz de volta
     await t.drag(find.byType(ListView).first, const Offset(0, 160));
     await t.pumpAndSettle();
-    await t.tap(find.text('Mais').last);
-    await t.pumpAndSettle();
-    expect(find.text('Investimentos'), findsOneWidget);
-    await t.tap(find.text('Lançamentos').last);
+    await t.tap(find.text('Extrato').last);
     await t.pumpAndSettle();
     expect(find.text('Buscar no mês'), findsOneWidget);
-
-    await t.tap(find.bySemanticsLabel('Lançar'));
+    await t.tap(find.text('Início').last);
     await t.pumpAndSettle();
-    expect(find.text('O que você quer registrar?'), findsOneWidget);
-
-    await t.tap(find.text('Gasto').last);
+    await t.dragUntilVisible(find.text('Gasto').first, find.byType(ListView).first, const Offset(0, 300));
+    await t.tap(find.text('Gasto').first);
     await t.pumpAndSettle();
     expect(find.text('Novo gasto'), findsOneWidget);
   });
@@ -46,6 +41,6 @@ void main() {
     expect(find.text('Diário da Carteira'), findsOneWidget);
     await t.pumpAndSettle();
     expect(find.text('Diário da Carteira'), findsNothing);
-    expect(find.text('Receitas'), findsOneWidget);
+    expect(find.text('Entrou'), findsOneWidget);
   });
 }

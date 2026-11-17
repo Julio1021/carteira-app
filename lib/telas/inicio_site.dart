@@ -250,7 +250,7 @@ class HeroSite extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                       decoration: BoxDecoration(color: velho ? const Color(0x47FFC478) : const Color(0x29FFFFFF), borderRadius: BorderRadius.circular(99)),
                       child: Row(mainAxisSize: MainAxisSize.min, children: [
-                        Text('$atu · ajustar', style: const TextStyle(color: _branco, fontSize: 12, fontWeight: FontWeight.w600, height: 1.5)),
+                        Flexible(child: Text('$atu · ajustar', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: _branco, fontSize: 12, fontWeight: FontWeight.w600, height: 1.5))),
                         const SizedBox(width: 4),
                         const IconeSite(Ico.baixo, tam: 12, cor: _branco),
                       ]),
@@ -271,7 +271,7 @@ class HeroSite extends StatelessWidget {
               if (emConta != null && ym == ymDe(hojeIso())) ...[
                 const SizedBox(height: 8),
                 Row(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
-                  const Text('No fim do mês', style: TextStyle(color: _branco, fontSize: 13)),
+                  const Flexible(child: Text('No fim do mês', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: _branco, fontSize: 13))),
                   const SizedBox(width: 4),
                   Text('≈ ${brl(emConta + prev.aReceber - prev.faltaPagar)}', style: const TextStyle(color: _branco, fontSize: 15, fontWeight: FontWeight.w800)),
                 ]),
