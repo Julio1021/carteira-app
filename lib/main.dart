@@ -646,10 +646,9 @@ class _MenuBaixo extends StatelessWidget {
                     child: Center(
                       child: Container(
                         constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        alignment: Alignment.center,
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                         decoration: BoxDecoration(color: S.neg, borderRadius: BorderRadius.circular(99)),
-                        child: Text('$badge', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.white, height: 1.2)),
+                        child: Text('$badge', textAlign: TextAlign.center, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.white, height: 1.3)),
                       ),
                     ),
                   ),
