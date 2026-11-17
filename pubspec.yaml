@@ -7,6 +7,7 @@ environment:
   sdk: ">=3.4.0 <4.0.0"
 
 dependencies:
+  flutter_svg: ^2.2.1
   flutter:
     sdk: flutter
   flutter_localizations:
@@ -29,6 +30,25 @@ flutter:
   assets:
     - assets/icone.png
   fonts:
+    - family: Manrope
+      fonts:
+        - asset: assets/fonts/Manrope-400.ttf
+        - asset: assets/fonts/Manrope-500.ttf
+          weight: 500
+        - asset: assets/fonts/Manrope-600.ttf
+          weight: 600
+        - asset: assets/fonts/Manrope-700.ttf
+          weight: 700
+        - asset: assets/fonts/Manrope-800.ttf
+          weight: 800
+    - family: Bricolage
+      fonts:
+        - asset: assets/fonts/Bricolage-500.ttf
+          weight: 500
+        - asset: assets/fonts/Bricolage-700.ttf
+          weight: 700
+        - asset: assets/fonts/Bricolage-800.ttf
+          weight: 800
     - family: Jakarta
       fonts:
         - asset: assets/fonts/Jakarta-400.ttf

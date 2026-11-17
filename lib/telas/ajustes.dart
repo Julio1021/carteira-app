@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 
 import '../dados/drive.dart';
 import '../tema.dart';
+import '../tema_site.dart';
 import '../tela_cheia.dart';
 import 'abertura.dart';
 import '../widgets/movimento.dart';
@@ -154,33 +155,17 @@ class _Aparencia extends StatelessWidget {
     return ValueListenableBuilder<String>(
       valueListenable: aparencia,
       builder: (context, modo, _) {
-        final texto = switch (modo) {
-          'auto' => kIsWeb ? 'Segue o tema do computador: Pérola de dia, Grafite quando ele estiver no modo escuro.' : 'Segue o tema do celular: Pérola de dia, Grafite quando o celular estiver no modo escuro.',
-          'claro' => 'Pérola: fundo claro com o cartão principal grafite.',
-          'linho' => 'Linho & Safira: fundo cor de linho e cartão principal azul safira, igual ao site.',
-          'leve' => 'Leve: branco e cinza bem claro, detalhes em verde. O mais limpo.',
-          'oceano' => 'Oceano: claro, com detalhes em azul-petróleo.',
-          'floresta' => 'Floresta: claro, com fundo esverdeado e detalhes em verde-escuro.',
-          'marinho' => 'Marinho: claro, com detalhes em azul vivo.',
-          'esmeralda' => 'Noite & Esmeralda: escuro em verde-petróleo, cartão principal esmeralda e detalhes em menta e ouro.',
-          _ => 'Grafite: tudo escuro, com detalhes em lavanda.',
-        };
-        const perola = Color(0xFFF4F5F9), grafite = Color(0xFF101119);
+        final atual = temaSite(modo);
+        final texto = atual == null ? '' : '${atual.nome} · ${atual.tipo}. Os mesmos temas do site.';
         final temas = <_MiniTema>[
-          for (final p in paletasNuvem)
-            _MiniTema(p.id, p.nome,
-                fundo: Color(p.c['fundo']!),
-                cartao: Colors.white,
-                hero: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: p.hero),
-                destaque: Color(p.c['lavanda']!),
-                linha: Color(p.c['borda']!),
-                nav: Color(p.c['navFundo']!),
-),
-          _MiniTema('linho', 'Linho & Safira', fundo: const Color(0xFFF3EFE7), cartao: const Color(0xFFFFFFFF), hero: GH.gradSafira, destaque: const Color(0xFF2448C8), linha: const Color(0xFFD9D2C4), nav: const Color(0xFF161C2D)),
-          _MiniTema('claro', 'Pérola', fundo: perola, cartao: const Color(0xFFFFFFFF), hero: GE.gradHero, destaque: const Color(0xFF4F57D6), linha: const Color(0xFFD9DBE6), nav: const Color(0xFF12131C)),
-          _MiniTema('esmeralda', 'Noite & Esmeralda', fundo: const Color(0xFF081114), cartao: const Color(0xFF12252A), hero: GH.gradEsmeralda, destaque: const Color(0xFF34D8AC), linha: const Color(0xFF2A4A47), nav: const Color(0xFF16332F)),
-          _MiniTema('escuro', 'Grafite', fundo: grafite, cartao: const Color(0xFF1B1C28), hero: GE.gradHero, destaque: const Color(0xFFB9BFF6), linha: const Color(0xFF34364A), nav: const Color(0xFF272938)),
-          _MiniTema('auto', 'Automático', fundo: perola, fundoB: grafite, cartao: const Color(0xFFFFFFFF), cartaoB: const Color(0xFF1B1C28), hero: GE.gradHero, destaque: const Color(0xFF4F57D6), linha: const Color(0xFFB9BFF6), nav: const Color(0xFF12131C)),
+          for (final t in temasSite)
+            _MiniTema(t.id, t.nome,
+                fundo: t['bg'],
+                cartao: t['surface'],
+                hero: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [t['cta'], Color.lerp(t['cta'], Colors.black, .35)!]),
+                destaque: t['accent'],
+                linha: t['line'],
+                nav: t['surface']),
         ];
         return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           SingleChildScrollView(

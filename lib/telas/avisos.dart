@@ -5,6 +5,7 @@ import '../tema.dart';
 import '../util/fmt.dart';
 import '../widgets/comum.dart';
 import '../widgets/formulario.dart';
+import '../widgets/site.dart';
 import 'busca.dart';
 import 'limites.dart';
 
@@ -156,4 +157,52 @@ class _FolhaAvisos extends StatelessWidget {
 
   static Color _cor(int s) => switch (s) { 3 => G.neg, 2 => G.alerta, 0 => G.pos, _ => G.lavanda };
   static IconData _ico(int s) => switch (s) { 3 => Icons.warning_amber_rounded, 2 => Icons.trending_up_rounded, 0 => Icons.check_rounded, _ => Icons.info_outline_rounded };
+}
+
+/// Botão flutuante de avisos do site (.av-fab): círculo branco com lâmpada e o número.
+class FabAvisosSite extends StatelessWidget {
+  final void Function(String cat) verCategoria;
+  const FabAvisosSite({super.key, required this.verCategoria});
+  @override
+  Widget build(BuildContext context) {
+    final repo = RepoScope.of(context);
+    final l = avisosDoMes(repo);
+    if (l.isEmpty) return const SizedBox.shrink();
+    final vistos = repo.lista('av.vistos').toSet();
+    final novos = l.where((a) => !vistos.contains(a.k)).toList();
+    final grave = novos.any((a) => a.sev >= 3);
+    final novo = novos.isNotEmpty;
+    return GestureDetector(
+      onTap: () async {
+        await repo.guardarLista('av.vistos', {...vistos, ...l.map((a) => a.k)}.toList().reversed.take(300).toList());
+        if (context.mounted) abrirAvisos(context, verCategoria);
+      },
+      child: Stack(clipBehavior: Clip.none, children: [
+        Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: grave ? S.neg : S.surface,
+            border: Border.all(color: grave ? S.neg : (novo ? Color.lerp(S.line, S.accent, .4)! : S.line)),
+            boxShadow: const [BoxShadow(color: Color(0x66000000), blurRadius: 22, offset: Offset(0, 8), spreadRadius: -10)],
+          ),
+          alignment: Alignment.center,
+          child: IconeSite(Ico.lampada, tam: 22, cor: grave ? Colors.white : (novo ? S.accent : S.muted)),
+        ),
+        if (novo)
+          Positioned(
+            right: -3,
+            top: -3,
+            child: Container(
+              constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 5),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(color: grave ? Colors.white : S.accent, borderRadius: BorderRadius.circular(99), border: Border.all(color: S.bg, width: 2)),
+              child: Text('${novos.length}', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: grave ? S.neg : S.c('accent-ink'))),
+            ),
+          ),
+      ]),
+    );
+  }
 }

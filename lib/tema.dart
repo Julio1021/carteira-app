@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'tema_site.dart';
+
 /// Paleta "Grafite" fixa (tema escuro). Usada também no cartão principal,
 /// que continua escuro no tema claro ("Pérola").
 class GE {
@@ -89,19 +91,21 @@ PaletaNuvem? paletaNuvem(String id) {
 }
 
 /// Aparência escolhida em Ajustes: 'auto' (segue o celular), 'claro', 'escuro', 'linho' (Linho & Safira) ou 'esmeralda' (Noite & Esmeralda).
-final aparencia = ValueNotifier<String>('leve');
+final aparencia = ValueNotifier<String>('linsaf');
 
 Future<void> carregarAparencia() async {
   try {
     final sp = await SharedPreferences.getInstance();
     // o visual Leve passa a ser o padrão; quem já usava o app vê ele uma vez
-    if (!(sp.getBool('leveApresentado') ?? false)) {
+    // o visual do site (Linho & Safira) passa a ser o padrão; quem já usava vê ele uma vez
+    if (!(sp.getBool('siteApresentado') ?? false)) {
+      await sp.setBool('siteApresentado', true);
       await sp.setBool('leveApresentado', true);
       await sp.setBool('nuvemApresentado', true);
-      await sp.setString('aparencia', 'leve');
+      await sp.setString('aparencia', 'linsaf');
     }
-    var a = sp.getString('aparencia') ?? 'leve';
-    if (a == 'ametista') a = 'leve'; // tema retirado
+    var a = sp.getString('aparencia') ?? 'linsaf';
+    if (temaSite(a) == null) a = 'linsaf'; // só os temas do site
     aparencia.value = a;
   } catch (_) {}
 }
@@ -147,7 +151,19 @@ class G {
   /// Paleta do visual Nuvem (null quando o tema escolhido é outro). Só vale com [claro] = true.
   static PaletaNuvem? nuvem;
   static PaletaNuvem? get _nv => claro ? nuvem : null;
+  /// Tema copiado do site Diário da Carteira (tem prioridade sobre os outros).
+  static TemaSite? site;
+  static const _doSite = {
+    'fundo': 'bg', 'fundo2': 'surface', 'branco': 'cta', 'tinta': 'cta-ink', 'texto': 'ink', 'texto2': 'ink-2', 'apagado': 'muted',
+    'lavanda': 'accent', 'lavandaIcone': 'accent', 'lavandaFundo': 'accent-soft', 'borda': 'line', 'navApagado': 'muted', 'navFundo': 'surface',
+    'dica': 'ink', 'abasFundo': 'tabs-bg', 'campo': 'input', 'pos': 'pos', 'neg': 'neg', 'negTexto': 'neg', 'saida': 'neg', 'alerta': 'second', 'tintaBase': 'ink',
+  };
   static Color? _p(String k) {
+    final st = site;
+    if (st != null) {
+      final sk = _doSite[k];
+      if (sk != null) return st.c[sk];
+    }
     final v = _nv?.c[k];
     return v == null ? null : Color(v);
   }
@@ -229,7 +245,14 @@ class GH {
   /// Cartão principal colorido (texto branco e blocos de vidro).
   static bool get ametista => G.claro && G.ametista;
   static PaletaNuvem? get nuvem => G.claro ? G.nuvem : null;
-  static bool get colorido => safira || esmeralda || ametista || nuvem != null;
+  static TemaSite? get site => G.site;
+  static bool get colorido => site != null || safira || esmeralda || ametista || nuvem != null;
+  /// Cartão principal do site: degradê do botão principal (cta) até ele escurecido.
+  static LinearGradient get _gradSite => LinearGradient(
+        begin: const Alignment(-.5, -1),
+        end: const Alignment(.5, 1),
+        colors: [site!['cta'], Color.lerp(site!['cta'], Colors.black, .35)!],
+      );
   static const gradSafira = LinearGradient(
     begin: Alignment(-1, -1),
     end: Alignment(1, 1),
@@ -248,28 +271,31 @@ class GH {
     colors: [Color(0xFF4B25B8), Color(0xFF7A3FDB), Color(0xFFB04FD6)],
     stops: [0, .52, 1],
   );
-  static LinearGradient get gradHero => nuvem != null
+  static LinearGradient get gradHero => site != null
+      ? _gradSite
+      : nuvem != null
       ? LinearGradient(begin: const Alignment(-1, -1), end: const Alignment(1, 1), colors: nuvem!.hero, stops: const [0, .5, 1])
       : safira ? gradSafira : (esmeralda ? gradEsmeralda : (ametista ? gradAmetista : GE.gradHero));
   static Color get texto => colorido ? const Color(0xFFFFFFFF) : GE.texto;
-  static Color get texto2 => nuvem != null ? nuvem!.heroTexto2 : safira ? const Color(0xFFE4EBFF) : (esmeralda ? const Color(0xFFDDF7EE) : (ametista ? const Color(0xFFEDE4FF) : GE.texto2));
-  static Color get apagado => nuvem != null ? nuvem!.heroTexto2.withValues(alpha: .78) : safira ? const Color(0xC7E4EBFF) : (esmeralda ? const Color(0xC7DDF7EE) : (ametista ? const Color(0xC7EDE4FF) : GE.apagado));
+  static Color get texto2 => site != null ? site!['hero-ink2'] : nuvem != null ? nuvem!.heroTexto2 : safira ? const Color(0xFFE4EBFF) : (esmeralda ? const Color(0xFFDDF7EE) : (ametista ? const Color(0xFFEDE4FF) : GE.texto2));
+  static Color get apagado => site != null ? site!['hero-ink2'].withValues(alpha: .8) : nuvem != null ? nuvem!.heroTexto2.withValues(alpha: .78) : safira ? const Color(0xC7E4EBFF) : (esmeralda ? const Color(0xC7DDF7EE) : (ametista ? const Color(0xC7EDE4FF) : GE.apagado));
   static Color get alerta => colorido ? const Color(0xFFFFD58A) : GE.alerta;
-  static Color get lavanda => nuvem != null ? nuvem!.hero[1] : safira ? const Color(0xFF2448C8) : (esmeralda ? const Color(0xFF0B6B58) : (ametista ? const Color(0xFF5B2FC9) : GE.lavanda));
+  static Color get lavanda => site != null ? site!['cta'] : nuvem != null ? nuvem!.hero[1] : safira ? const Color(0xFF2448C8) : (esmeralda ? const Color(0xFF0B6B58) : (ametista ? const Color(0xFF5B2FC9) : GE.lavanda));
   static Color get chipInvest => colorido ? const Color(0xFFFFFFFF) : const Color(0x33B9BFF6);
-  static Color get sombra => nuvem != null ? nuvem!.hero[1].withValues(alpha: .45) : safira ? const Color(0x8C1F3FB5) : (esmeralda ? const Color(0x800C8068) : (ametista ? const Color(0x8C5B2FC9) : G.sombra(0xCC)));
+  static Color get sombra => site != null ? site!['cta'].withValues(alpha: .5) : nuvem != null ? nuvem!.hero[1].withValues(alpha: .45) : safira ? const Color(0x8C1F3FB5) : (esmeralda ? const Color(0x800C8068) : (ametista ? const Color(0x8C5B2FC9) : G.sombra(0xCC)));
   /// Blocos Entrou/Saiu: vidro branco translúcido nos cartões coloridos.
   static bool get vidro => colorido;
   static const vidroFundo = Color(0x21FFFFFF);
   static const vidroBorda = Color(0x38FFFFFF);
-  static Color get posIcone => nuvem != null ? const Color(0xFF14935C) : safira ? const Color(0xFF11764A) : (esmeralda ? const Color(0xFF0B6B58) : (ametista ? const Color(0xFF11764A) : GE.posEscuro));
-  static Color get negIcone => nuvem != null ? const Color(0xFFD6453D) : safira ? const Color(0xFFC23B2A) : (esmeralda ? const Color(0xFFC8243F) : (ametista ? const Color(0xFFC23B2A) : GE.negEscuro));
+  static Color get posIcone => site != null ? site!['pos'] : nuvem != null ? const Color(0xFF14935C) : safira ? const Color(0xFF11764A) : (esmeralda ? const Color(0xFF0B6B58) : (ametista ? const Color(0xFF11764A) : GE.posEscuro));
+  static Color get negIcone => site != null ? site!['neg'] : nuvem != null ? const Color(0xFFD6453D) : safira ? const Color(0xFFC23B2A) : (esmeralda ? const Color(0xFFC8243F) : (ametista ? const Color(0xFFC23B2A) : GE.negEscuro));
 }
 
 /// Monta o tema do app para o modo pedido sem mudar o modo atual.
-ThemeData temaDe(bool claro, {bool linho = false, bool noite = false, bool ametista = false, PaletaNuvem? nuvem}) {
-  final antes = G.claro, antesL = G.linho, antesN = G.noite, antesA = G.ametista, antesNv = G.nuvem;
+ThemeData temaDe(bool claro, {bool linho = false, bool noite = false, bool ametista = false, PaletaNuvem? nuvem, TemaSite? site}) {
+  final antes = G.claro, antesL = G.linho, antesN = G.noite, antesA = G.ametista, antesNv = G.nuvem, antesS = G.site;
   G.nuvem = nuvem;
+  G.site = site;
   G.claro = claro;
   G.linho = linho;
   G.noite = noite;
@@ -282,6 +308,7 @@ ThemeData temaDe(bool claro, {bool linho = false, bool noite = false, bool ameti
     G.noite = antesN;
     G.ametista = antesA;
     G.nuvem = antesNv;
+    G.site = antesS;
   }
 }
 
@@ -300,7 +327,7 @@ ThemeData temaGrafite() {
       onError: Colors.white,
     ).copyWith(brightness: G.claro ? Brightness.light : Brightness.dark),
     scaffoldBackgroundColor: G.fundo,
-    fontFamily: 'Jakarta',
+    fontFamily: 'Manrope',
   );
   final t0 = base.textTheme.apply(bodyColor: G.texto, displayColor: G.texto);
   // números com a mesma largura (colunas de valores alinhadas, como num extrato)

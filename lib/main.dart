@@ -13,7 +13,11 @@ import 'dados/analise.dart';
 import 'widgets/graficos.dart';
 import 'dados/drive.dart';
 import 'dados/indices.dart';
+import 'telas/inicio_site.dart';
+import 'widgets/site.dart';
+import 'dados/planejar.dart';
 import 'tema.dart';
+import 'tema_site.dart';
 import 'tela_cheia.dart';
 import 'widgets/movimento.dart';
 import 'telas/abertura.dart';
@@ -39,12 +43,13 @@ import 'telas/objetivos.dart';
 import 'telas/retro.dart';
 import 'telas/inicio_nuvem.dart';
 import 'telas/mais.dart';
+import 'telas/menu_site.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final demo = kIsWeb && Uri.base.queryParameters['demo'] == '1';
   if (demo) {
-    aparencia.value = Uri.base.queryParameters['tema'] ?? 'leve';
+    aparencia.value = Uri.base.queryParameters['tema'] ?? 'linsaf';
     if (Uri.base.queryParameters['oculto'] == '1') {
       privacidade.value = true;
       valoresOcultos = true;
@@ -68,7 +73,7 @@ Future<void> main() async {
 }
 
 /// Liga/desliga o tema claro a partir da escolha em Ajustes e do tema do celular.
-bool resolverClaro(String modo, Brightness celular) => modo == 'claro' || modo == 'linho' || modo == 'ametista' || paletaNuvem(modo) != null || (modo == 'auto' && celular == Brightness.light);
+bool resolverClaro(String modo, Brightness celular) => temaSite(modo) != null ? !temaSite(modo)!.escuro : modo == 'claro' || modo == 'linho' || modo == 'ametista' || paletaNuvem(modo) != null || (modo == 'auto' && celular == Brightness.light);
 
 void _barrasDoSistema() => aplicarBarras();
 
@@ -91,6 +96,7 @@ class _AppCarteiraState extends State<AppCarteira> with WidgetsBindingObserver {
     G.noite = aparencia.value == 'esmeralda';
     G.ametista = aparencia.value == 'ametista';
     G.nuvem = paletaNuvem(aparencia.value);
+    G.site = temaSite(aparencia.value);
     _barrasDoSistema();
   }
 
@@ -117,8 +123,10 @@ class _AppCarteiraState extends State<AppCarteira> with WidgetsBindingObserver {
     final claro = resolverClaro(aparencia.value, WidgetsBinding.instance.platformDispatcher.platformBrightness);
     final linho = aparencia.value == 'linho', noite = aparencia.value == 'esmeralda', ametista = aparencia.value == 'ametista';
     final nuvem = paletaNuvem(aparencia.value);
-    if ((claro == G.claro && linho == G.linho && noite == G.noite && ametista == G.ametista && nuvem == G.nuvem) || !mounted) return;
+    final site = temaSite(aparencia.value);
+    if ((claro == G.claro && linho == G.linho && noite == G.noite && ametista == G.ametista && nuvem == G.nuvem && site == G.site) || !mounted) return;
     G.nuvem = nuvem;
+    G.site = site;
     G.claro = claro;
     G.linho = linho;
     G.noite = noite;
@@ -205,7 +213,7 @@ class _CascaState extends State<Casca> {
   double? congelarAbertura;
   bool _decidiuAbertura = false;
 
-  static const _titulos = ['Início', 'Lançamentos', 'Planejar', 'Mais'];
+  static const _titulos = ['Início', 'Extrato', 'Planejar', 'Patrimônio'];
 
   @override
   void initState() {
@@ -338,19 +346,20 @@ class _CascaState extends State<Casca> {
   @override
   Widget build(BuildContext context) {
     final telas = <Widget>[
-      TelaInicio(
+      InicioSite(
         ym: ym,
         onMes: (m) => setState(() => ym = m),
         irExtrato: () => _irAba(1),
         irLimites: _abrirLimites,
         irExtratoFiltro: (f) => _irAba(1, filtro: f),
         irPlanejar: () => _irAba(2),
-        irCategoria: (c) => _irAba(1, filtro: 'saidas', cat: c),
-        irPatrimonio: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TelaPatrimonioPagina())),
+        irCartao: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TelaCartoes())),
+        irImportar: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TelaImportarExtrato())),
+        irBuscar: _buscar,
       ),
       TelaExtrato(ym: ym, onMes: (m) => setState(() => ym = m), filtroInicial: filtroExtrato, catInicial: catExtrato, analiseInicial: analiseDemo),
       TelaPlanejar(irLimites: _abrirLimites),
-      TelaMais(ym: ym),
+      TelaPatrimonio(key: ValueKey('pat$subPat'), subInicial: subPat),
     ];
     final largo = telaLarga(context);
     final telasVisiveis = largo
@@ -358,8 +367,9 @@ class _CascaState extends State<Casca> {
         : telas;
     final some = recolhido && !largo;
     final cabecalho = _Cabecalho(titulo: _titulos[aba], inicio: aba == 0, largo: largo, verCategoria: (c) => _irAba(1, filtro: 'saidas', cat: c));
+    // no celular, como no site, não há barra de título: o cartão do mês fica no topo
     final corpo = Column(children: [
-      largo ? cabecalho : _Recolhe(recolhido: some, child: cabecalho),
+      if (largo) cabecalho,
       Expanded(child: NotificationListener<ScrollNotification>(onNotification: largo ? null : _rolou, child: _Abas(aba: aba, children: telasVisiveis))),
     ]);
     return PopScope(
@@ -379,7 +389,18 @@ class _CascaState extends State<Casca> {
                 )
               : Scaffold(
                   extendBody: true,
-                  body: SafeArea(bottom: false, child: corpo),
+                  body: Stack(children: [
+                    SafeArea(bottom: false, child: corpo),
+                    Positioned(
+                      right: 16,
+                      bottom: 96 + MediaQuery.paddingOf(context).bottom,
+                      child: AnimatedSlide(
+                        offset: some ? const Offset(2, 0) : Offset.zero,
+                        duration: const Duration(milliseconds: 260),
+                        child: FabAvisosSite(verCategoria: (c) => _irAba(1, filtro: 'saidas', cat: c)),
+                      ),
+                    ),
+                  ]),
                   // some deslizando para baixo; volta com um pequeno "pulo"
                   bottomNavigationBar: AnimatedSlide(
                     offset: some ? const Offset(0, 1.25) : Offset.zero,
@@ -388,7 +409,7 @@ class _CascaState extends State<Casca> {
                     child: AnimatedOpacity(
                       opacity: some ? 0 : 1,
                       duration: Duration(milliseconds: some ? 200 : 260),
-                      child: IgnorePointer(ignoring: some, child: _MenuBaixo(aba: aba, onAba: _irAba, onMais: () => abrirMenuLancar(context))),
+                      child: IgnorePointer(ignoring: some, child: _MenuBaixo(aba: aba, onAba: _irAba, onMais: () => abrirMenuSite(context, ym))),
                     ),
                   ),
                 ),
@@ -586,63 +607,107 @@ class _MenuBaixo extends StatelessWidget {
   final VoidCallback onMais;
   const _MenuBaixo({required this.aba, required this.onAba, required this.onMais});
 
-  /// Visual Leve: barra branca com linha fina em cima, ícone + nome em cada
-  /// item e o "+" no meio, na cor de destaque.
+  /// Menu de baixo do site (.bnav): pílula branca flutuante, quatro abas e o
+  /// botão de tema/menu no meio. A aba escolhida fica na cor de destaque com um
+  /// tracinho em cima.
   Widget _nuvem(BuildContext context) {
-    Widget item(int i, IconData ic, IconData icOn, String t) {
+    final repo = RepoScope.of(context);
+    var atrasadas = 0;
+    if (repo.doTipo('pagar').isNotEmpty) atrasadas = mesContas(repo, ymDe(hojeIso())).nAtrasadas;
+    Widget item(int i, String d, String t, {int badge = 0}) {
       final on = aba == i;
-      final cor = on ? G.lavanda : G.apagado;
+      final cor = on ? S.accent : S.muted;
       return Expanded(
-        child: InkResponse(
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
           onTap: () {
             HapticFeedback.selectionClick();
             onAba(i);
           },
-          radius: 36,
           child: SizedBox(
-            height: 58,
-            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Icon(on ? icOn : ic, color: cor, size: 24),
-              const SizedBox(height: 3),
-              Text(t, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 11, fontWeight: on ? FontWeight.w600 : FontWeight.w500, color: cor)),
+            height: 51,
+            child: Stack(clipBehavior: Clip.none, alignment: Alignment.topCenter, children: [
+              if (on) Positioned(top: -7, child: Container(width: 22, height: 3, decoration: BoxDecoration(color: S.accent, borderRadius: const BorderRadius.vertical(bottom: Radius.circular(3))))),
+              Padding(
+                padding: const EdgeInsets.only(top: 6, bottom: 4),
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  IconeSite(d, tam: 22, cor: cor, traco: 2),
+                  const SizedBox(height: 3),
+                  Text(t, maxLines: 1, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: cor)),
+                ]),
+              ),
+              if (badge > 0)
+                Positioned(
+                  top: 4,
+                  left: 0,
+                  right: 0,
+                  child: Transform.translate(
+                    offset: const Offset(17, 0),
+                    child: Center(
+                      child: Container(
+                        constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(color: S.neg, borderRadius: BorderRadius.circular(99)),
+                        child: Text('$badge', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.white, height: 1.2)),
+                      ),
+                    ),
+                  ),
+                ),
             ]),
           ),
         ),
       );
     }
 
-    return Container(
-      decoration: BoxDecoration(color: G.fundo2, border: Border(top: BorderSide(color: G.borda))),
-      child: SafeArea(
-        top: false,
-        child: SizedBox(
-          height: 62,
-          child: Row(children: [
-          item(0, Icons.home_outlined, Icons.home_rounded, 'Início'),
-          item(1, Icons.receipt_long_outlined, Icons.receipt_long_rounded, 'Lançamentos'),
-          Expanded(
+    final t = S.t;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(10, 0, 10, 10 + MediaQuery.paddingOf(context).bottom),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+        decoration: BoxDecoration(
+          color: S.surface.withValues(alpha: S.escuro ? .96 : .94),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: S.line),
+          boxShadow: [BoxShadow(color: S.ink.withValues(alpha: .28), blurRadius: 30, offset: const Offset(0, 10), spreadRadius: -12)],
+        ),
+        child: Row(children: [
+          item(0, Ico.casa, 'Início'),
+          item(1, Ico.lista, 'Extrato'),
+          SizedBox(
+            width: 46,
             child: Center(
-              child: Toque(
-                escala: .9,
-                child: GestureDetector(
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    onMais();
-                  },
-                  child: Container(
-                    width: 50,
-                    height: 50,
-                    decoration: BoxDecoration(color: G.lavanda, shape: BoxShape.circle),
-                    child: const Icon(Icons.add_rounded, color: Colors.white, size: 28, semanticLabel: 'Lançar'),
+              child: GestureDetector(
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  onMais();
+                },
+                child: Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: S.surface,
+                    border: Border.all(color: S.line),
+                    boxShadow: const [BoxShadow(color: Color(0x4D000000), blurRadius: 10, offset: Offset(0, 3), spreadRadius: -4)],
+                  ),
+                  alignment: Alignment.center,
+                  // as três cores do tema, como no site
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: Stack(children: [
+                      for (final (k, x, y) in [('top', 0.0, 0.0), ('accent', 8.0, 0.0), ('cta', 4.0, 7.0)])
+                        Positioned(left: x, top: y, child: Container(width: 12, height: 12, decoration: BoxDecoration(color: t[k], shape: BoxShape.circle, border: Border.all(color: S.surface, width: 1.5)))),
+                    ]),
                   ),
                 ),
               ),
             ),
           ),
-          item(2, Icons.event_note_outlined, Icons.event_note_rounded, 'Planejar'),
-          item(3, Icons.menu_rounded, Icons.menu_rounded, 'Mais'),
-          ]),
-        ),
+          item(2, Ico.calendario, 'Planejar', badge: atrasadas),
+          item(3, Ico.patrimonio, 'Patrimônio'),
+        ]),
       ),
     );
   }

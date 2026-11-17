@@ -15,7 +15,7 @@ const categoriasGasto = <Categoria>[
   Categoria('contas', 'Contas da casa', Color(0xFF2F8FE8), Icons.bolt_rounded),
   Categoria('mercado', 'Mercado', Color(0xFF14A39A), Icons.shopping_cart_rounded),
   Categoria('alimentacao', 'Alimentação fora', Color(0xFFFF7A00), Icons.restaurant_rounded),
-  Categoria('transporte', 'Transporte', Color(0xFF2456C8), Icons.directions_car_rounded),
+  Categoria('transporte', 'Transporte', Color(0xFF003DA5), Icons.directions_car_rounded),
   Categoria('saude', 'Saúde', Color(0xFFCC092F), Icons.favorite_rounded),
   Categoria('educacao', 'Educação', Color(0xFF820AD1), Icons.school_rounded),
   Categoria('lazer', 'Lazer', Color(0xFFE8467C), Icons.sentiment_very_satisfied_rounded),
