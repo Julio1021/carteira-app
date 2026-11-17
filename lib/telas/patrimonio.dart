@@ -11,6 +11,8 @@ import '../dados/resumo.dart';
 import '../tema.dart';
 import '../util/fmt.dart';
 import '../widgets/comum.dart';
+import 'inicio_site.dart';
+import '../widgets/site.dart';
 import '../widgets/movimento.dart';
 import '../widgets/largo.dart';
 import '../widgets/painel.dart';
@@ -29,8 +31,6 @@ class _TelaPatrimonioState extends State<TelaPatrimonio> {
   late int sub = widget.subInicial;
   // abas visíveis: Visão geral, Análise e Ativos. Lançar (1) e Relatórios (3)
   // abrem pelos botões da Visão geral, com "Voltar".
-  static const abas = [0, 4, 2];
-  static const nomesAbas = ['Visão geral', 'Análise', 'Ativos'];
 
   @override
   Widget build(BuildContext context) {
@@ -43,39 +43,34 @@ class _TelaPatrimonioState extends State<TelaPatrimonio> {
       4 => AnaliseInvest(c: c),
       _ => _Relatorios(c: c),
     };
-    final naAba = abas.contains(sub);
     final largo = telaLarga(context);
+    const pilulas = [(0, 'Visão geral'), (1, 'Lançar valores'), (2, 'Ativos'), (3, 'Relatórios'), (4, 'Análise')];
     return Column(children: [
       Padding(
-        padding: largo ? const EdgeInsets.fromLTRB(28, 2, 28, 12) : const EdgeInsets.fromLTRB(12, 2, 12, 8),
-        child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 220),
-          child: naAba
-              ? Centralizar(
-                  key: const ValueKey('abas'),
-                  max: sub == 0 ? 1180 : (sub == 4 ? 1156 : 876),
-                  child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(maxWidth: largo ? 460 : double.infinity),
-                    child: Segmentos(nomes: nomesAbas, sel: abas.indexOf(sub), onSel: (i) => setState(() => sub = abas[i])),
+        padding: largo ? const EdgeInsets.fromLTRB(28, 14, 28, 14) : const EdgeInsets.fromLTRB(12, 14, 12, 14),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(children: [
+            for (final (i, t) in pilulas)
+              Padding(
+                padding: const EdgeInsets.only(right: 6),
+                child: Material(
+                  color: sub == i ? S.ink : S.surface,
+                  shape: StadiumBorder(side: BorderSide(color: sub == i ? S.ink : S.line)),
+                  child: InkWell(
+                    customBorder: const StadiumBorder(),
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      setState(() => sub = i);
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      child: Text(t, style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: sub == i ? S.bg : S.ink2)),
+                    ),
                   ),
                 ),
-                )
-              : Row(key: const ValueKey('voltar'), children: [
-                  TextButton.icon(
-                    onPressed: () {
-                      HapticFeedback.selectionClick();
-                      setState(() => sub = 0);
-                    },
-                    icon: const Icon(Icons.chevron_left_rounded),
-                    label: const Text('Visão geral'),
-                    style: TextButton.styleFrom(foregroundColor: G.lavanda, textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14), padding: const EdgeInsets.only(right: 10)),
-                  ),
-                  const Spacer(),
-                  Text(sub == 1 ? 'Lançar saldos' : 'Relatórios', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
-                  const SizedBox(width: 6),
-                ]),
+              ),
+          ]),
         ),
       ),
       Expanded(child: largo && sub != 0 ? Centralizar(max: sub == 4 ? 1180 : 900, child: corpo) : corpo),
@@ -119,64 +114,23 @@ class _Resumo extends StatelessWidget {
     final ultMeses = c.meses.where((m) => m.ym.compareTo(ymAdd(hojeYm, -11)) >= 0).toList();
     final amostra = _amostrar(c.dias, 90);
     final esquerda = <Widget>[
-      Cartao(
-        padding: const EdgeInsets.fromLTRB(18, 14, 14, 16),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Expanded(child: Text('Investido', style: TextStyle(color: G.apagado, fontSize: 12.5))),
-            TextButton(
-              onPressed: () => ir(1),
-              style: TextButton.styleFrom(foregroundColor: G.lavanda, minimumSize: const Size(10, 30), padding: const EdgeInsets.symmetric(horizontal: 8)),
-              child: Text(ult.data == hojeIso() ? 'Lançado hoje' : 'Lançar saldos de hoje', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-            ),
-          ]),
-          FittedBox(fit: BoxFit.scaleDown, child: ValorBrl(c.total, estilo: TextStyle(fontSize: 30, fontWeight: FontWeight.w700, letterSpacing: -.8, color: G.texto))),
-          const SizedBox(height: 4),
-          Text(
-            '${brl(c.ganhoUltimo, sinal: true)} (${pct(c.rUltimo, sinal: true)}) ${ult.data == hojeIso() ? 'no lançamento de hoje' : 'no lançamento de ${dataCurta(ult.data)}'}',
-            style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w500, color: c.ganhoUltimo >= 0 ? G.pos : G.negTexto),
-          ),
-          const SizedBox(height: 14),
-          Divider(height: 1, color: G.borda),
-          const SizedBox(height: 12),
-          Row(children: [
-            for (final (t, v) in [('Patrimônio total', patrimonio), ('Em conta · ${pct(1 - pctInv, casas: 0)}', emConta)])
-              Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(t, style: TextStyle(color: G.apagado, fontSize: 12.5)),
-                  const SizedBox(height: 2),
-                  Text(brl(v), style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
-                ]),
-              ),
-          ]),
-          const SizedBox(height: 10),
-          Barra(pctInv, cor: G.lavanda, altura: 5),
-        ]),
-      ),
-      const SizedBox(height: 16),
-      Row(children: [
-        _at(context, Icons.add_rounded, 'Lançar', () => ir(1), destaque: true),
-        _at(context, Icons.add_card_rounded, 'Novo ativo', () => abrirFolha(context, const FormAtivo())),
-        _at(context, Icons.insert_chart_outlined_rounded, 'Relatórios', () => ir(3)),
-        _at(context, Icons.trending_up_rounded, 'Projetar', () => ir(3)),
+      _HeroPat(c: c, emConta: emConta, patrimonio: patrimonio, pctInv: pctInv, irLancar: () => ir(1)),
+      const SizedBox(height: 14),
+      AtalhosSite(itens: [
+        (Ico.mais, 'Lançar', () => ir(1)),
+        ('<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>', 'Ativos', () => ir(2)),
+        ('<path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/>', 'Projetar', () => ir(3)),
+        ('<path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 6-6"/>', 'Relatórios', () => ir(3)),
+        (Ico.importar, 'Backup', () => Navigator.of(context).pushNamed('/ajustes')),
       ]),
-      const SizedBox(height: 16),
-      _Pendencias(c: c),
-      CartaoObjetivos(c: c),
     ];
-    final chips = ChipsAssunto(
-        nomes: [
-          'Ativos',
-          'Origem',
-          if (amostra.length >= 2) 'Evolução',
-          if (ultMeses.isNotEmpty) 'Mês a mês',
-        ],
-        construir: (context, i) {
-          final ns = ['Ativos', 'Origem', if (amostra.length >= 2) 'Evolução', if (ultMeses.isNotEmpty) 'Mês a mês'];
-          return switch (ns[i]) {
-            'Ativos' => Cartao(
+    final finais = <Widget>[_Pendencias(c: c), CartaoObjetivos(c: c)];
+    final ns = ['Ativos', 'Origem', if (ultMeses.isNotEmpty) 'Mês a mês', if (amostra.length >= 2) 'Evolução'];
+    Widget assunto(String nome) => switch (nome) {
+            'Ativos' => CartaoSite(
+        padding: const EdgeInsets.all(16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          CabecalhoCartao('Seus ativos', sub: 'Saldo de cada investimento no total de ${brl(c.total)}', acao: 'Gerenciar', onAcao: () => ir(2)),
+          CabecalhoSite('Seus ativos', sub: 'Saldo de cada investimento no total de ${brl(c.total)}', acao: 'Gerenciar', onAcao: () => ir(2)),
           LayoutBuilder(builder: (context, cons) {
             final larg = cons.maxWidth >= 520; // computador: rosca à esquerda, lista à direita
             final rosca = Rosca(
@@ -196,9 +150,10 @@ class _Resumo extends StatelessWidget {
           }),
         ]),
       ),
-            'Origem' => Cartao(
+            'Origem' => CartaoSite(
+        padding: const EdgeInsets.all(16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          CabecalhoCartao('De onde vem seu patrimônio', sub: c.investido > 0 ? '${pct(c.rendeu / c.investido, sinal: true)} desde ${dataBr(c.dias.first.data)}' : null),
+          CabecalhoSite('De onde vem seu patrimônio', sub: c.investido > 0 ? '${pct(c.rendeu / c.investido, sinal: true)} desde ${dataBr(c.dias.first.data)}' : null),
           Barra(c.total > 0 ? c.investido / c.total : 0, cor: G.neutroSerie, trilho: G.pos, altura: 10),
           const SizedBox(height: 12),
           Row(children: [
@@ -207,9 +162,10 @@ class _Resumo extends StatelessWidget {
           ]),
         ]),
       ),
-            'Evolução' => Cartao(
+            'Evolução' => CartaoSite(
+        padding: const EdgeInsets.all(16),
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            const CabecalhoCartao('Evolução'),
+            const CabecalhoSite('Evolução do patrimônio'),
             GraficoLinha(
               titulo: 'Evolução do patrimônio',
               series: [amostra.map((d) => d.total).toList(), amostra.map((d) => d.investido).toList()],
@@ -228,9 +184,10 @@ class _Resumo extends StatelessWidget {
             ]),
           ]),
         ),
-            _ => Cartao(
+            _ => CartaoSite(
+        padding: const EdgeInsets.all(16),
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            CabecalhoCartao('Rentabilidade mês a mês', sub: 'ganho em % sobre o saldo, sem contar aportes', acao: 'Relatório', onAcao: () => ir(3)),
+            CabecalhoSite('Rentabilidade mês a mês', sub: 'ganho em % sobre o saldo, sem contar aportes', acao: 'Relatório', onAcao: () => ir(3)),
             Wrap(spacing: 6, runSpacing: 6, children: [
               for (final m in ultMeses)
                 Container(
@@ -248,9 +205,12 @@ class _Resumo extends StatelessWidget {
             ]),
           ]),
         ),
-          };
-        },
-      );
+        };
+    final chips = Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      for (final n in ns) ...[const SizedBox(height: 18), assunto(n)],
+      const SizedBox(height: 18),
+      ...finais,
+    ]);
     return LayoutBuilder(builder: (context, cons) {
       if (cons.maxWidth >= 860) {
         // computador: cartão principal + atalhos/pendências em cima; embaixo,
@@ -270,7 +230,7 @@ class _Resumo extends StatelessWidget {
           ),
         ]);
       }
-      return ListView(padding: const EdgeInsets.fromLTRB(12, 0, 12, 150), children: [...esquerda, chips]);
+      return ListView(padding: const EdgeInsets.fromLTRB(12, 0, 12, 104), children: [...esquerda, chips]);
     });
   }
 
@@ -1402,3 +1362,118 @@ class _FolhaSemAtivo extends StatelessWidget {
   }
 }
 
+
+
+/// Cartão do topo do Patrimônio, como o do site (.pt-hx).
+class _HeroPat extends StatelessWidget {
+  final Carteira c;
+  final double emConta, patrimonio, pctInv;
+  final VoidCallback irLancar;
+  const _HeroPat({required this.c, required this.emConta, required this.patrimonio, required this.pctInv, required this.irLancar});
+  @override
+  Widget build(BuildContext context) {
+    const br = Colors.white;
+    final cta = S.cta;
+    final ult = c.ultimo!;
+    final emDia = ult.data == hojeIso();
+    Widget k(String rot, String v, String ic, Color cor) => Expanded(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+            decoration: BoxDecoration(color: const Color(0x21FFFFFF), border: Border.all(color: const Color(0x38FFFFFF)), borderRadius: BorderRadius.circular(16)),
+            child: Row(children: [
+              Container(width: 28, height: 28, decoration: const BoxDecoration(color: br, shape: BoxShape.circle), alignment: Alignment.center, child: IconeSite(ic, tam: 15, cor: cor)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(rot, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: br, fontSize: 11.5, fontWeight: FontWeight.w600, height: 1.5)),
+                  FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(v, style: const TextStyle(color: br, fontSize: 14.5, fontWeight: FontWeight.w700, height: 1.5))),
+                ]),
+              ),
+            ]),
+          ),
+        );
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        gradient: LinearGradient(begin: const Alignment(-.55, -1), end: const Alignment(.55, 1), colors: [cta, Color.lerp(cta, Colors.black, .35)!]),
+        boxShadow: [BoxShadow(color: cta.withValues(alpha: .55), blurRadius: 36, offset: const Offset(0, 18), spreadRadius: -18)],
+      ),
+      child: Stack(children: [
+        Positioned.fill(child: DecoratedBox(decoration: BoxDecoration(gradient: RadialGradient(center: const Alignment(1, -1), radius: 1.1, colors: [S.accent.withValues(alpha: .7), S.accent.withValues(alpha: 0)], stops: const [0, .6])))),
+        Positioned(right: -70, bottom: -110, child: Container(width: 260, height: 260, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withValues(alpha: .05)))),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Row(children: [
+              const Text('Investido', style: TextStyle(color: br, fontWeight: FontWeight.w600)),
+              ValueListenableBuilder<bool>(
+                valueListenable: privacidade,
+                builder: (_, o, __) => GestureDetector(
+                  onTap: () => definirPrivacidade(!o),
+                  child: Padding(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2), child: IconeSite(o ? Ico.olhoFechado : Ico.olho, tam: 15, cor: br.withValues(alpha: .85))),
+                ),
+              ),
+              const Spacer(),
+              GestureDetector(
+                onTap: irLancar,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(color: emDia ? const Color(0x29FFFFFF) : br, borderRadius: BorderRadius.circular(99)),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    if (emDia) ...[const IconeSite(Ico.certo, tam: 12, cor: br), const SizedBox(width: 5)],
+                    Text(emDia ? 'Em dia' : 'Lançar hoje', style: TextStyle(color: emDia ? br : cta, fontSize: 12.5, fontWeight: FontWeight.w700)),
+                  ]),
+                ),
+              ),
+            ]),
+            const SizedBox(height: 8),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(brl(c.total), style: const TextStyle(fontFamily: S.fonteNum, color: br, fontSize: 32, fontWeight: FontWeight.w800, letterSpacing: -.64, height: 1.5)),
+            ),
+            const SizedBox(height: 4),
+            Text.rich(
+              TextSpan(children: [
+                WidgetSpan(
+                  alignment: PlaceholderAlignment.middle,
+                  child: Container(
+                    margin: const EdgeInsets.only(right: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(color: (c.ganhoUltimo >= 0 ? const Color(0xFF22C55E) : const Color(0xFFEF4444)).withValues(alpha: .35), borderRadius: BorderRadius.circular(99)),
+                    child: Text('${brl(c.ganhoUltimo, sinal: true)} · ${pct(c.rUltimo, sinal: true)}', style: const TextStyle(color: br, fontWeight: FontWeight.w700, fontSize: 12.5)),
+                  ),
+                ),
+                TextSpan(text: ' no último lançamento, em ${dataBr(ult.data)}'),
+              ]),
+              style: const TextStyle(color: br, fontSize: 12.5, height: 1.5),
+            ),
+            const SizedBox(height: 14),
+            Row(children: [
+              k('Patrimônio total', brl(patrimonio), '<path d="M3 21h18M5 21V10M19 21V10M9 21V10M15 21V10M2 10l10-7 10 7z"/>', const Color(0xFF11764A)),
+              const SizedBox(width: 8),
+              k('Em conta · ${pct(1 - pctInv)}', brl(emConta), Ico.cartao, const Color(0xFFC23B2A)),
+            ]),
+            const SizedBox(height: 14),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(99),
+              child: SizedBox(
+                height: 6,
+                child: Stack(children: [
+                  const Positioned.fill(child: ColoredBox(color: Color(0x38FFFFFF))),
+                  Align(alignment: Alignment.centerLeft, child: FractionallySizedBox(widthFactor: pctInv.clamp(0, 1).toDouble(), heightFactor: 1, child: const ColoredBox(color: br))),
+                ]),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Row(children: [
+              Expanded(child: Text('${pct(pctInv)} investido', style: const TextStyle(color: br, fontSize: 11.5))),
+              Text('${pct(1 - pctInv)} em conta', style: const TextStyle(color: br, fontSize: 11.5)),
+            ]),
+          ]),
+        ),
+      ]),
+    );
+  }
+}
