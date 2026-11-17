@@ -677,7 +677,7 @@ class _MenuBaixo extends StatelessWidget {
           item(0, Ico.casa, 'Início'),
           item(1, Ico.lista, 'Extrato'),
           SizedBox(
-            width: 46,
+            width: 56,
             child: Center(
               child: GestureDetector(
                 onTap: () {
@@ -685,13 +685,13 @@ class _MenuBaixo extends StatelessWidget {
                   onMais();
                 },
                 child: Container(
-                  width: 34,
-                  height: 34,
+                  width: 44,
+                  height: 44,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: S.surface,
-                    border: Border.all(color: S.line),
-                    boxShadow: const [BoxShadow(color: Color(0x4D000000), blurRadius: 10, offset: Offset(0, 3), spreadRadius: -4)],
+                    color: S.accentSoft,
+                    border: Border.all(color: S.accent.withValues(alpha: .35), width: 1.5),
+                    boxShadow: [BoxShadow(color: S.accent.withValues(alpha: .35), blurRadius: 12, offset: const Offset(0, 4), spreadRadius: -4)],
                   ),
                   alignment: Alignment.center,
                   child: const _Engrenagem(),
@@ -814,9 +814,9 @@ class _EngrenagemState extends State<_Engrenagem> with SingleTickerProviderState
         turns: c,
         child: IconeSite(
           '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
-          tam: 20,
+          tam: 26,
           cor: S.accent,
-          traco: 1.9,
+          traco: 2,
         ),
       );
 }
