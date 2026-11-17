@@ -314,23 +314,42 @@ class _LinhaPos extends StatelessWidget {
   const _LinhaPos({required this.p, required this.total});
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
+    final frac = total > 0 ? p.valor / total : 0.0;
+    final destaque = p.indice == 0;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: destaque ? S.surface2 : null,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: destaque ? S.line : Colors.transparent),
+      ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Row(children: [
-          Container(width: 10, height: 10, decoration: BoxDecoration(color: p.cor, borderRadius: BorderRadius.circular(3))),
-          const SizedBox(width: 8),
-          Expanded(child: Text(p.a.nome, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600))),
-          Text(brl(p.valor), style: const TextStyle(fontWeight: FontWeight.w700)),
+          Container(width: 9, height: 9, decoration: BoxDecoration(color: p.cor, borderRadius: BorderRadius.circular(2))),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(p.a.nome, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w600, color: S.ink, height: 1.4)),
+              Text('${pct(frac, casas: 1)} da carteira', style: TextStyle(fontSize: 12, color: S.muted, height: 1.4)),
+            ]),
+          ),
+          Text(brl(p.valor), style: TextStyle(fontFamily: S.fonteNum, fontSize: 16, fontWeight: FontWeight.w700, color: S.ink)),
         ]),
         const SizedBox(height: 6),
-        Barra(total > 0 ? p.valor / total : 0, cor: p.cor, altura: 5),
-        const SizedBox(height: 4),
-        Row(children: [
-          Text('${pct(total > 0 ? p.valor / total : 0, casas: 1)} da carteira', style: TextStyle(color: G.apagado, fontSize: 12.5)),
-          const Spacer(),
-          Text('${brl(p.lucro, sinal: true)} (${pct(p.rent, sinal: true)})', style: TextStyle(color: p.lucro >= 0 ? G.texto2 : G.neg, fontSize: 12.5, fontWeight: FontWeight.w600)),
-        ]),
+        LayoutBuilder(
+          builder: (_, c) => Container(
+            height: 5,
+            decoration: BoxDecoration(color: S.surface2, borderRadius: BorderRadius.circular(99)),
+            alignment: Alignment.centerLeft,
+            child: Container(width: c.maxWidth * frac.clamp(0, 1), decoration: BoxDecoration(color: p.cor, borderRadius: BorderRadius.circular(99))),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text.rich(TextSpan(children: [
+          TextSpan(text: '${brl(p.lucro, sinal: true)} (${pct(p.rent, sinal: true)})', style: TextStyle(fontWeight: FontWeight.w700, color: p.lucro >= 0 ? S.pos : S.neg)),
+          if (p.ultima != null) TextSpan(text: ' · atualizado ${dataCurta(p.ultima!.data)}', style: TextStyle(color: S.muted)),
+        ]), style: const TextStyle(fontSize: 12)),
       ]),
     );
   }

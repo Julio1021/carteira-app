@@ -234,7 +234,7 @@ class G {
   static Color get neutroSerie => _nv != null ? Color(_nv!.series.last.toARGB32()) : claro ? const Color(0xFF9AA0BC) : const Color(0xFF7D839F);
   static const coresSerieNoite = [Color(0xFF4FE3C1), Color(0xFFF6C667), Color(0xFF6EA8FF), Color(0xFFFF8A7A), Color(0xFFB79CFF), Color(0xFF8EE36B), Color(0xFFF28DC0), Color(0xFF8AA39C)];
   static const coresSerieAmetista = [Color(0xFF6B3FD4), Color(0xFFE0832B), Color(0xFF12885A), Color(0xFFD43C7E), Color(0xFF2C8FD9), Color(0xFF1A9FA0), Color(0xFFC8553D), Color(0xFF857D99)];
-  static List<Color> get coresSerie => _nv != null ? _nv!.series : claro ? (_a ? coresSerieAmetista : (_l ? coresSerieLinho : coresSerieClaro)) : (_n ? coresSerieNoite : coresSerieEscuro);
+  static List<Color> get coresSerie => site != null ? site!.series : _nv != null ? _nv!.series : claro ? (_a ? coresSerieAmetista : (_l ? coresSerieLinho : coresSerieClaro)) : (_n ? coresSerieNoite : coresSerieEscuro);
 }
 
 /// Cores do cartão principal (Início e Patrimônio): grafite no Escuro e no
