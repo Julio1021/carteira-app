@@ -91,22 +91,62 @@ class InicioSite extends StatelessWidget {
     final r = ResumoMes.de(repo, ym);
     final prev = previsaoMes(repo, ym);
     const e = SizedBox(height: 18);
+    final temReceb = repo.rendas.isNotEmpty || agendaRecebimentos(repo).isNotEmpty;
+    return LayoutBuilder(builder: (context, cons) {
+      if (cons.maxWidth >= 860) {
+        // computador: cartão do mês, atalhos e recebimentos à esquerda;
+        // previsão e lançamentos à direita (como o site no PC)
+        return ListView(padding: const EdgeInsets.fromLTRB(28, 14, 28, 40), children: [
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1180),
+              child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                SizedBox(
+                  width: 440,
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                    HeroSite(r: r, ym: ym, onMes: onMes, prev: prev, irEntradas: () => irExtratoFiltro('entradas'), irSaidas: () => irExtratoFiltro('saidas')),
+                    e,
+                    _atalhos(context),
+                    if (temReceb) ...[e, RecebimentosSite(irPlanejar: irPlanejar)],
+                  ]),
+                ),
+                const SizedBox(width: 20),
+                Expanded(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                    PrevisaoSite(r: r, prev: prev, irExtrato: irExtrato, irLimites: irLimites),
+                    e,
+                    UltimosSite(r: r, irExtrato: irExtrato),
+                  ]),
+                ),
+              ]),
+            ),
+          ),
+        ]);
+      }
+      return _lista(context, r, prev, temReceb);
+    });
+  }
+
+  Widget _atalhos(BuildContext context) => AtalhosSite(itens: [
+        (Ico.mais, 'Gasto', () => abrirFormLanc(context)),
+        (Ico.cima, 'Entrada', () => abrirFormLanc(context, entrada: true)),
+        (Ico.cartao, 'Cartão', irCartao),
+        (Ico.importar, 'Importar', irImportar),
+        (Ico.buscar, 'Buscar', irBuscar),
+        (Ico.ajustes, 'Limites', irLimites),
+      ]);
+
+  Widget _lista(BuildContext context, ResumoMes r, ({double aReceber, double faltaPagar}) prev, bool temReceb) {
+    const e = SizedBox(height: 18);
     return ListView(
       padding: const EdgeInsets.fromLTRB(12, 14, 12, 104),
       children: [
         HeroSite(r: r, ym: ym, onMes: onMes, prev: prev, irEntradas: () => irExtratoFiltro('entradas'), irSaidas: () => irExtratoFiltro('saidas')),
         e,
-        AtalhosSite(itens: [
-          (Ico.mais, 'Gasto', () => abrirFormLanc(context)),
-          (Ico.cima, 'Entrada', () => abrirFormLanc(context, entrada: true)),
-          (Ico.cartao, 'Cartão', irCartao),
-          (Ico.importar, 'Importar', irImportar),
-          (Ico.buscar, 'Buscar', irBuscar),
-          (Ico.ajustes, 'Limites', irLimites),
-        ]),
+        _atalhos(context),
         e,
         PrevisaoSite(r: r, prev: prev, irExtrato: irExtrato, irLimites: irLimites),
-        if (repo.rendas.isNotEmpty || agendaRecebimentos(repo).isNotEmpty) ...[e, RecebimentosSite(irPlanejar: irPlanejar)],
+        if (temReceb) ...[e, RecebimentosSite(irPlanejar: irPlanejar)],
         e,
         UltimosSite(r: r, irExtrato: irExtrato),
       ],
@@ -372,7 +412,7 @@ class PrevisaoSite extends StatelessWidget {
     final proj = lim > 0 ? projecaoMes(g, r.ym) : null;
     final noRitmo = uso <= fracDia + .02;
     final cor = uso > 1 ? S.neg : (noRitmo ? S.pos : S.second);
-    final entradas = r.entrou + (mesAtual ? prev.aReceber : 0), saidas = r.saiu + (mesAtual ? prev.faltaPagar : 0);
+    final entradas = r.entrou + (mesAtual ? prev.aReceber : 0), saidas = r.saiu + r.agendado + (mesAtual ? prev.faltaPagar : 0);
     Widget linha(String d, String rot, double v, Color c, Color fundo) => Padding(
           padding: const EdgeInsets.only(bottom: 7),
           child: Row(children: [
@@ -531,7 +571,8 @@ class RecebimentosSite extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 4),
                     child: Column(children: [
                       Text('${x.data.substring(8, 10)}/${x.data.substring(5, 7)}', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: S.ink, height: 1.5)),
-                      Text(x.nome + (x.atrasado ? ' · atrasado' : ''), maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 11.5, color: S.ink2, height: 1.5)),
+                      // atrasado: o nome fica vermelho (o "· atrasado" escrito se perdia no corte)
+                      Text(x.nome, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 11.5, color: x.atrasado ? S.neg : S.ink2, fontWeight: x.atrasado ? FontWeight.w600 : FontWeight.w400, height: 1.5)),
                       const SizedBox(height: 7),
                       Container(
                         width: 16,
@@ -594,7 +635,7 @@ class UltimosSite extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final repo = RepoScope.of(context);
-    final ult = r.lancamentos.take(6).toList();
+    final ult = r.ateHoje.take(6).toList();
     return CartaoSite(
       padding: const EdgeInsets.all(16),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [

@@ -290,7 +290,7 @@ Future<double?> pedirLimite(BuildContext context, {required String titulo, doubl
             for (final (rot, v) in [('Igual à média', sug), ('10% a menos', redondo(media * .9))])
               ActionChip(
                 label: Text('$rot · ${brl(v)}'),
-                labelStyle: TextStyle(fontWeight: FontWeight.w600, fontSize: 12.5, color: G.lavanda),
+                labelStyle: TextStyle(fontFamily: 'Manrope', fontWeight: FontWeight.w600, fontSize: 12.5, color: G.lavanda),
                 onPressed: () => c.text = valorCampo(v),
               ),
           ]),

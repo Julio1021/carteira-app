@@ -23,7 +23,6 @@ import 'widgets/movimento.dart';
 import 'telas/abertura.dart';
 import 'telas/ajustes.dart';
 import 'telas/extrato.dart';
-import 'telas/inicio.dart';
 import 'telas/lancar.dart';
 import 'telas/limites.dart';
 import 'telas/cartoes.dart';
@@ -394,8 +393,10 @@ class _CascaState extends State<Casca> {
                     Positioned(
                       right: 16,
                       bottom: 96 + MediaQuery.paddingOf(context).bottom,
+                      // só no Início: nas listas (Extrato, Planejar) ela cobria valores e o
+                      // botão "Pagar". Nas outras abas, os avisos ficam no menu da engrenagem.
                       child: AnimatedSlide(
-                        offset: some ? const Offset(2, 0) : Offset.zero,
+                        offset: some || aba != 0 ? const Offset(2, 0) : Offset.zero,
                         duration: const Duration(milliseconds: 260),
                         child: FabAvisosSite(verCategoria: (c) => _irAba(1, filtro: 'saidas', cat: c)),
                       ),
@@ -418,29 +419,6 @@ class _CascaState extends State<Casca> {
       abrindo,
       congelarAbertura,
       () => setState(() => abrindo = false),
-    );
-  }
-}
-
-/// Recolhe o cabeçalho para cima (encolhendo o espaço) e o traz de volta descendo.
-class _Recolhe extends StatelessWidget {
-  final bool recolhido;
-  final Widget child;
-  const _Recolhe({required this.recolhido, required this.child});
-  @override
-  Widget build(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween<double>(end: recolhido ? 0 : 1),
-      duration: Duration(milliseconds: semAnimacao(context) ? 0 : (recolhido ? 220 : 320)),
-      curve: recolhido ? Curves.easeInCubic : Curves.easeOutCubic,
-      child: child,
-      builder: (_, v, filho) => ClipRect(
-        child: Align(
-          alignment: Alignment.bottomCenter,
-          heightFactor: v.clamp(0.0, 1.0).toDouble(),
-          child: Opacity(opacity: v.clamp(0.0, 1.0).toDouble(), child: filho),
-        ),
-      ),
     );
   }
 }
@@ -659,7 +637,6 @@ class _MenuBaixo extends StatelessWidget {
       );
     }
 
-    final t = S.t;
     return Padding(
       padding: EdgeInsets.fromLTRB(10, 0, 10, 10 + MediaQuery.paddingOf(context).bottom),
       child: Container(

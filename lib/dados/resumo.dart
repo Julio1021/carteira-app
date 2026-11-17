@@ -55,6 +55,8 @@ class ResumoMes {
   /// Aplicado − resgatado no mês.
   final double investiu, aplicou, resgatou;
   final double saiu, entrou, entreContas;
+  /// Gastos do mês com data depois de hoje (agendados): fora do "Saiu" e dos limites.
+  final double agendado;
   final Map<String, double> porCategoria;
   final Map<String, double> limites; // categoria -> limite mensal
   final double limiteTotal, gastoComLimite;
@@ -73,6 +75,7 @@ class ResumoMes {
     required this.aplicou,
     required this.resgatou,
     required this.saiu,
+    this.agendado = 0,
     required this.entrou,
     required this.entreContas,
     required this.porCategoria,
@@ -97,6 +100,12 @@ class ResumoMes {
     return l;
   }
 
+  /// Só o que já aconteceu (data até hoje), do mais novo ao mais velho.
+  List<Lanc> get ateHoje {
+    final h = hojeIso();
+    return lancamentos.where((l) => l.data.compareTo(h) <= 0).toList();
+  }
+
   factory ResumoMes.de(Repo repo, String ym) {
     final de = '$ym-01', ate = '$ym-${doisDig(diasNoMes(ym))}';
     final gs = repo.gastos.where((g) => g.data.compareTo(de) >= 0 && g.data.compareTo(ate) <= 0).toList()
@@ -117,8 +126,14 @@ class ResumoMes {
         return c != 0 ? c : b.criado.compareTo(a.criado);
       });
     final porCat = <String, double>{};
-    var saiu = 0.0;
+    var saiu = 0.0, agendado = 0.0;
+    final hoje = hojeIso();
     for (final g in gs) {
+      // com data futura (parcela, compra agendada): ainda não saiu
+      if (g.data.compareTo(hoje) > 0) {
+        agendado += g.valor;
+        continue;
+      }
       saiu += g.valor;
       porCat[g.cat] = (porCat[g.cat] ?? 0) + g.valor;
     }
@@ -158,6 +173,7 @@ class ResumoMes {
       aplicou: aplicou,
       resgatou: resgatou,
       saiu: saiu,
+      agendado: agendado,
       entrou: entrou,
       entreContas: proprias,
       porCategoria: porCat,

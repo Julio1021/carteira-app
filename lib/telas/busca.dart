@@ -76,7 +76,7 @@ class _TelaBuscaState extends State<TelaBusca> {
                 child: ChoiceChip(
                   selected: tipo == f[0],
                   label: Text(f[1]),
-                  labelStyle: TextStyle(fontWeight: FontWeight.w600, color: tipo == f[0] ? G.tinta : G.texto2),
+                  labelStyle: TextStyle(fontFamily: 'Manrope', fontWeight: FontWeight.w600, color: tipo == f[0] ? G.tinta : G.texto2),
                   onSelected: (_) => setState(() => tipo = f[0]),
                 ),
               ),
@@ -88,7 +88,7 @@ class _TelaBuscaState extends State<TelaBusca> {
                     selected: cat == cg.id,
                     avatar: Icon(cg.icone, size: 16, color: cat == cg.id ? G.tinta : cg.cor),
                     label: Text(cg.nome),
-                    labelStyle: TextStyle(fontWeight: FontWeight.w600, color: cat == cg.id ? G.tinta : G.texto2),
+                    labelStyle: TextStyle(fontFamily: 'Manrope', fontWeight: FontWeight.w600, color: cat == cg.id ? G.tinta : G.texto2),
                     onSelected: (s) => setState(() => cat = s ? cg.id : null),
                   ),
                 ),

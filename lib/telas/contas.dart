@@ -146,69 +146,6 @@ class _CartaoContasState extends State<CartaoContas> {
   }
 }
 
-class _TituloGrupo extends StatelessWidget {
-  final String nome;
-  final List<InstConta> l;
-  final bool semPadding;
-  const _TituloGrupo(this.nome, this.l, {this.semPadding = false});
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: semPadding ? EdgeInsets.zero : const EdgeInsets.only(bottom: 8, left: 2),
-        child: Text('$nome  ·  ${l.length} · ${brl(l.fold<double>(0, (a, i) => a + i.valor))}', style: TextStyle(fontWeight: FontWeight.w600, color: G.texto2, fontSize: 12.5)),
-      );
-}
-
-class _BlocoAtrasadas extends StatelessWidget {
-  final List<InstConta> lista;
-  final bool aberto;
-  final VoidCallback onTap;
-  const _BlocoAtrasadas({required this.lista, required this.aberto, required this.onTap});
-  @override
-  Widget build(BuildContext context) {
-    final por = <String, int>{};
-    for (final i in lista) {
-      por[i.b.nome] = (por[i.b.nome] ?? 0) + 1;
-    }
-    final nomes = por.entries.map((e) => e.value > 1 ? '${e.key} ×${e.value}' : e.key).join(', ');
-    return Container(
-      decoration: BoxDecoration(color: G.alerta.withValues(alpha: G.claro ? .10 : .12), borderRadius: BorderRadius.circular(18), border: Border.all(color: G.alerta.withValues(alpha: .35))),
-      clipBehavior: Clip.antiAlias,
-      child: Column(children: [
-        InkWell(
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(color: G.alerta.withValues(alpha: .22), borderRadius: BorderRadius.circular(12)),
-                child: Icon(Icons.schedule_rounded, color: G.alerta, size: 20),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text.rich(TextSpan(children: [
-                    TextSpan(text: '${lista.length} atrasada${lista.length > 1 ? 's' : ''} · '),
-                    TextSpan(text: brl(lista.fold<double>(0, (a, i) => a + i.valor)), style: TextStyle(color: G.negTexto)),
-                  ]), style: const TextStyle(fontWeight: FontWeight.w700)),
-                  Text(nomes, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: G.apagado, fontSize: 12.5)),
-                ]),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(color: G.v(0x14), borderRadius: BorderRadius.circular(99)),
-                child: Text(aberto ? 'Fechar' : 'Ver', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12.5)),
-              ),
-            ]),
-          ),
-        ),
-        if (aberto) Padding(padding: const EdgeInsets.fromLTRB(10, 0, 10, 10), child: CaixaLista([for (final i in lista) LinhaConta(i)])),
-      ]),
-    );
-  }
-}
-
 /// Uma conta na lista, com o botão Pagar e a sugestão de gasto encontrado.
 class LinhaConta extends StatelessWidget {
   final InstConta i;
@@ -304,7 +241,7 @@ class LinhaConta extends StatelessWidget {
                 const SizedBox(width: 8),
                 TextButton(
                   onPressed: () => repo.salvar(docRejeitar(i, i.sug!.id)),
-                  style: TextButton.styleFrom(foregroundColor: S.ink, textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                  style: TextButton.styleFrom(foregroundColor: S.ink, textStyle: const TextStyle(fontFamily: 'Manrope', fontSize: 12, fontWeight: FontWeight.w700)),
                   child: const Text('Não'),
                 ),
               ]),

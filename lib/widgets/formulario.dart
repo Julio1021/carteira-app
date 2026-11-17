@@ -50,7 +50,7 @@ class Opcoes<T> extends StatelessWidget {
         ChoiceChip(
           selected: v == valor,
           label: Text(t),
-          labelStyle: TextStyle(fontWeight: FontWeight.w600, color: v == valor ? G.tinta : G.texto2),
+          labelStyle: TextStyle(fontFamily: 'Manrope', fontWeight: FontWeight.w600, color: v == valor ? G.tinta : G.texto2),
           onSelected: (_) => onMudar(v),
         ),
     ]);
@@ -67,7 +67,7 @@ class CampoData extends StatelessWidget {
   Widget build(BuildContext context) {
     final h = hojeIso(), o = addDias(h, -1);
     final outra = data != h && (!comOntem || data != o);
-    TextStyle st(bool s) => TextStyle(fontWeight: FontWeight.w600, color: s ? G.tinta : G.texto2);
+    TextStyle st(bool s) => TextStyle(fontFamily: 'Manrope', fontWeight: FontWeight.w600, color: s ? G.tinta : G.texto2);
     return Wrap(spacing: 8, runSpacing: 8, children: [
       ChoiceChip(selected: data == h, label: const Text('Hoje'), labelStyle: st(data == h), onSelected: (_) => onMudar(h)),
       if (comOntem) ChoiceChip(selected: data == o, label: const Text('Ontem'), labelStyle: st(data == o), onSelected: (_) => onMudar(o)),

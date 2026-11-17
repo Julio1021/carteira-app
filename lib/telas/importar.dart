@@ -193,7 +193,7 @@ class _TelaImportarExtratoState extends State<TelaImportarExtrato> {
                   ChoiceChip(
                     selected: nomeIgual(c.nome, dono),
                     label: Text(c.nome),
-                    labelStyle: TextStyle(fontWeight: FontWeight.w600, color: nomeIgual(c.nome, dono) ? G.tinta : G.texto2),
+                    labelStyle: TextStyle(fontFamily: 'Manrope', fontWeight: FontWeight.w600, color: nomeIgual(c.nome, dono) ? G.tinta : G.texto2),
                     onSelected: (_) => setState(() {
                       dono = c.nome;
                       donoC.text = c.nome;

@@ -417,7 +417,7 @@ class _FormLancState extends State<FormLanc> {
                 ChoiceChip(
                   selected: resgate == r,
                   label: Text(t),
-                  labelStyle: TextStyle(fontWeight: FontWeight.w600, color: resgate == r ? G.tinta : G.texto2),
+                  labelStyle: TextStyle(fontFamily: 'Manrope', fontWeight: FontWeight.w600, color: resgate == r ? G.tinta : G.texto2),
                   onSelected: (_) => setState(() => resgate = r),
                 ),
             ]),
@@ -430,7 +430,7 @@ class _FormLancState extends State<FormLanc> {
                   ChoiceChip(
                     selected: ativo == a.id,
                     label: Text(a.nome),
-                    labelStyle: TextStyle(fontWeight: FontWeight.w600, color: ativo == a.id ? G.tinta : G.texto2),
+                    labelStyle: TextStyle(fontFamily: 'Manrope', fontWeight: FontWeight.w600, color: ativo == a.id ? G.tinta : G.texto2),
                     onSelected: (v) => setState(() => ativo = v ? a.id : null),
                   ),
               ]),
@@ -467,7 +467,7 @@ class _FormLancState extends State<FormLanc> {
                 selected: c.id == catAtual,
                 avatar: Icon(c.icone, size: 16, color: c.id == catAtual ? G.tinta : c.cor),
                 label: Text(c.nome),
-                labelStyle: TextStyle(fontWeight: FontWeight.w600, color: c.id == catAtual ? G.tinta : G.texto2),
+                labelStyle: TextStyle(fontFamily: 'Manrope', fontWeight: FontWeight.w600, color: c.id == catAtual ? G.tinta : G.texto2),
                 onSelected: (_) => setState(() {
                   if (entrada) {
                     catE = c.id;
@@ -488,7 +488,7 @@ class _FormLancState extends State<FormLanc> {
                 ChoiceChip(
                   selected: p == pag,
                   label: Text(p),
-                  labelStyle: TextStyle(fontWeight: FontWeight.w600, color: p == pag ? G.tinta : G.texto2),
+                  labelStyle: TextStyle(fontFamily: 'Manrope', fontWeight: FontWeight.w600, color: p == pag ? G.tinta : G.texto2),
                   onSelected: (_) => setState(() => pag = p),
                 ),
             ]),
@@ -497,17 +497,17 @@ class _FormLancState extends State<FormLanc> {
           Text('Data', style: TextStyle(fontWeight: FontWeight.w600, color: G.texto2)),
           const SizedBox(height: 10),
           Wrap(spacing: 8, runSpacing: 8, children: [
-            ChoiceChip(selected: data == h, label: const Text('Hoje'), labelStyle: TextStyle(fontWeight: FontWeight.w600, color: data == h ? G.tinta : G.texto2), onSelected: (_) => setState(() => data = h)),
+            ChoiceChip(selected: data == h, label: const Text('Hoje'), labelStyle: TextStyle(fontFamily: 'Manrope', fontWeight: FontWeight.w600, color: data == h ? G.tinta : G.texto2), onSelected: (_) => setState(() => data = h)),
             ChoiceChip(
                 selected: data == addDias(h, -1),
                 label: const Text('Ontem'),
-                labelStyle: TextStyle(fontWeight: FontWeight.w600, color: data == addDias(h, -1) ? G.tinta : G.texto2),
+                labelStyle: TextStyle(fontFamily: 'Manrope', fontWeight: FontWeight.w600, color: data == addDias(h, -1) ? G.tinta : G.texto2),
                 onSelected: (_) => setState(() => data = addDias(h, -1))),
             ChoiceChip(
               selected: data != h && data != addDias(h, -1),
               avatar: Icon(Icons.calendar_month_rounded, size: 16, color: data != h && data != addDias(h, -1) ? G.tinta : G.texto2),
               label: Text(data != h && data != addDias(h, -1) ? dataBr(data) : 'Outra data'),
-              labelStyle: TextStyle(fontWeight: FontWeight.w600, color: data != h && data != addDias(h, -1) ? G.tinta : G.texto2),
+              labelStyle: TextStyle(fontFamily: 'Manrope', fontWeight: FontWeight.w600, color: data != h && data != addDias(h, -1) ? G.tinta : G.texto2),
               onSelected: (_) => _escolherData(),
             ),
           ]),

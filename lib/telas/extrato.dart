@@ -138,10 +138,16 @@ class _TelaExtratoState extends State<TelaExtrato> {
     }).toList();
 
     // agrupa por dia
-    final grupos = <String, List<Lanc>>{};
+    final gruposTodos = <String, List<Lanc>>{};
     for (final l in lista) {
-      (grupos[l.data] ??= []).add(l);
+      (gruposTodos[l.data] ??= []).add(l);
     }
+    // os dias que já passaram primeiro (do mais novo ao mais velho); os
+    // agendados (data depois de hoje) vão para o fim, do mais próximo ao mais longe
+    final hojeX = hojeIso();
+    final passados = gruposTodos.keys.where((d) => d.compareTo(hojeX) <= 0);
+    final futuros = gruposTodos.keys.where((d) => d.compareTo(hojeX) > 0).toList()..sort();
+    final grupos = <String, List<Lanc>>{for (final d in [...passados, ...futuros]) d: gruposTodos[d]!};
     final totalFiltro = filtro == 'investido' ? lista.fold<double>(0, (a, l) => a + l.i!.liquido) : lista.fold<double>(0, (a, l) => a + l.efeito);
     final catsDoMes = r.porCategoria.keys.toList()..sort((a, b) => (r.porCategoria[b] ?? 0).compareTo(r.porCategoria[a] ?? 0));
 
@@ -345,7 +351,10 @@ class _TelaExtratoState extends State<TelaExtrato> {
                   Padding(
                     padding: const EdgeInsets.fromLTRB(4, 12, 4, 6),
                     child: Row(children: [
-                      Expanded(child: Text(rotuloDia(dia), maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: S.ink2))),
+                      Expanded(
+                        child: Text(dia.compareTo(hojeIso()) > 0 ? 'Agendado · ${rotuloDia(dia)}' : rotuloDia(dia),
+                            maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: dia.compareTo(hojeIso()) > 0 ? S.accent : S.ink2)),
+                      ),
                       Text(_totDia(ls), style: TextStyle(color: S.muted, fontWeight: FontWeight.w600, fontSize: 12)),
                     ]),
                   ),
@@ -365,21 +374,6 @@ String _totDia(List<Lanc> ls) {
   final sai = ls.where((l) => l.ehGasto).fold<double>(0, (a, l) => a + l.valor);
   final p = <String>[if (ent > 0) '+ ${brl(ent)}', if (sai > 0) '− ${brl(sai)}'];
   return p.isEmpty ? '' : p.join(' · ');
-}
-
-class _Resumo extends StatelessWidget {
-  final String t;
-  final double v;
-  final Color cor;
-  const _Resumo(this.t, this.v, this.cor);
-  @override
-  Widget build(BuildContext context) {
-    return Column(children: [
-      Text(t, style: TextStyle(color: G.texto2, fontSize: 12.5, fontWeight: FontWeight.w600)),
-      const SizedBox(height: 2),
-      FittedBox(fit: BoxFit.scaleDown, child: Text(brl(v), style: TextStyle(color: cor, fontWeight: FontWeight.w700, fontSize: 14))),
-    ]);
-  }
 }
 
 /// Painel da direita no computador, quando nenhum lançamento está aberto.

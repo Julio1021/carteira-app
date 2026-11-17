@@ -140,7 +140,7 @@ class _TelaCartaoState extends State<TelaCartao> {
                 child: ChoiceChip(
                   selected: f.ym == sel.ym,
                   label: Text('${mesesAbr[int.parse(f.ym.substring(5)) - 1]}/${f.ym.substring(2, 4)} · ${brl(f.total)}'),
-                  labelStyle: TextStyle(fontWeight: FontWeight.w600, color: f.ym == sel.ym ? G.tinta : G.texto2),
+                  labelStyle: TextStyle(fontFamily: 'Manrope', fontWeight: FontWeight.w600, color: f.ym == sel.ym ? G.tinta : G.texto2),
                   onSelected: (_) => setState(() => fat = f.ym),
                 ),
               ),

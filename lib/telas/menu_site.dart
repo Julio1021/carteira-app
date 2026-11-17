@@ -7,6 +7,7 @@ import '../tema.dart';
 import '../tema_site.dart';
 import '../widgets/comum.dart';
 import '../widgets/site.dart';
+import 'avisos.dart';
 import 'busca.dart';
 import 'cartoes.dart';
 import 'emprestimos.dart';
@@ -68,7 +69,6 @@ class _Menu extends StatelessWidget {
       controller: sc,
       padding: const EdgeInsets.fromLTRB(14, 10, 14, 30),
       children: [
-        Center(child: Container(width: 40, height: 4, margin: const EdgeInsets.only(bottom: 14), decoration: BoxDecoration(color: S.line, borderRadius: BorderRadius.circular(99)))),
         ValueListenableBuilder<bool>(
           valueListenable: privacidade,
           builder: (_, o, __) => bloco(SwitchListTile(
@@ -81,6 +81,10 @@ class _Menu extends StatelessWidget {
             subtitle: Text(o ? 'Os valores aparecem como •••' : 'Para usar o app em público', style: TextStyle(fontSize: 13, color: S.muted)),
           )),
         ),
+        link(Ico.lampada, 'Avisos', 'Limites, contas e recebimentos que pedem atenção', () {
+          Navigator.pop(context);
+          abrirAvisos(context, (_) {});
+        }),
         link(Ico.cartao, 'Cartões de crédito', 'Faturas, limites e compras parceladas', () => ir(const TelaCartoes())),
         link('<path d="M7 12l3 3 7-7"/><circle cx="12" cy="12" r="9"/>', 'Empréstimos', 'Dinheiro que você emprestou e vai receber', () => ir(const TelaEmprestimos())),
         link(Ico.importar, 'Importar extrato do banco', 'Arquivo OFX ou CSV', () => ir(const TelaImportarExtrato())),

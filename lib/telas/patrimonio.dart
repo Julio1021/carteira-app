@@ -280,34 +280,6 @@ class _Mini extends StatelessWidget {
       ]);
 }
 
-class _Bloco extends StatelessWidget {
-  final String rotulo;
-  final double valor;
-  final bool claro;
-  final IconData icone;
-  const _Bloco({required this.rotulo, required this.valor, required this.claro, required this.icone});
-  @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: GH.vidro ? GH.vidroFundo : (claro ? GE.branco : null),
-          gradient: GH.vidro || claro ? null : GE.gradLavanda,
-          border: GH.vidro ? Border.all(color: GH.vidroBorda) : null,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Row(children: [
-          Container(width: 30, height: 30, decoration: BoxDecoration(color: GH.vidro ? Colors.white : const Color(0x1612131C), borderRadius: BorderRadius.circular(10)), child: Icon(icone, size: 16, color: GH.vidro ? GH.lavanda : GE.tinta)),
-          const SizedBox(width: 9),
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(rotulo, maxLines: 1, style: TextStyle(color: GH.vidro ? GH.texto2 : const Color(0x9E12131C), fontWeight: FontWeight.w600, fontSize: 12.5))),
-              FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(brl(valor), style: TextStyle(color: GH.vidro ? Colors.white : GE.tinta, fontWeight: FontWeight.w700, fontSize: 14))),
-            ]),
-          ),
-        ]),
-      );
-}
-
 class _LinhaPos extends StatelessWidget {
   final PosAtivo p;
   final double total;
@@ -1225,22 +1197,6 @@ class _Kpi extends StatelessWidget {
         ]),
       );
 }
-
-class _Lin extends StatelessWidget {
-  final String t, v;
-  final Color? cor;
-  final bool forte;
-  const _Lin(this.t, this.v, {this.cor, this.forte = false});
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 2),
-        child: Row(children: [
-          Expanded(child: Text(t, style: TextStyle(color: G.texto2, fontSize: 12.5))),
-          Text(v, style: TextStyle(fontWeight: forte ? FontWeight.w700 : FontWeight.w600, color: cor ?? G.texto, fontSize: 14)),
-        ]),
-      );
-}
-
 
 /// Aviso: investimentos registrados que ainda não foram para nenhum ativo.
 /// "Para conferir": junta, num cartão só, o que precisa de atenção.

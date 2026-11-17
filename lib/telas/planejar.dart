@@ -105,42 +105,6 @@ class TelaPlanejar extends StatelessWidget {
   }
 }
 
-class _Link extends StatelessWidget {
-  final IconData icone;
-  final String titulo, sub;
-  final double? progresso;
-  final VoidCallback onTap;
-  const _Link({required this.icone, required this.titulo, required this.sub, required this.onTap, this.progresso});
-  @override
-  Widget build(BuildContext context) {
-    return Cartao(
-      onTap: onTap,
-      padding: const EdgeInsets.all(14),
-      child: Row(children: [
-        Container(
-          width: 42,
-          height: 42,
-          decoration: BoxDecoration(color: G.lavandaFundo, borderRadius: BorderRadius.circular(14)),
-          child: Icon(icone, color: G.lavandaIcone),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(titulo, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
-            const SizedBox(height: 2),
-            Text(sub, style: TextStyle(color: G.apagado, fontSize: 12.5)),
-            if (progresso != null) ...[
-              const SizedBox(height: 8),
-              Barra(progresso!, cor: progresso! >= 1 ? G.pos : G.lavanda, altura: 5),
-            ],
-          ]),
-        ),
-        Icon(Icons.chevron_right_rounded, color: G.apagado),
-      ]),
-    );
-  }
-}
-
 /// Próximos recebimentos: uma lista só, em ordem de data, com o próximo em
 /// destaque e quanto dá por dia até ele.
 class CartaoRecebimentos extends StatelessWidget {
@@ -483,7 +447,7 @@ class _FormRendaState extends State<FormRenda> {
               selected: nomeC.text == p.nome,
               avatar: Icon(p.icone, size: 16, color: nomeC.text == p.nome ? G.tinta : G.lavanda),
               label: Text(p.nome),
-              labelStyle: TextStyle(fontWeight: FontWeight.w600, color: nomeC.text == p.nome ? G.tinta : G.texto2),
+              labelStyle: TextStyle(fontFamily: 'Manrope', fontWeight: FontWeight.w600, color: nomeC.text == p.nome ? G.tinta : G.texto2),
               onSelected: (_) => _usarPreset(p),
             ),
         ]),

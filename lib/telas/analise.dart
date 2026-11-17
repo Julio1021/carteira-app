@@ -114,7 +114,7 @@ class _EntrouSaiu extends StatelessWidget {
               foregroundColor: G.texto2,
               side: BorderSide(color: G.borda),
               visualDensity: VisualDensity.compact,
-              textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12.5),
+              textStyle: const TextStyle(fontFamily: 'Manrope', fontWeight: FontWeight.w600, fontSize: 12.5),
             ),
             onSelectionChanged: (s) => onN(s.first),
           ),
