@@ -577,14 +577,14 @@ String subLancSite(Repo repo, Lanc l) {
 /// Valor com sinal, como no site: "− R$ 48,90" / "+ R$ 150,00".
 String valorLancSite(Lanc l) => l.ehEntrada ? '+ ${brl(l.valor)}' : (l.ehGasto ? '− ${brl(l.valor)}' : brl(l.valor));
 
-Widget linhaLancSite(BuildContext context, Repo repo, Lanc l) => LinhaTxSite(
+Widget linhaLancSite(BuildContext context, Repo repo, Lanc l, {VoidCallback? onTap}) => LinhaTxSite(
       cat: l.ehEntrada ? catEntrada(l.e!.cat) : (l.ehGasto ? catGasto(l.g!.cat) : catGasto('outros')),
       entrada: l.ehEntrada,
       titulo: l.desc,
       sub: subLancSite(repo, l),
       valor: valorLancSite(l),
       corValor: l.ehEntrada ? S.pos : null,
-      onTap: () => abrirFormLanc(context, doc: l.doc),
+      onTap: onTap ?? () => abrirFormLanc(context, doc: l.doc),
     );
 
 class UltimosSite extends StatelessWidget {

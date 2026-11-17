@@ -255,3 +255,12 @@ class ListaTxSite extends StatelessWidget {
         ]),
       );
 }
+
+/// Cor "#rrggbb" guardada nos dados do site (cartões, por exemplo).
+Color? corDeTexto(Object? v) {
+  if (v is! String) return null;
+  final h = v.replaceAll('#', '');
+  if (h.length != 6) return null;
+  final n = int.tryParse(h, radix: 16);
+  return n == null ? null : Color(0xFF000000 | n);
+}
