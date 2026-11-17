@@ -26,7 +26,8 @@ void main() {
     expect(find.text('Buscar no mês'), findsOneWidget);
     await t.tap(find.text('Início').last);
     await t.pumpAndSettle();
-    await t.dragUntilVisible(find.text('Gasto').first, find.byType(ListView).first, const Offset(0, 300));
+    await t.ensureVisible(find.text('Gasto').first);
+    await t.pumpAndSettle();
     await t.tap(find.text('Gasto').first);
     await t.pumpAndSettle();
     expect(find.text('Novo gasto'), findsOneWidget);
