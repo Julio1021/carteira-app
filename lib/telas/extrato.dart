@@ -154,11 +154,11 @@ class _TelaExtratoState extends State<TelaExtrato> {
             ),
           ),
         );
-    Widget pilula(String t, bool on, VoidCallback onTap, {Color? ponto}) => Padding(
+    Widget pilula(String t, bool on, VoidCallback onTap, {Color? ponto, bool origem = false}) => Padding(
           padding: const EdgeInsets.only(right: 6),
           child: Material(
             color: on ? S.accentSoft : S.surface,
-            shape: StadiumBorder(side: BorderSide(color: on ? S.accent.withValues(alpha: .35) : S.line)),
+            shape: StadiumBorder(side: BorderSide(color: on ? (origem ? S.accent : S.accent.withValues(alpha: .35)) : S.line)),
             child: InkWell(
               customBorder: const StadiumBorder(),
               onTap: onTap,
@@ -166,7 +166,7 @@ class _TelaExtratoState extends State<TelaExtrato> {
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
                   if (ponto != null) ...[Container(width: 9, height: 9, decoration: BoxDecoration(color: ponto, shape: BoxShape.circle)), const SizedBox(width: 6)],
-                  Text(t, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: on ? S.accent : S.ink2)),
+                  Text(t, style: TextStyle(fontSize: 13, fontWeight: origem ? FontWeight.w600 : FontWeight.w700, color: on ? (origem ? S.ink : S.accent) : S.ink2)),
                 ]),
               ),
             ),
@@ -243,8 +243,8 @@ class _TelaExtratoState extends State<TelaExtrato> {
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(children: [
-                  pilula('Todas', origem == null, () => setState(() => origem = null)),
-                  for (final (id, nome, cor) in origens) pilula(nome, origem == id, () => setState(() => origem = origem == id ? null : id), ponto: cor),
+                  pilula('Todas', origem == null, () => setState(() => origem = null), origem: true),
+                  for (final (id, nome, cor) in origens) pilula(nome, origem == id, () => setState(() => origem = origem == id ? null : id), ponto: cor, origem: true),
                 ]),
               ),
             ],
@@ -281,7 +281,7 @@ class _TelaExtratoState extends State<TelaExtrato> {
               ),
               const SizedBox(width: 8),
               Material(
-                color: cat != null ? S.accentSoft : S.surface,
+                color: cat != null ? S.accentSoft : S.surface2,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: cat != null ? S.accent : S.line)),
                 child: InkWell(
                   borderRadius: BorderRadius.circular(12),

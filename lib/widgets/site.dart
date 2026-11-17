@@ -249,7 +249,7 @@ class ListaTxSite extends StatelessWidget {
         ),
         child: Column(children: [
           for (var i = 0; i < linhas.length; i++) ...[
-            if (i > 0) Padding(padding: const EdgeInsets.only(left: 61, right: 10), child: Divider(height: 1, thickness: 1, color: S.line)),
+            if (i > 0) Padding(padding: const EdgeInsets.only(left: 61, right: 10), child: Divider(height: 1.5, thickness: 1.5, color: Color.lerp(S.line, S.muted, .25))),
             linhas[i],
           ],
         ]),
