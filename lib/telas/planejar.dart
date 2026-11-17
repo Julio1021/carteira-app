@@ -12,6 +12,8 @@ import '../widgets/painel.dart';
 import '../widgets/formulario.dart';
 import 'cartoes.dart';
 import 'contas.dart';
+import 'inicio_site.dart';
+import '../widgets/site.dart';
 import 'emprestimos.dart';
 
 class TelaPlanejar extends StatelessWidget {
@@ -26,43 +28,59 @@ class TelaPlanejar extends StatelessWidget {
     final emAberto = emps.where((e) => !dadosEmprestimo(repo, e).quitado).toList();
     final meta = repo.metaSobra;
     final r = ResumoMes.de(repo, ymDe(hojeIso()));
-    return ListView(padding: const EdgeInsets.fromLTRB(12, 4, 12, 150), children: emSequencia([
-      const CartaoRecebimentos(),
-      const SizedBox(height: 14),
+    void ir(Widget t) => Navigator.of(context).push(MaterialPageRoute(builder: (_) => t));
+    return ListView(padding: const EdgeInsets.fromLTRB(12, 14, 12, 104), children: emSequencia([
+      RecebimentosSite(irPlanejar: () => _editarRecebimentos(context)),
+      const SizedBox(height: 18),
       const CartaoContas(),
-      const SizedBox(height: 14),
-      _Link(
-        icone: Icons.credit_card_rounded,
+      const SizedBox(height: 18),
+      LinkSite(
+        icone: Ico.cartao,
         titulo: 'Cartões de crédito',
         sub: ccs.isEmpty ? 'Cadastre seus cartões e acompanhe as faturas' : '${ccs.length} cartão(ões) · faturas e parcelas',
-        onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TelaCartoes())),
+        onTap: () => ir(const TelaCartoes()),
       ),
       const SizedBox(height: 10),
-      _Link(
-        icone: Icons.track_changes_rounded,
+      LinkSite(
+        icone: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
         titulo: 'Meta de sobra do mês',
         sub: meta > 0 ? 'Guardar ${brl(meta)} por mês · este mês: ${brl(r.sobra)}' : 'Defina quanto quer que sobre no mês',
         progresso: meta > 0 ? r.sobra / meta : null,
         onTap: () => _editarMeta(context, meta),
       ),
       const SizedBox(height: 10),
-      _Link(
-        icone: Icons.tune_rounded,
+      LinkSite(
+        icone: Ico.ajustes,
         titulo: 'Limites de gastos',
-        sub: r.limiteTotal > 0 ? '${brl(r.gastoComLimite)} de ${brl(r.limiteTotal)}${r.temLimiteGeral ? ' no mês' : ' nas categorias'} · ${mesLongo(r.ym).toLowerCase()}' : 'Um teto para o mês e, se quiser, por categoria',
+        sub: r.limiteTotal > 0 ? '${brl(r.gastoComLimite)} de ${brl(r.limiteTotal)} em ${mesLongo(r.ym).toLowerCase()}' : 'Um teto para o mês e, se quiser, por categoria',
         onTap: irLimites,
       ),
       const SizedBox(height: 10),
-      _Link(
-        icone: Icons.handshake_rounded,
+      LinkSite(
+        icone: '<path d="M7 12l3 3 7-7"/><circle cx="12" cy="12" r="9"/>',
         titulo: 'Dinheiro emprestado',
         sub: emAberto.isEmpty
             ? (emps.isEmpty ? 'Controle o que você emprestou e as parcelas' : 'Tudo recebido')
             : '${emAberto.length} em aberto · faltam ${brl(emAberto.fold<double>(0, (a, e) => a + dadosEmprestimo(repo, e).falta))}',
-        onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TelaEmprestimos())),
+        onTap: () => ir(const TelaEmprestimos()),
       ),
     ]));
   }
+
+  /// "Ajustar" dos recebimentos: a lista completa, para criar, editar e remover.
+  Future<void> _editarRecebimentos(BuildContext context) => showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        useSafeArea: true,
+        backgroundColor: S.bg,
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(22))),
+        builder: (c) => DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: .75,
+          maxChildSize: .95,
+          builder: (c, sc) => ListView(controller: sc, padding: const EdgeInsets.fromLTRB(12, 14, 12, 30), children: const [CartaoRecebimentos()]),
+        ),
+      );
 
   Future<void> _editarMeta(BuildContext context, double atual) async {
     final c = TextEditingController(text: atual > 0 ? valorCampo(atual) : '');

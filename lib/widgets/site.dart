@@ -264,3 +264,73 @@ Color? corDeTexto(Object? v) {
   final n = int.tryParse(h, radix: 16);
   return n == null ? null : Color(0xFF000000 | n);
 }
+
+/// .btn.primary: botão cheio na cor principal, cantos de 8 (largura toda).
+class BotaoSite extends StatelessWidget {
+  final String texto;
+  final String? icone;
+  final VoidCallback? onTap;
+  final bool primario;
+  const BotaoSite(this.texto, {super.key, this.icone, this.onTap, this.primario = true});
+  @override
+  Widget build(BuildContext context) => Material(
+        color: primario ? S.cta : S.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8), side: BorderSide(color: primario ? S.cta : S.line)),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(8),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              if (icone != null) ...[IconeSite(icone!, tam: 16, cor: primario ? S.ctaInk : S.ink), const SizedBox(width: 6)],
+              Text(texto, style: TextStyle(fontWeight: FontWeight.w700, color: primario ? S.ctaInk : S.ink)),
+            ]),
+          ),
+        ),
+      );
+}
+
+/// .pl-l: atalho em cartão com ícone num quadrado azul-claro.
+class LinkSite extends StatelessWidget {
+  final String icone, titulo, sub;
+  final VoidCallback onTap;
+  final double? progresso;
+  const LinkSite({super.key, required this.icone, required this.titulo, required this.sub, required this.onTap, this.progresso});
+  @override
+  Widget build(BuildContext context) => Material(
+        color: S.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: S.line)),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(color: S.accentSoft, borderRadius: BorderRadius.circular(12)),
+                alignment: Alignment.center,
+                child: IconeSite(icone, tam: 19, cor: S.accent),
+              ),
+              const SizedBox(width: 11),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(titulo, style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700, color: S.ink, height: 1.5)),
+                  const SizedBox(height: 2),
+                  Text(sub, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: S.muted, height: 1.5)),
+                  if (progresso != null) ...[
+                    const SizedBox(height: 6),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(99),
+                      child: LinearProgressIndicator(value: progresso!.clamp(0, 1).toDouble(), minHeight: 5, color: progresso! >= 1 ? S.pos : S.accent, backgroundColor: S.surface2),
+                    ),
+                  ],
+                ]),
+              ),
+              IconeSite(Ico.dir, tam: 16, cor: S.muted),
+            ]),
+          ),
+        ),
+      );
+}
