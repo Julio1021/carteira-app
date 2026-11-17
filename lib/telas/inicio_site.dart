@@ -198,6 +198,12 @@ class HeroSite extends StatelessWidget {
             ),
           ),
         ),
+        // círculo decorativo grande no canto de baixo, como no site
+        Positioned(
+          right: -70,
+          bottom: -110,
+          child: Container(width: 260, height: 260, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withValues(alpha: .05))),
+        ),
         Container(
           decoration: const BoxDecoration(border: Border(top: BorderSide(color: Color(0x2EFFFFFF)))),
           padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
@@ -294,7 +300,10 @@ class HeroSite extends StatelessWidget {
                   height: 6,
                   child: Stack(children: [
                     const Positioned.fill(child: ColoredBox(color: Color(0x33FFFFFF))),
-                    FractionallySizedBox(widthFactor: (gl / lim).clamp(0, 1).toDouble(), child: const ColoredBox(color: _branco)),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: FractionallySizedBox(widthFactor: (gl / lim).clamp(0, 1).toDouble(), heightFactor: 1, child: const ColoredBox(color: _branco)),
+                    ),
                   ]),
                 ),
               ),
