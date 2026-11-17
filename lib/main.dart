@@ -671,7 +671,9 @@ class _MenuBaixo extends StatelessWidget {
           border: Border.all(color: S.line),
           boxShadow: [BoxShadow(color: S.ink.withValues(alpha: .28), blurRadius: 30, offset: const Offset(0, 10), spreadRadius: -12)],
         ),
-        child: Row(children: [
+        child: SizedBox(
+          height: 51,
+          child: Row(children: [
           item(0, Ico.casa, 'Início'),
           item(1, Ico.lista, 'Extrato'),
           SizedBox(
@@ -707,7 +709,8 @@ class _MenuBaixo extends StatelessWidget {
           ),
           item(2, Ico.calendario, 'Planejar', badge: atrasadas),
           item(3, Ico.patrimonio, 'Patrimônio'),
-        ]),
+          ]),
+        ),
       ),
     );
   }
