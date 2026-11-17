@@ -694,15 +694,7 @@ class _MenuBaixo extends StatelessWidget {
                     boxShadow: const [BoxShadow(color: Color(0x4D000000), blurRadius: 10, offset: Offset(0, 3), spreadRadius: -4)],
                   ),
                   alignment: Alignment.center,
-                  // as três cores do tema, como no site
-                  child: SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: Stack(children: [
-                      for (final (k, x, y) in [('top', 0.0, 0.0), ('accent', 8.0, 0.0), ('cta', 4.0, 7.0)])
-                        Positioned(left: x, top: y, child: Container(width: 12, height: 12, decoration: BoxDecoration(color: t[k], shape: BoxShape.circle, border: Border.all(color: S.surface, width: 1.5)))),
-                    ]),
-                  ),
+                  child: const _Engrenagem(),
                 ),
               ),
             ),
@@ -786,4 +778,45 @@ class _ApareceState extends State<_Aparece> with SingleTickerProviderStateMixin 
       },
     );
   }
+}
+
+
+/// Engrenagem do botão do meio, girando devagar (uma volta a cada 8 s).
+/// Fica parada quando o celular pede menos animações.
+class _Engrenagem extends StatefulWidget {
+  const _Engrenagem();
+  @override
+  State<_Engrenagem> createState() => _EngrenagemState();
+}
+
+class _EngrenagemState extends State<_Engrenagem> with SingleTickerProviderStateMixin {
+  late final c = AnimationController(vsync: this, duration: const Duration(seconds: 8));
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // parada também nos testes automáticos (uma animação sem fim os trava)
+    final emTeste = WidgetsBinding.instance.runtimeType.toString().contains('Test');
+    if (MediaQuery.disableAnimationsOf(context) || emTeste) {
+      c.stop();
+    } else if (!c.isAnimating) {
+      c.repeat();
+    }
+  }
+
+  @override
+  void dispose() {
+    c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => RotationTransition(
+        turns: c,
+        child: IconeSite(
+          '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+          tam: 20,
+          cor: S.accent,
+          traco: 1.9,
+        ),
+      );
 }
