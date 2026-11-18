@@ -17,6 +17,7 @@ import '../widgets/movimento.dart';
 import '../widgets/largo.dart';
 import '../widgets/painel.dart';
 import 'objetivos.dart';
+import 'patrimonio_site.dart';
 import '../widgets/formulario.dart';
 import '../widgets/graficos.dart';
 
@@ -125,7 +126,7 @@ class _Resumo extends StatelessWidget {
       ]),
     ];
     final finais = <Widget>[_Pendencias(c: c), CartaoObjetivos(c: c)];
-    final ns = ['Ativos', 'Origem', if (ultMeses.isNotEmpty) 'Mês a mês', if (amostra.length >= 2) 'Evolução'];
+    final ns = ['Ativos', 'Origem', if (ultMeses.isNotEmpty) 'Mês a mês', if (amostra.length >= 2) 'Evolução', 'Alocação', if (ultMeses.isNotEmpty) 'Rentabilidade', if (amostra.length >= 2 && posicoes.length > 1) 'Por ativo', 'Posição'];
     Widget assunto(String nome) => switch (nome) {
             'Ativos' => CartaoSite(
         padding: const EdgeInsets.all(16),
@@ -162,14 +163,18 @@ class _Resumo extends StatelessWidget {
           ]),
         ]),
       ),
+            'Alocação' => AlocacaoClasseSite(c: c),
+            'Rentabilidade' => RentMensalSite(meses: ultMeses),
+            'Por ativo' => EvolucaoAtivoSite(amostra: amostra, posicoes: posicoes),
+            'Posição' => PosicaoAtualSite(c: c, posicoes: posicoes, verRelatorios: () => ir(3)),
             'Evolução' => CartaoSite(
         padding: const EdgeInsets.all(16),
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            const CabecalhoSite('Evolução do patrimônio'),
+            const CabecalhoSite('Evolução do patrimônio', sub: 'Patrimônio comparado ao total que você aplicou'),
             GraficoLinha(
               titulo: 'Evolução do patrimônio',
               series: [amostra.map((d) => d.total).toList(), amostra.map((d) => d.investido).toList()],
-              cores: [G.pos, G.neutroSerie],
+              cores: [S.accent, S.second],
               tracejada: const [false, true],
               formatoY: curto,
               rotulosX: [dataCurta(amostra.first.data), dataCurta(amostra[amostra.length ~/ 2].data), dataCurta(amostra.last.data)],
@@ -178,9 +183,9 @@ class _Resumo extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Row(children: [
-              _Legenda(G.pos, 'Saldo'),
+              _Legenda(S.accent, 'Patrimônio'),
               SizedBox(width: 14),
-              _Legenda(G.neutroSerie, 'Quanto você aplicou'),
+              _Legenda(S.second, 'Valor aplicado'),
             ]),
           ]),
         ),
@@ -188,20 +193,35 @@ class _Resumo extends StatelessWidget {
         padding: const EdgeInsets.all(16),
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             CabecalhoSite('Rentabilidade mês a mês', sub: 'ganho em % sobre o saldo, sem contar aportes', acao: 'Relatório', onAcao: () => ir(3)),
-            Wrap(spacing: 6, runSpacing: 6, children: [
-              for (final m in ultMeses)
-                Container(
-                  width: 52,
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  decoration: BoxDecoration(
-                    color: (m.rent >= 0 ? G.pos : G.neg).withValues(alpha: (m.rent.abs() * 40).clamp(.12, .55).toDouble()),
-                    borderRadius: BorderRadius.circular(12),
+            Row(children: [
+              Container(width: 10, height: 10, decoration: BoxDecoration(color: S.neg, borderRadius: BorderRadius.circular(2))),
+              const SizedBox(width: 6),
+              Text('perda', style: TextStyle(fontSize: 12, color: S.muted)),
+              const SizedBox(width: 14),
+              Container(width: 10, height: 10, decoration: BoxDecoration(color: S.pos, borderRadius: BorderRadius.circular(2))),
+              const SizedBox(width: 6),
+              Text('ganho · em %', style: TextStyle(fontSize: 12, color: S.muted)),
+            ]),
+            const SizedBox(height: 10),
+            LayoutBuilder(builder: (context, cons) {
+              const gap = 6.0;
+              final w = (cons.maxWidth - gap * 5) / 6;
+              return Wrap(spacing: gap, runSpacing: gap, children: [
+                for (final m in ultMeses)
+                  Container(
+                    width: w,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Color.lerp(S.surface, m.rent >= 0 ? S.pos : S.neg, (.45 + m.rent.abs() * 40).clamp(.45, .95).toDouble()),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(children: [
+                      Text(mesesAbr[int.parse(m.ym.substring(5)) - 1][0].toUpperCase(), style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: .85), fontWeight: FontWeight.w600)),
+                      Text(pct(m.rent, casas: 1).replaceAll('%', '').replaceAll('+', ''), style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Colors.white)),
+                    ]),
                   ),
-                  child: Column(children: [
-                    Text(mesesAbr[int.parse(m.ym.substring(5)) - 1], style: TextStyle(fontSize: 11, color: G.texto2, fontWeight: FontWeight.w600)),
-                    Text(pct(m.rent, casas: 1).replaceAll('%', ''), style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700)),
-                  ]),
-                ),
+              ]);
+            }),
             ]),
           ]),
         ),
