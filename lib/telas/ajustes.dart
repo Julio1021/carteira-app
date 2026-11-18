@@ -12,6 +12,7 @@ import '../tela_cheia.dart';
 import 'abertura.dart';
 import '../widgets/movimento.dart';
 import '../widgets/comum.dart';
+import '../widgets/site.dart';
 import '../widgets/formulario.dart';
 import 'importar.dart';
 import 'inicio_nuvem.dart';
@@ -331,7 +332,7 @@ class _AberturaAjuste extends StatelessWidget {
     return AnimatedBuilder(
       animation: Listenable.merge([aberturaLigada, aberturaValor]),
       builder: (context, _) => Container(
-        decoration: BoxDecoration(color: G.v(0x07), borderRadius: BorderRadius.circular(18), border: Border.all(color: G.borda)),
+        decoration: BoxDecoration(color: S.c('card'), borderRadius: BorderRadius.circular(18), border: Border.all(color: S.bordaCartao), boxShadow: S.escuro ? null : S.sombraCartao),
         child: Column(children: [
           SwitchListTile(
             value: aberturaLigada.value,
@@ -460,7 +461,7 @@ class _TelaCheiaAjuste extends StatelessWidget {
     return AnimatedBuilder(
       animation: Listenable.merge([telaCheia, telaCheiaTipo]),
       builder: (context, _) => Container(
-        decoration: BoxDecoration(color: G.v(0x07), borderRadius: BorderRadius.circular(18), border: Border.all(color: G.borda)),
+        decoration: BoxDecoration(color: S.c('card'), borderRadius: BorderRadius.circular(18), border: Border.all(color: S.bordaCartao), boxShadow: S.escuro ? null : S.sombraCartao),
         child: Column(children: [
           SwitchListTile(
             value: telaCheia.value,
