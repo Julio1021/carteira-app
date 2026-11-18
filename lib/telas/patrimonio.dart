@@ -222,7 +222,6 @@ class _Resumo extends StatelessWidget {
                   ),
               ]);
             }),
-            ]),
           ]),
         ),
         };
