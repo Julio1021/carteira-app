@@ -1,6 +1,7 @@
 // Peças da organização "combinada": quadradinhos de números (2 por linha),
 // chips que mostram um assunto por vez (com deslize) e o botão de período.
 import 'package:flutter/material.dart';
+import 'site.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
@@ -481,7 +482,7 @@ class TituloSecao extends StatelessWidget {
         // mesmo estilo do título dentro dos cartões (CabecalhoCartao): um padrão só
         padding: const EdgeInsets.fromLTRB(4, 6, 2, 10),
         child: Row(children: [
-          Expanded(child: Text(texto, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600))),
+          Expanded(child: Text(texto, style: TextStyle(fontFamily: S.fonteNum, fontSize: 17, fontWeight: FontWeight.w700, letterSpacing: -.15, color: S.ink))),
           if (direita != null) direita!,
         ]),
       );

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'site.dart';
+
 import '../dados/categorias.dart';
 import '../dados/repo.dart';
 import '../dados/resumo.dart';
@@ -25,14 +27,15 @@ class Cartao extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // visual leve: plano, borda fina e sem sombra
-    final r = BorderRadius.circular(raio == 20 ? 16 : raio);
+    // igual ao .card do site: superfície, borda clara, cantos de 18 e sombra leve
+    final r = BorderRadius.circular(raio == 20 ? 18 : raio);
     final caixa = DecoratedBox(
       decoration: BoxDecoration(
-        color: gradiente == null ? G.fundo2 : null,
+        color: gradiente == null ? S.c('card') : null,
         gradient: gradiente,
         borderRadius: r,
-        border: Border.all(color: G.borda),
+        border: Border.all(color: S.bordaCartao),
+        boxShadow: gradiente == null && !S.escuro ? S.sombraCartao : null,
       ),
       child: Material(
         type: MaterialType.transparency,
@@ -57,8 +60,8 @@ class CabecalhoCartao extends StatelessWidget {
       child: Row(children: [
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(titulo, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
-            if (sub != null) Padding(padding: const EdgeInsets.only(top: 2), child: Text(sub!, style: TextStyle(color: G.apagado, fontSize: 12.5))),
+            Text(titulo, style: TextStyle(fontFamily: S.fonteNum, fontSize: 16.5, fontWeight: FontWeight.w700, letterSpacing: -.08, color: S.ink)),
+            if (sub != null) Padding(padding: const EdgeInsets.only(top: 2), child: Text(sub!, style: TextStyle(color: S.muted, fontSize: 12.5, height: 1.4))),
           ]),
         ),
         if (acao != null)
@@ -83,18 +86,8 @@ class IconeCategoria extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = cat.cor;
-    if (!forte) {
-      final claro = G.claro;
-      return Container(
-        width: tam,
-        height: tam,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(tam * .36),
-          color: c.withValues(alpha: claro ? .13 : .2),
-        ),
-        child: Icon(cat.icone, color: claro ? Color.lerp(c, Colors.black, .12) : Color.lerp(c, Colors.white, .15), size: tam * .5),
-      );
-    }
+    // nas listas, o ícone do site (traço fino num quadrado claro da cor da categoria)
+    if (!forte) return IconeCatSite(cat, tam: tam);
     return Container(
       width: tam,
       height: tam,
@@ -171,7 +164,7 @@ class CaixaLista extends StatelessWidget {
     ]);
     if (plana) return col;
     return Container(
-      decoration: BoxDecoration(color: G.v(0x07), borderRadius: BorderRadius.circular(16), border: Border.all(color: G.borda)),
+      decoration: BoxDecoration(color: S.c('card'), borderRadius: BorderRadius.circular(18), border: Border.all(color: S.bordaCartao), boxShadow: S.escuro ? null : S.sombraCartao),
       clipBehavior: Clip.antiAlias,
       child: col,
     );

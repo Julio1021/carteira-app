@@ -80,15 +80,15 @@ jobs:
           }
           tirar v1-inicio "" 2000
           tirar v2-lanc "&aba=1" 1700
-          tirar v3-analise "&aba=1&analise=1" 1700
+          tirar v3-analise "&aba=1&analise=1" 5200
           tirar v4-planejar "&aba=2" 2200
           tirar v5-mais "&aba=3" 1500
-          tirar v6-invest "&tela=patrimonio" 1900
+          tirar v6-invest "&tela=patrimonio" 4200
           tirar v7-limites "&tela=limites" 1900
           tirar v8-lancar "&tela=lancar" 1100
           tirar v9-ativo "&tela=ativo" 1900
-          tirar v10-cartoes "&tela=cartoes" 1500
-          tirar v11-ajustes "&tela=ajustes" 1900
+          tirar v10-cartoes "&tela=cartoes" 2600
+          tirar v11-ajustes "&tela=ajustes" 3200
           for tm in linho claro esmeralda escuro oceano; do tirar "t-$tm" "&tema=$tm" 2000; done
           tirar w1-inicio "" 1000 1440 1
           tirar w2-lanc "&aba=1" 1000 1440 1

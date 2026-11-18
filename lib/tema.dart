@@ -351,7 +351,7 @@ ThemeData temaGrafite() {
       elevation: 0,
       centerTitle: true,
       foregroundColor: G.texto,
-      titleTextStyle: TextStyle(fontFamily: 'Manrope', fontSize: 17, fontWeight: FontWeight.w700, letterSpacing: -.2, color: G.texto, fontFeatures: const [FontFeature.tabularFigures()]),
+      titleTextStyle: TextStyle(fontFamily: 'Bricolage', fontSize: 18, fontWeight: FontWeight.w700, letterSpacing: -.2, color: G.texto, fontFeatures: const [FontFeature.tabularFigures()]),
     ),
     dividerTheme: DividerThemeData(color: G.borda, thickness: 1, space: 1),
     inputDecorationTheme: InputDecorationTheme(
