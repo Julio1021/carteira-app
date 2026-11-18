@@ -232,6 +232,13 @@ class _TelaExtratoState extends State<TelaExtrato> {
                 filtro = 'saidas';
                 cat = c;
               }),
+              irLista: () => setState(() => analise = false),
+              buscar: (d) => setState(() {
+                analise = false;
+                filtro = 'tudo';
+                cat = null;
+                buscaC.text = d;
+              }),
             ),
           if (!analise) ...[
             SingleChildScrollView(

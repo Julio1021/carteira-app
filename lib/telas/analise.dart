@@ -10,6 +10,9 @@ import '../widgets/comum.dart';
 import '../widgets/painel.dart';
 import '../widgets/graficos.dart';
 import 'analise_extras.dart';
+import 'analise_site.dart';
+import 'inicio_site.dart' show PrevisaoSite, previsaoMes;
+import 'limites.dart';
 
 Color get corEntrada => G.pos;
 Color get corSaida => G.saida;
@@ -21,127 +24,53 @@ class AnaliseExtrato extends StatefulWidget {
   final String ym;
   final ValueChanged<String> onMes;
   final ValueChanged<String> verCategoria;
-  const AnaliseExtrato({super.key, required this.ym, required this.onMes, required this.verCategoria});
+  final VoidCallback? irLista, irLimites;
+  final ValueChanged<String>? buscar;
+  const AnaliseExtrato({super.key, required this.ym, required this.onMes, required this.verCategoria, this.irLista, this.irLimites, this.buscar});
   @override
   State<AnaliseExtrato> createState() => _AnaliseExtratoState();
 }
 
 class _AnaliseExtratoState extends State<AnaliseExtrato> {
-  int nMeses = 6;
 
   @override
   Widget build(BuildContext context) {
     final repo = RepoScope.of(context);
     final r = ResumoMes.de(repo, widget.ym);
-    final hist = historicoMeses(repo, widget.ym, nMeses);
     final rit = ritmoDoMes(repo, widget.ym);
     final comp = comparativoCategorias(repo, widget.ym);
     final mesNome = mesesLongos[int.parse(widget.ym.substring(5)) - 1].toLowerCase();
-    // números que o cabeçalho do mês ainda não mostra
-    final dias = rit.diaHoje > 0 ? rit.diaHoje : diasNoMes(widget.ym);
-    final totGastos = r.gastos.fold<double>(0, (a, g) => a + g.valor);
-    final maior = r.gastos.isEmpty ? null : r.gastos.reduce((a, b) => b.valor > a.valor ? b : a);
-    final cats = r.porCategoria.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
-    final topCat = cats.isEmpty ? null : cats.first;
-    final base = rit.media.isNotEmpty ? rit.mediaMesmoDia : rit.anteriorMesmoDia;
-    final varRit = base > 0 ? rit.gastoAteHoje / base - 1 : null;
-    final assuntos = <(String, Widget)>[
-      ('Resumo', Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+    final hoje = hojeIso();
+    final atual = ymDe(hoje) == widget.ym;
+    final meses = [for (var i = 5; i >= 0; i--) i == 0 ? r : ResumoMes.de(repo, ymAdd(widget.ym, -i))];
+    final hist12 = historicoMeses(repo, widget.ym, 12);
+    final limites = widget.irLimites ?? () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => TelaLimites(ym: widget.ym)));
+    final extras = <(String, Widget)>[
+      ('Destaques', Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         DestaquesMes(ym: widget.ym),
         _RitmoCard(rit: rit, mesNome: mesNome),
       ])),
-      ('Entrou × Saiu', _EntrouSaiu(hist: hist, ym: widget.ym, nMeses: nMeses, onN: (n) => setState(() => nMeses = n), onMes: widget.onMes)),
       ('Fluxo', FluxoDinheiro(r: r)),
       ('Calendário', CalendarioCalor(ym: widget.ym)),
-      ('Categorias', Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        _OndeFoi(r: r, verCategoria: widget.verCategoria),
-        const SizedBox(height: 12),
-        _Comparativo(comp: comp, verCategoria: widget.verCategoria, atual: widget.ym == ymDe(hojeIso())),
-      ])),
+      ('Comparar', _Comparativo(comp: comp, verCategoria: widget.verCategoria, atual: atual)),
     ];
+    final per = mesLongo(widget.ym);
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      GradeKpi([
-        Kpi(icone: Icons.calendar_today_rounded, rotulo: 'Gasto por dia', valor: totGastos / dias, formato: brl, sub: 'média de $dias dia${dias == 1 ? '' : 's'}', cor: corSaida),
-        Kpi(
-          icone: Icons.speed_rounded,
-          rotulo: 'Ritmo',
-          texto: varRit == null ? '—' : '${varRit >= 0 ? '+' : '−'}${(varRit.abs() * 100).round()}%',
-          sub: rit.media.isNotEmpty ? 'vs. sua média' : 'vs. mês anterior',
-          cor: varRit == null ? G.texto : (varRit > .08 ? G.neg : (varRit < -.08 ? G.pos : G.texto)),
-        ),
-        Kpi(icone: Icons.arrow_upward_rounded, rotulo: 'Maior gasto', valor: maior?.valor ?? 0, formato: (v) => maior == null ? '—' : brl(v), sub: maior?.desc ?? 'nenhum gasto'),
-        Kpi(
-          icone: Icons.donut_small_rounded,
-          rotulo: 'Mais gastou em',
-          texto: topCat == null ? '—' : catGasto(topCat.key).nome,
-          sub: topCat == null ? '' : '${brl(topCat.value)} · ${r.saiu > 0 ? (topCat.value / r.saiu * 100).round() : 0}%',
-          onTap: topCat == null ? null : () => widget.verCategoria(topCat.key),
-        ),
-      ]),
-      const SizedBox(height: 16),
-      ChipsAssunto(nomes: [for (final a in assuntos) a.$1], construir: (_, i) => assuntos[i].$2),
+      SecaoSite(atual ? 'Como o mês está indo' : 'Como foi o mês', per, primeira: true),
+      PrevisaoSite(r: r, prev: previsaoMes(repo, widget.ym), irExtrato: widget.irLista ?? () {}, irLimites: limites),
+      SecaoSite('Para onde foi o dinheiro', per),
+      DistribuicaoSite(r: r, meses: meses),
+      const SizedBox(height: 14),
+      OndeMaisGastouSite(r: r, buscar: widget.buscar ?? (_) {}),
+      const SizedBox(height: 14),
+      FormaPagamentoSite(r: r),
+      const SizedBox(height: 14),
+      GastosCategoriaSite(r: r, verCategoria: widget.verCategoria, ajustarLimites: limites),
+      SecaoSite('Ao longo do tempo', 'Últimos 12 meses'),
+      EntradasGastosSite(hist: hist12, limite: r.limiteTotal, ymAtual: widget.ym, onMes: widget.onMes),
+      SecaoSite('Mais detalhes', per),
+      ChipsAssunto(nomes: [for (final a in extras) a.$1], construir: (_, i) => extras[i].$2),
     ]);
-  }
-}
-
-class _EntrouSaiu extends StatelessWidget {
-  final List<MesValores> hist;
-  final String ym;
-  final int nMeses;
-  final ValueChanged<int> onN;
-  final ValueChanged<String> onMes;
-  const _EntrouSaiu({required this.hist, required this.ym, required this.nMeses, required this.onN, required this.onMes});
-  @override
-  Widget build(BuildContext context) {
-    final comDados = hist.where((m) => m.entrou > 0 || m.saiu > 0).toList();
-    final mediaSobra = comDados.isEmpty ? 0.0 : comDados.fold<double>(0, (a, m) => a + m.sobra) / comDados.length;
-    final melhor = comDados.isEmpty ? null : comDados.reduce((a, b) => b.sobra > a.sobra ? b : a);
-    final temInv = hist.any((m) => m.investiu > 0);
-    final comEntrada = hist.where((m) => m.entrou > 0 && m.investiu != 0).toList();
-    final pctMedio = comEntrada.isEmpty ? null : comEntrada.fold<double>(0, (a, m) => a + m.investiu / m.entrou) / comEntrada.length;
-    String abr(String m) => mesesAbr[int.parse(m.substring(5)) - 1];
-    return Cartao(
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Row(children: [
-          Expanded(child: Text(temInv ? 'Entrou × Saiu × Investiu' : 'Entrou × Saiu', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700))),
-          SegmentedButton<int>(
-            segments: const [ButtonSegment(value: 6, label: Text('6m')), ButtonSegment(value: 12, label: Text('12m'))],
-            selected: {nMeses},
-            showSelectedIcon: false,
-            style: SegmentedButton.styleFrom(
-              selectedBackgroundColor: G.branco,
-              selectedForegroundColor: G.tinta,
-              foregroundColor: G.texto2,
-              side: BorderSide(color: G.borda),
-              visualDensity: VisualDensity.compact,
-              textStyle: const TextStyle(fontFamily: 'Manrope', fontWeight: FontWeight.w600, fontSize: 12.5),
-            ),
-            onSelectionChanged: (s) => onN(s.first),
-          ),
-        ]),
-        const SizedBox(height: 12),
-        GraficoBarras(
-          titulo: temInv ? 'Entrou × Saiu × Investiu' : 'Entrou × Saiu',
-          rotulos: [for (final m in hist) abr(m.ym)],
-          valores: [for (final m in hist) [m.entrou, m.saiu, if (temInv) (m.investiu > 0 ? m.investiu : 0.0)]],
-          cores: [corEntrada, corSaida, if (temInv) corInvest],
-          nomes: ['Entrou', 'Saiu', if (temInv) 'Investiu'],
-          formatoY: curto,
-          selecionado: hist.indexWhere((m) => m.ym == ym),
-          onToque: (i) => onMes(hist[i].ym),
-          rodape: [for (final m in hist) m.entrou == 0 && m.saiu == 0 ? '' : (m.sobra >= 0 ? '+' : '−') + curto(m.sobra.abs())],
-          coresRodape: [for (final m in hist) m.sobra >= 0 ? G.pos : corSaida],
-        ),
-        const SizedBox(height: 10),
-        Wrap(spacing: 16, runSpacing: 6, children: [Legenda(corEntrada, 'Entrou'), Legenda(corSaida, 'Saiu'), if (temInv) Legenda(corInvest, 'Investiu')]),
-        if (comDados.length >= 2)
-          FaixaNumeros([
-            ('Sobra média', brl(mediaSobra), mediaSobra >= 0 ? G.pos : corSaida),
-            if (melhor != null) ('Melhor mês · ${abr(melhor.ym)}', brl(melhor.sobra), null),
-            if (pctMedio != null) ('Investe', '${(pctMedio * 100).round()}% da renda', corInvest),
-          ]),
-      ]),
-    );
   }
 }
 
@@ -196,72 +125,6 @@ class _RitmoCard extends StatelessWidget {
             if (projecao != null) ('Previsão do mês', brl(projecao), rit.limite > 0 && projecao > rit.limite ? G.neg : null),
             if (rit.limite > 0) ('Limite', brl(rit.limite), null),
           ]),
-      ]),
-    );
-  }
-}
-
-/// 3. Para onde foi o dinheiro (rosca por categoria).
-class _OndeFoi extends StatefulWidget {
-  final ResumoMes r;
-  final ValueChanged<String> verCategoria;
-  const _OndeFoi({required this.r, required this.verCategoria});
-  @override
-  State<_OndeFoi> createState() => _OndeFoiState();
-}
-
-class _OndeFoiState extends State<_OndeFoi> {
-  @override
-  Widget build(BuildContext context) {
-    final r = widget.r;
-    final itens = r.porCategoria.entries.where((e) => e.value > 0).toList()..sort((a, b) => b.value.compareTo(a.value));
-    if (itens.isEmpty) return const SizedBox.shrink();
-    final top = itens.take(7).toList();
-    final resto = itens.skip(7).fold<double>(0, (a, e) => a + e.value);
-    final valores = [...top.map((e) => e.value), if (resto > 0) resto];
-    final cores = [...top.map((e) => catGasto(e.key).cor), if (resto > 0) const Color(0xFF7A7F92)];
-    final nomes = [...top.map((e) => catGasto(e.key).nome), if (resto > 0) 'Outras ${itens.length - 7}'];
-    final cats = [...top.map((e) => e.key), if (resto > 0) null];
-    final maior = valores.first;
-    // Com várias categorias, barras ordenadas comparam melhor do que uma rosca:
-    // a faixa de cima mostra a divisão do total e a lista, o tamanho de cada uma.
-    return Cartao(
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        CabecalhoCartao('Para onde foi o dinheiro', sub: '${brl(r.saiu)} em ${itens.length} categoria${itens.length == 1 ? '' : 's'}'),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(6),
-          child: SizedBox(
-            height: 12,
-            child: Row(children: [
-              for (var i = 0; i < valores.length; i++) ...[
-                if (i > 0) const SizedBox(width: 2),
-                Expanded(flex: (valores[i] / r.saiu * 1000).round().clamp(8, 1000).toInt(), child: ColoredBox(color: cores[i])),
-              ],
-            ]),
-          ),
-        ),
-        const SizedBox(height: 10),
-        for (var i = 0; i < valores.length; i++)
-          InkWell(
-            borderRadius: BorderRadius.circular(10),
-            onTap: cats[i] == null ? null : () => widget.verCategoria(cats[i]!),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 2),
-              child: Column(children: [
-                Row(children: [
-                  Container(width: 10, height: 10, decoration: BoxDecoration(color: cores[i], borderRadius: BorderRadius.circular(3))),
-                  const SizedBox(width: 9),
-                  Expanded(child: Text(nomes[i], maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600))),
-                  Text(pct(valores[i] / r.saiu, casas: 0), style: TextStyle(color: G.apagado, fontSize: 12.5)),
-                  const SizedBox(width: 10),
-                  SizedBox(width: 92, child: Text(brl(valores[i]), textAlign: TextAlign.right, style: const TextStyle(fontWeight: FontWeight.w700))),
-                  if (cats[i] != null) Icon(Icons.chevron_right_rounded, size: 18, color: G.apagado) else const SizedBox(width: 18),
-                ]),
-                const SizedBox(height: 6),
-                Padding(padding: const EdgeInsets.only(left: 19, right: 18), child: Barra(valores[i] / maior, cor: cores[i], altura: 5)),
-              ]),
-            ),
-          ),
       ]),
     );
   }
