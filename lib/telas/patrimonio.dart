@@ -362,6 +362,11 @@ class _LancarState extends State<_Lancar> {
   String data = hojeIso();
   final saldoC = <String, TextEditingController>{};
   final aporteC = <String, TextEditingController>{};
+  // Saldo digitado à mão? Enquanto não, o campo "Saldo hoje" acompanha o aporte
+  // (saldo sem o aporte do dia + aporte), para o aporte não virar "perda".
+  final saldoMexido = <String, bool>{};
+  final saldoBase = <String, double?>{};
+  final saldoOrig = <String, String>{};
 
   @override
   void initState() {
@@ -374,21 +379,41 @@ class _LancarState extends State<_Lancar> {
     for (final p in widget.c.posicoes) {
       final id = p.a.id;
       String s = '', a = '';
+      double? base;
       if (widget.c.pais.contains(id)) {
         final g = estadoGrupo(repo, widget.c, id, data);
         if (g.totalDoDia != null) {
           s = valorCampo(g.totalDoDia!);
           if ((g.aporteDoDia ?? 0) != 0) a = valorCampo(g.aporteDoDia!);
+          base = g.totalDoDia! - (g.aporteDoDia ?? 0);
         }
       } else {
         final ex = repo.porId('l_${id}_$data');
         if (ex != null) {
           s = valorCampo(numD(ex['saldo']));
           if (numD(ex['aporte']) != 0) a = valorCampo(numD(ex['aporte']));
+          base = numD(ex['saldo']) - numD(ex['aporte']);
         }
       }
       (saldoC[id] ??= TextEditingController()).text = s;
       (aporteC[id] ??= TextEditingController()).text = a;
+      saldoMexido[id] = false;
+      saldoOrig[id] = s;
+      saldoBase[id] = base ?? _anterior(repo, p);
+    }
+  }
+
+  /// Aporte mudou: se o saldo não foi digitado à mão, ele passa a incluir o aporte.
+  void _aporteMudou(String id) {
+    if (saldoMexido[id] == true) return;
+    final b = saldoBase[id];
+    final ap = _lerComSinal(_ac(id).text) ?? 0;
+    if (b == null) return;
+    if (ap == 0) {
+      _sc(id).text = saldoOrig[id] ?? '';
+    } else {
+      final v = b + ap;
+      _sc(id).text = v < 0 ? '0,00' : valorCampo(v);
     }
   }
 
@@ -523,7 +548,7 @@ class _LancarState extends State<_Lancar> {
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))],
                     decoration: const InputDecoration(labelText: 'Saldo hoje', prefixText: 'R\$ '),
-                    onChanged: (_) => setState(() {}),
+                    onChanged: (_) => setState(() => saldoMexido[p.a.id] = true),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -533,7 +558,7 @@ class _LancarState extends State<_Lancar> {
                     keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
                     inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,\-]'))],
                     decoration: const InputDecoration(labelText: 'Aporte / resgate', hintText: 'só se mexeu'),
-                    onChanged: (_) => setState(() {}),
+                    onChanged: (_) => setState(() => _aporteMudou(p.a.id)),
                   ),
                 ),
               ]),
@@ -542,6 +567,31 @@ class _LancarState extends State<_Lancar> {
                   padding: const EdgeInsets.only(top: 8),
                   child: Text('Rendimento: ${brl(rend, sinal: true)}${ant! > 0 ? ' (${pct(rend / ant, sinal: true)})' : ''}',
                       style: TextStyle(color: rend >= 0 ? G.pos : G.neg, fontWeight: FontWeight.w600, fontSize: 12.5)),
+                ),
+              // o saldo parece não incluir o aporte/resgate (o "rendimento" fica perto de −aporte)
+              if (rend != null && s != null && ap != 0 && (rend + ap).abs() < ap.abs() * .5)
+                Container(
+                  margin: const EdgeInsets.only(top: 8),
+                  padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
+                  decoration: BoxDecoration(color: S.second.withValues(alpha: .12), borderRadius: BorderRadius.circular(10)),
+                  child: Row(children: [
+                    Expanded(
+                      child: Text(
+                        ap > 0
+                            ? 'O saldo hoje parece não incluir este aporte. Ele deve ser o total do banco já com o dinheiro que você colocou.'
+                            : 'O saldo hoje parece ainda incluir este resgate. Ele deve ser o total do banco depois de tirar o dinheiro.',
+                        style: TextStyle(fontSize: 12.5, color: S.ink2, height: 1.35),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => setState(() {
+                        final v = s + ap;
+                        _sc(p.a.id).text = valorCampo(v < 0 ? 0 : v);
+                        saldoMexido[p.a.id] = true;
+                      }),
+                      child: Text(ap > 0 ? 'Somar ao saldo' : 'Descontar'),
+                    ),
+                  ]),
                 ),
             ]),
           );
