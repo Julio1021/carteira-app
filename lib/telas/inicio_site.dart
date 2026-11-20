@@ -533,11 +533,11 @@ class RecebimentosSite extends StatelessWidget {
             final proximo = ag.indexWhere((x) => !x.recebido && !x.atrasado && x.data.compareTo(h) >= 0);
             return Stack(children: [
             // a linha que liga os pontos (cinza) e a parte já percorrida (cor do tema)
-            Positioned(left: 0, right: 0, top: 58, child: Container(height: 2, color: S.line)),
+            Positioned(left: 0, right: 0, top: 72, child: Container(height: 2, color: S.line)),
             Positioned(
               left: 0,
               right: 0,
-              top: 57,
+              top: 71,
               child: LayoutBuilder(
                 builder: (_, c) => Align(
                   alignment: Alignment.centerLeft,
@@ -559,7 +559,11 @@ class RecebimentosSite extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 4),
                     child: Column(children: [
                       Text('${x.data.substring(8, 10)}/${x.data.substring(5, 7)}', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: S.ink, height: 1.5)),
-                      Text(x.nome, maxLines: 2, textAlign: TextAlign.center, style: TextStyle(fontSize: 11.5, color: x.atrasado ? S.neg : S.ink2, fontWeight: x.atrasado ? FontWeight.w600 : FontWeight.w400, height: 1.5)),
+                      // altura fixa de 2 linhas: os pontos ficam todos na mesma altura da linha
+                      SizedBox(
+                        height: 35,
+                        child: Text(x.nome, maxLines: 2, textAlign: TextAlign.center, style: TextStyle(fontSize: 11.5, color: x.atrasado ? S.neg : S.ink2, fontWeight: x.atrasado ? FontWeight.w600 : FontWeight.w400, height: 1.5)),
+                      ),
                       const SizedBox(height: 4),
                       SizedBox(
                         width: 22,
