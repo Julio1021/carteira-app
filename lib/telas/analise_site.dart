@@ -22,12 +22,17 @@ class SecaoSite extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
         padding: EdgeInsets.fromLTRB(0, primeira ? 2 : 24, 0, 12),
-        child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-          Text(titulo, style: TextStyle(fontFamily: S.fonteNum, fontSize: 19, fontWeight: FontWeight.w700, letterSpacing: -.19, color: S.ink)),
-          const SizedBox(width: 10),
-          Flexible(child: Text(sub, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: S.muted))),
-          const SizedBox(width: 10),
-          Expanded(child: Container(height: 1, color: S.line)),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Row(children: [
+            Text(titulo, style: TextStyle(fontFamily: S.fonteNum, fontSize: 19, fontWeight: FontWeight.w700, letterSpacing: -.19, color: S.ink)),
+            const SizedBox(width: 10),
+            Expanded(child: Container(height: 1, color: S.line)),
+          ]),
+          if (sub.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(sub, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: S.muted)),
+            ),
         ]),
       );
 }
