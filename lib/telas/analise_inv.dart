@@ -31,6 +31,9 @@ double _passo(double bruto) {
   return 10 * mag;
 }
 
+/// Espaços não separáveis: "R$ 1.234,56" nunca quebra no meio.
+String _nb(String t) => t.replaceAll(' ', '\u00A0');
+
 TextStyle _tit() => TextStyle(fontFamily: S.fonteNum, fontSize: 17, fontWeight: FontWeight.w700, color: S.ink, height: 1.3);
 TextStyle _sub() => TextStyle(fontSize: 13, color: S.muted, height: 1.4);
 
@@ -315,8 +318,8 @@ class _GraficoComparacao extends StatelessWidget {
       }
     }
     final passo = _passo((maxV - minV) / 4);
-    final topo = (maxV / passo).ceil() * passo;
-    final base = (minV / passo).floor() * passo;
+    final topo = maxV + (maxV - minV) * .08;
+    final base = minV < 0 ? minV - (maxV - minV) * .08 : 0.0;
     // rótulo do eixo X: o fim de cada mês; mostra no máximo ~6 para não embolar
     final cada = math.max(1, (meses.length / 6).ceil());
     String rot(int i) => i == 0 ? 'início' : _abr(meses[i - 1]);
@@ -329,7 +332,7 @@ class _GraficoComparacao extends StatelessWidget {
           minX: 0,
           maxX: (n - 1).toDouble(),
           minY: base,
-          maxY: topo == base ? base + passo : topo,
+          maxY: topo <= base ? base + passo : topo,
           clipData: const FlClipData.all(),
           borderData: FlBorderData(show: true, border: Border(bottom: BorderSide(color: S.line))),
           gridData: FlGridData(
@@ -345,10 +348,12 @@ class _GraficoComparacao extends StatelessWidget {
                 showTitles: true,
                 interval: passo,
                 reservedSize: 44,
-                getTitlesWidget: (v, meta) => Padding(
-                  padding: const EdgeInsets.only(right: 6),
-                  child: Text('${v.toStringAsFixed(passo < 1 ? 1 : 0).replaceAll('.', ',')}%', textAlign: TextAlign.right, style: TextStyle(fontSize: 11, color: S.muted)),
-                ),
+                getTitlesWidget: (v, meta) => (v == meta.max || v == meta.min && v != 0)
+                    ? const SizedBox()
+                    : Padding(
+                        padding: const EdgeInsets.only(right: 6),
+                        child: Text('${v.toStringAsFixed(passo < 1 ? 1 : 0).replaceAll('.', ',')}%', textAlign: TextAlign.right, style: TextStyle(fontSize: 11, color: S.muted)),
+                      ),
               ),
             ),
             bottomTitles: AxisTitles(
@@ -487,13 +492,6 @@ class _CardRendaState extends State<_CardRenda> {
                   color: S.ink2.withValues(alpha: .7),
                   strokeWidth: 1.2,
                   dashArray: [5, 4],
-                  label: HorizontalLineLabel(
-                    show: true,
-                    alignment: Alignment.topRight,
-                    padding: const EdgeInsets.only(right: 2, bottom: 3),
-                    style: TextStyle(fontSize: 10.5, color: S.ink2, fontWeight: FontWeight.w700, fontFamily: 'Manrope'),
-                    labelResolver: (_) => 'média',
-                  ),
                 ),
             ]),
             barTouchData: BarTouchData(
@@ -550,6 +548,15 @@ class _CardRendaState extends State<_CardRenda> {
             ],
           )),
         ),
+        if (rp.media > 0)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Row(children: [
+              _Marca(S.ink2, tracejada: true),
+              const SizedBox(width: 8),
+              Text('Linha tracejada: média de ${brl(rp.media)} por mês', style: TextStyle(fontSize: 12.5, color: S.muted)),
+            ]),
+          ),
         if (rp.pctSalario != null || rp.pagaConta != null) ...[
           const SizedBox(height: 12),
           Container(
@@ -617,7 +624,8 @@ class _CardAtivos extends StatelessWidget {
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text(lista[i].a.nome, style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700, color: S.ink)),
-                    Text('Saldo ${brl(lista[i].saldo)} · rendeu ${brl(lista[i].ganho, sinal: true)}', style: TextStyle(color: S.muted, fontSize: 12.5, height: 1.35)),
+                    Text('Saldo ${_nb(brl(lista[i].saldo))}', style: TextStyle(color: S.muted, fontSize: 12.5, height: 1.35)),
+                    Text('Rendeu ${_nb(brl(lista[i].ganho, sinal: true))}', style: TextStyle(color: lista[i].ganho >= 0 ? S.pos : S.neg, fontSize: 12.5, fontWeight: FontWeight.w600, height: 1.35)),
                   ]),
                 ),
                 const SizedBox(width: 8),
@@ -724,7 +732,7 @@ class _CardDiversificacaoState extends State<_CardDiversificacao> {
               PieChart(PieChartData(
                 startDegreeOffset: -90,
                 sectionsSpace: 2,
-                centerSpaceRadius: 62,
+                centerSpaceRadius: 68,
                 pieTouchData: PieTouchData(touchCallback: (ev, resp) {
                   if (ev is! FlTapUpEvent) return;
                   final i = resp?.touchedSection?.touchedSectionIndex;
@@ -735,19 +743,19 @@ class _CardDiversificacaoState extends State<_CardDiversificacao> {
                     PieChartSectionData(
                       value: fatias[i].valor,
                       color: t == null || t == i ? cores[i] : cores[i].withValues(alpha: .3),
-                      radius: t == i ? 30 : 26,
+                      radius: t == i ? 24 : 20,
                       showTitle: false,
                     ),
                 ],
               )),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 34),
+                padding: const EdgeInsets.symmetric(horizontal: 38),
                 child: Column(mainAxisSize: MainAxisSize.min, children: [
                   Text(t == null ? 'Total' : fatias[t].nome, textAlign: TextAlign.center, maxLines: 2, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: S.muted)),
                   FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Text(t == null ? brl(tot) : '${(fatias[t].valor / tot * 100).toStringAsFixed(1).replaceAll('.', ',')}%',
-                        style: TextStyle(fontFamily: S.fonteNum, fontSize: 18, fontWeight: FontWeight.w800, color: S.ink)),
+                        style: TextStyle(fontFamily: S.fonteNum, fontSize: 17, fontWeight: FontWeight.w800, color: S.ink)),
                   ),
                 ]),
               ),
