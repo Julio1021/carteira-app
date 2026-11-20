@@ -166,5 +166,30 @@ void main() {
       expect(r.entradas.single.desc, 'Pix Prefeitura');
       expect(r.entradas.single.d['div'], isNull);
     });
+
+    test('linha somada das transferências: separa só o depósito e deixa a sobra', () async {
+      final r = Repo.memoria([
+        {'kind': 'renda', 'id': 'rd_va', 'nome': 'Vale alimentação', 'valor': 880, 'regra': 'dia', 'dia': 20},
+        {'kind': 'entrada', 'id': 'pr', 'desc': 'Transferências das suas outras contas para o Inter (saldo do mês)', 'valor': 3855.08, 'data': '2026-11-18', 'cat': 'salario', 'ext': 'proprias|c1|2026-11'},
+      ]);
+      final va = r.rendas.single;
+      final dep = depositosPara(r, va, '2026-11-20', 880).single;
+      expect(linhaSomada(dep), isTrue);
+      final ds = destinosResto(r, va, dep.data, dep);
+      expect(ds.first.desc, '13º salário');
+      await r.salvarVarios(docsDivisao(r: va, parte: 880, resto: ds.first, dep: dep, total: 3847.20));
+      final por = {for (final e in r.entradas) e.desc: e};
+      expect(r.entradas.length, 3);
+      expect(por['Vale alimentação']!.valor, 880);
+      expect(por['13º salário']!.valor, 2967.20);
+      expect(r.entradas.firstWhere((e) => e.id == 'pr').valor, 7.88);
+      expect(r.entradas.firstWhere((e) => e.id == 'pr').cat, 'proprias');
+      expect((r.entradas.fold<double>(0, (a, e) => a + e.valor) * 100).round(), 385508);
+      final x = desfazerDivisao(r, por['Vale alimentação']!.d['div'] as String);
+      await r.salvarVarios(x.salvar);
+      await r.apagarVarios(x.apagar);
+      expect(r.entradas.single.valor, 3855.08);
+      expect(r.entradas.single.cat, 'salario');
+    });
   });
 }

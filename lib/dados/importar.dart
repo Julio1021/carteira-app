@@ -242,7 +242,9 @@ class ItemImport {
   final double valor;
   bool dup;
   final String? rd, upd;
-  ItemImport({required this.t, required this.ext, required this.ch, required this.cat, required this.desc, required this.valor, this.pag = 'Pix', this.dup = false, this.rd, this.upd});
+  /// Campos a manter ao atualizar um registro que já existe (ex.: divisão).
+  final Map<String, dynamic>? extra;
+  ItemImport({required this.t, required this.ext, required this.ch, required this.cat, required this.desc, required this.valor, this.pag = 'Pix', this.dup = false, this.rd, this.upd, this.extra});
 }
 
 class PlanoImport {
@@ -457,6 +459,31 @@ PlanoImport planoImport(Repo repo, Ofx o, {required String dono, String desde = 
         p.jaImportados++;
         return;
       }
+      // linha já dividida (ex.: vale + 13º separados dela): as partes saem da conta
+      final grp = ex?.d['div'];
+      if (ex != null && grp is String) {
+        if ((numD(ex.d['divT']) - liq).abs() < .01) {
+          p.jaImportados++;
+          return;
+        }
+        final partes = repo.entradas.where((e) => e.d['div'] == grp && e.id != ex.id).fold<double>(0, (a, e) => a + e.valor);
+        final sobra = ((liq - partes) * 100).round() / 100;
+        if (sobra <= 0) {
+          p.jaImportados++;
+          return;
+        }
+        p.entradas.add(ItemImport(
+          t: TxOfx(tipo: '', data: x.ult, valor: sobra),
+          ext: ext,
+          ch: '__proprias',
+          cat: 'proprias',
+          desc: ex.desc,
+          valor: sobra,
+          upd: ex.id,
+          extra: {'div': grp, 'divT': liq, if (ex.d['divO'] != null) 'divO': ex.d['divO']},
+        ));
+        return;
+      }
       p.entradas.add(ItemImport(
         t: TxOfx(tipo: '', data: x.ult, valor: liq),
         ext: ext,
@@ -502,6 +529,7 @@ List<Doc> docsImportacao(Repo repo, Ofx o, PlanoImport p, {required String dono,
       'conta': cid,
       'orig': cnome,
       if (x.rd != null) 'rd': x.rd,
+      ...?x.extra,
     });
   }
   for (final x in p.invest) {

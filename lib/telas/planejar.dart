@@ -204,6 +204,7 @@ class _FolhaReceber extends StatefulWidget {
 class _FolhaReceberState extends State<_FolhaReceber> {
   late final c = TextEditingController(text: valorCampo(widget.valor));
   final cTotal = TextEditingController();
+  final cDep = TextEditingController();
   late String data = widget.data;
   bool junto = false;
   String? depId; // depósito escolhido; '' = não está na lista (informar o total)
@@ -220,12 +221,14 @@ class _FolhaReceberState extends State<_FolhaReceber> {
     super.initState();
     c.addListener(() => setState(() {}));
     cTotal.addListener(() => setState(() {}));
+    cDep.addListener(() => setState(() {}));
   }
 
   @override
   void dispose() {
     c.dispose();
     cTotal.dispose();
+    cDep.dispose();
     super.dispose();
   }
 
@@ -258,12 +261,17 @@ class _FolhaReceberState extends State<_FolhaReceber> {
     List<Doc> docs;
     double restoV;
     if (dep != null) {
-      restoV = dep.valor - v;
-      if (v >= dep.valor) {
-        avisar(context, 'A parte do ${r.nome} tem que ser menor que o depósito de ${brl(dep.valor)}.');
+      final t = lerValor(cDep.text);
+      if (t == null || t <= v) {
+        avisar(context, 'Informe quanto foi o depósito; ele tem que ser maior que ${brl(v)}.');
         return;
       }
-      docs = docsDivisao(r: r, parte: v, resto: resto, dep: dep);
+      if (t > dep.valor + .009) {
+        avisar(context, 'O depósito não pode passar de ${brl(dep.valor)}, o valor dessa linha.');
+        return;
+      }
+      restoV = t - v;
+      docs = docsDivisao(r: r, parte: v, resto: resto, dep: dep, total: t);
     } else if (dId == '') {
       final t = lerValor(cTotal.text);
       if (t == null || t <= v) {
@@ -313,7 +321,7 @@ class _FolhaReceberState extends State<_FolhaReceber> {
     final dep = deps.where((e) => e.id == dId).firstOrNull;
     final destinos = junto ? destinosResto(repo, r, dep?.data ?? data, dep) : const <DestinoResto>[];
     final resto = destinos.where((d) => d.chave == restoK).firstOrNull ?? destinos.firstOrNull;
-    final total = dep?.valor ?? (dId == '' ? (lerValor(cTotal.text) ?? 0) : 0);
+    final total = dep != null ? (lerValor(cDep.text) ?? 0) : (dId == '' ? (lerValor(cTotal.text) ?? 0) : 0);
     final corR = catEntrada(r.cat).cor;
     final partes = grp == null ? const <Entrada>[] : partesDivisao(repo, grp!);
 
@@ -369,6 +377,8 @@ class _FolhaReceberState extends State<_FolhaReceber> {
               onTap: () => setState(() {
                 depId = e.id;
                 restoK = null;
+                // na soma das transferências do mês o valor certo do depósito é você que diz
+                cDep.text = linhaSomada(e) ? '' : valorCampo(e.valor);
               }),
             ),
           _Deposito(
@@ -381,6 +391,17 @@ class _FolhaReceberState extends State<_FolhaReceber> {
           if (dId == '') ...[
             const SizedBox(height: 10),
             CampoValor(cTotal, rotulo: 'Total que caiu na conta'),
+          ],
+          if (dep != null) ...[
+            if (linhaSomada(dep)) ...[
+              const SizedBox(height: 4),
+              _Info(
+                icone: Icons.info_outline_rounded,
+                texto: 'Essa linha junta todas as transferências entre as suas contas no mês. Informe só o valor da transferência que trouxe o ${r.nome}; o que sobrar continua como transferência entre contas.',
+              ),
+            ],
+            const SizedBox(height: 10),
+            CampoValor(cDep, rotulo: 'Quanto foi esse depósito'),
           ],
           if (dId != null && resto != null) ...[
             const Rotulo('O resto do depósito é'),
@@ -395,7 +416,15 @@ class _FolhaReceberState extends State<_FolhaReceber> {
             ]),
             if (total > 0) ...[
               const SizedBox(height: 16),
-              _BarraDivisao(total: total, parte: v, nomeParte: r.nome, nomeResto: resto.desc, corParte: corR),
+              _BarraDivisao(
+                total: total,
+                parte: v,
+                nomeParte: r.nome,
+                nomeResto: resto.desc,
+                corParte: corR,
+                sobra: dep != null && total < dep.valor - .009 ? dep.valor - total : 0,
+                nomeSobra: dep != null && linhaSomada(dep) ? 'Continua em transferências entre contas' : 'Continua em ${dep?.desc ?? ''}',
+              ),
             ],
           ],
         ],
@@ -489,9 +518,10 @@ class _Deposito extends StatelessWidget {
                 child: x == null
                     ? Text('Não está na lista: informar o total', style: TextStyle(fontWeight: FontWeight.w600, color: G.texto))
                     : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text(x.desc, style: TextStyle(fontWeight: FontWeight.w600, color: G.texto, height: 1.3)),
+                        Text(linhaSomada(x) ? 'Soma das transferências entre suas contas no mês' : x.desc, style: TextStyle(fontWeight: FontWeight.w600, color: G.texto, height: 1.3)),
                         const SizedBox(height: 2),
-                        Text('${dataCurta(x.data)} · ${catEntrada(x.cat).nome}', style: TextStyle(fontSize: 12, color: G.apagado)),
+                        Text(linhaSomada(x) ? 'Última em ${dataCurta(x.data)} · junta várias transferências' : '${dataCurta(x.data)} · ${catEntrada(x.cat).nome}',
+                            style: TextStyle(fontSize: 12, color: G.apagado)),
                       ]),
               ),
               if (x != null) ...[
@@ -508,10 +538,10 @@ class _Deposito extends StatelessWidget {
 
 /// Barra mostrando como o depósito fica dividido.
 class _BarraDivisao extends StatelessWidget {
-  final double total, parte;
-  final String nomeParte, nomeResto;
+  final double total, parte, sobra;
+  final String nomeParte, nomeResto, nomeSobra;
   final Color corParte;
-  const _BarraDivisao({required this.total, required this.parte, required this.nomeParte, required this.nomeResto, required this.corParte});
+  const _BarraDivisao({required this.total, required this.parte, required this.nomeParte, required this.nomeResto, required this.corParte, this.sobra = 0, this.nomeSobra = ''});
   @override
   Widget build(BuildContext context) {
     final ok = parte > 0 && parte < total;
@@ -541,6 +571,10 @@ class _BarraDivisao extends StatelessWidget {
                     Expanded(flex: fp, child: Container(color: corParte)),
                     const SizedBox(width: 2),
                     Expanded(flex: 1000 - fp, child: Container(color: G.lavanda)),
+                    if (sobra > .004) ...[
+                      const SizedBox(width: 2),
+                      Expanded(flex: ((sobra / total * 1000).round()).clamp(30, 600).toInt(), child: Container(color: G.apagado)),
+                    ],
                   ])
                 : Container(color: G.borda),
           ),
@@ -550,8 +584,12 @@ class _BarraDivisao extends StatelessWidget {
           leg(corParte, nomeParte, brl(parte)),
           const SizedBox(height: 6),
           leg(G.lavanda, nomeResto, brl(resto)),
+          if (sobra > .004) ...[
+            const SizedBox(height: 6),
+            leg(G.apagado, nomeSobra, brl(sobra)),
+          ],
           const SizedBox(height: 8),
-          Text('O total no extrato continua ${brl(total)}: nada fica duplicado.', style: TextStyle(fontSize: 12, color: G.apagado)),
+          Text('O total no extrato continua ${brl(total + sobra)}: nada fica duplicado.', style: TextStyle(fontSize: 12, color: G.apagado)),
         ] else
           Text('A parte do $nomeParte precisa ser menor que o depósito.', style: TextStyle(fontSize: 12.5, color: G.alerta)),
       ]),

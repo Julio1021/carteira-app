@@ -680,7 +680,7 @@ List<Doc> docsRecebimento(Repo repo, Emprestimo e, double valor, String data, {r
 List<Entrada> depositosPara(Repo repo, Renda r, String data, double parte) {
   final ini = addDias(data, -12), fim = addDias(data, 12);
   return repo.entradas.where((e) {
-    if (e.entreContas || e.rd == r.id) return false;
+    if (e.rd == r.id) return false;
     if (e.data.compareTo(ini) < 0 || e.data.compareTo(fim) > 0) return false;
     return e.valor > parte + .009;
   }).toList()
@@ -689,6 +689,10 @@ List<Entrada> depositosPara(Repo repo, Renda r, String data, double parte) {
       return d != 0 ? d : b.valor.compareTo(a.valor);
     });
 }
+
+/// Linha que o app monta na importação somando as transferências entre as
+/// suas contas no mês: não é um depósito só.
+bool linhaSomada(Entrada e) => e.d['ext'] is String && (e.d['ext'] as String).startsWith('proprias|') && !(e.d['ext'] as String).contains('#');
 
 /// Como chamar o resto do depósito depois de tirar a parte do recebimento.
 class DestinoResto {
@@ -707,7 +711,7 @@ List<DestinoResto> destinosResto(Repo repo, Renda r, String data, Entrada? dep) 
     if (vistos.add(d.desc.toLowerCase())) out.add(d);
   }
 
-  if (dep != null) add(DestinoResto('Manter: ${dep.desc}', dep.desc, dep.cat, dep.rd));
+  if (dep != null && !linhaSomada(dep) && !dep.entreContas) add(DestinoResto('Manter: ${dep.desc}', dep.desc, dep.cat, dep.rd));
   final ym = ymDe(data);
   final mes = int.parse(ym.substring(5, 7));
   final temRenda13 = repo.rendas.any((o) => o.nome.contains('13'));
@@ -724,7 +728,7 @@ List<DestinoResto> destinosResto(Repo repo, Renda r, String data, Entrada? dep) 
   }
   if (!out.any((d) => d.desc.contains('13'))) add(const DestinoResto('13º salário', '13º salário', 'salario'));
   add(const DestinoResto('Salário', 'Salário', 'salario'));
-  add(DestinoResto('Outra entrada', dep?.desc ?? 'Outra entrada', dep?.cat ?? 'outros_e'));
+  add(dep == null || linhaSomada(dep) || dep.entreContas ? const DestinoResto('Outra entrada', 'Outra entrada', 'outros_e') : DestinoResto('Outra entrada', dep.desc, dep.cat));
   return out;
 }
 
@@ -735,6 +739,34 @@ double _c2(double v) => (v * 100).round() / 100;
 /// não muda). Sem ele, cria as duas entradas a partir do [total] informado.
 List<Doc> docsDivisao({required Renda r, required double parte, required DestinoResto resto, Entrada? dep, double? total, String? data}) {
   final agora = DateTime.now().millisecondsSinceEpoch;
+  // o depósito foi só uma parte da linha (ex.: a soma das transferências do
+  // mês): a linha fica com a sobra e o depósito vira duas entradas novas
+  if (dep != null && total != null && total < dep.valor - .009) {
+    final grp = dep.d['div'] is String ? dep.d['div'] as String : novoId('dv');
+    final tot = dep.d['divT'] != null ? numD(dep.d['divT']) : dep.valor;
+    final base = Map<String, dynamic>.from(dep.d)..remove('_u');
+    final sobra = {
+      ...base,
+      'valor': _c2(dep.valor - total),
+      'cat': linhaSomada(dep) ? 'proprias' : dep.cat,
+      'div': grp,
+      'divT': tot,
+    };
+    if (dep.d['divO'] == null && dep.d['div'] == null) sobra['divO'] = {'desc': dep.desc, 'cat': dep.cat, if (dep.rd != null) 'rd': dep.rd};
+    final ext = dep.d['ext'];
+    Doc nova(String desc, String cat, String? rd, double v, int k) {
+      final id = novoId('e') + '$k';
+      final d = <String, dynamic>{...base, 'id': id, 'valor': _c2(v), 'desc': desc, 'cat': cat, 'div': grp, 'divT': tot, 'criado': agora + k}
+        ..remove('rd')
+        ..remove('divO')
+        ..remove('ext');
+      if (rd != null) d['rd'] = rd;
+      if (ext is String && ext.isNotEmpty) d['ext'] = '$ext#$id';
+      return d;
+    }
+
+    return [sobra, nova(r.nome, r.cat, r.id, parte, 1), nova(resto.desc, resto.cat, resto.rd, total - parte, 2)];
+  }
   if (dep != null) {
     final grp = dep.d['div'] is String ? dep.d['div'] as String : novoId('dv');
     final tot = dep.d['divT'] != null ? numD(dep.d['divT']) : dep.valor;
