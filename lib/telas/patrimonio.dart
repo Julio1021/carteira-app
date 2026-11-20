@@ -1687,7 +1687,7 @@ class _RelatoriosState extends State<_Relatorios> {
         Cartao(
           padding: const EdgeInsets.fromLTRB(14, 14, 14, 6),
           child: Builder(builder: (context) {
-            String n(double v, {bool sinal = false}) => brl(v, sinal: sinal).replaceFirst('R\$ ', '');
+            String n(double v, {bool sinal = false}) => brl(v, sinal: sinal).replaceFirst('R\$\u00A0', '');
             final cab = TextStyle(color: G.apagado, fontSize: 11, fontWeight: FontWeight.w600);
             Widget cel(String t, {int flex = 3, TextStyle? estilo}) => Expanded(
                   flex: flex,

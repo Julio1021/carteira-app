@@ -11,7 +11,8 @@ const diasSemana = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
 bool valoresOcultos = false;
 
 /// R$ 1.234,56 (com sinal de menos quando negativo). Respeita o modo privacidade.
-String brl(num v, {bool sinal = false}) => valoresOcultos ? 'R\$ ••••' : brlSempre(v, sinal: sinal);
+/// Espaços não separáveis: "R\$ 1.234,56" nunca quebra de linha no meio.
+String brl(num v, {bool sinal = false}) => (valoresOcultos ? 'R\$ ••••' : brlSempre(v, sinal: sinal)).replaceAll(' ', '\u00A0');
 
 /// Igual a [brl], mas mostra o valor mesmo no modo privacidade (campos de edição).
 String brlSempre(num v, {bool sinal = false}) {

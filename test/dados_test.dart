@@ -8,11 +8,11 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   group('formatação', () {
     test('brl', () {
-      expect(brl(1234.5), 'R\$ 1.234,50');
-      expect(brl(0), 'R\$ 0,00');
-      expect(brl(-12.3), '− R\$ 12,30');
-      expect(brl(1000000), 'R\$ 1.000.000,00');
-      expect(brl(5, sinal: true), '+ R\$ 5,00');
+      expect(brl(1234.5).replaceAll("\u00A0", " "), 'R\$ 1.234,50');
+      expect(brl(0).replaceAll("\u00A0", " "), 'R\$ 0,00');
+      expect(brl(-12.3).replaceAll("\u00A0", " "), '− R\$ 12,30');
+      expect(brl(1000000).replaceAll("\u00A0", " "), 'R\$ 1.000.000,00');
+      expect(brl(5, sinal: true).replaceAll("\u00A0", " "), '+ R\$ 5,00');
     });
     test('lerValor', () {
       expect(lerValor('1.234,56'), 1234.56);
