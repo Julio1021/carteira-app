@@ -367,6 +367,7 @@ class _LancarState extends State<_Lancar> {
   final saldoMexido = <String, bool>{};
   final saldoBase = <String, double?>{};
   final saldoOrig = <String, String>{};
+  int periodo = 0; // 0 = desde o último lançamento, 1 = semana, 2 = mês
 
   @override
   void initState() {
@@ -481,6 +482,46 @@ class _LancarState extends State<_Lancar> {
     widget.aoSalvar();
   }
 
+  /// Início do período escolhido (segunda-feira da semana ou dia 1 do mês).
+  String _inicioPeriodo() {
+    final d = DateTime.parse(data);
+    if (periodo == 1) return isoDe(d.subtract(Duration(days: d.weekday - 1)));
+    return '${data.substring(0, 8)}01';
+  }
+
+  /// Base de comparação do resultado: saldo de partida, a data dele e os aportes
+  /// já lançados no período (o aporte digitado agora é somado à parte).
+  ({double base, String dBase, double apAntes})? _base(Repo repo, PosAtivo p) {
+    if (periodo == 0) {
+      final ant = _anterior(repo, p);
+      return ant == null ? null : (base: ant, dBase: _dataAnterior(repo, p)!, apAntes: 0);
+    }
+    final ini = _inicioPeriodo();
+    final ids = widget.c.pais.contains(p.a.id) ? [for (final a in widget.c.ativos) if (a.pai == p.a.id) a.id] : [p.a.id];
+    var base = 0.0, ap = 0.0;
+    String? dBase;
+    var achou = false;
+    for (final id in ids) {
+      final ls = (widget.c.porAtivo[id] ?? const <Lancamento>[]).where((l) => l.data.compareTo(data) < 0).toList();
+      if (ls.isEmpty) continue;
+      final antes = ls.where((l) => l.data.compareTo(ini) < 0).toList();
+      final dentro = ls.where((l) => l.data.compareTo(ini) >= 0).toList();
+      Lancamento? partida;
+      if (antes.isNotEmpty) {
+        partida = antes.last;
+        ap += dentro.fold<double>(0, (t, l) => t + l.aporte);
+      } else {
+        // o ativo começou dentro do período: parte do primeiro lançamento dele
+        partida = dentro.first;
+        ap += dentro.skip(1).fold<double>(0, (t, l) => t + l.aporte);
+      }
+      achou = true;
+      base += partida.saldo;
+      if (dBase == null || partida.data.compareTo(dBase) < 0) dBase = partida.data;
+    }
+    return achou ? (base: base, dBase: dBase!, apAntes: ap) : null;
+  }
+
   static double? _lerComSinal(String t) {
     final neg = t.trim().startsWith('-');
     final v = lerValor(t.replaceAll('-', ''));
@@ -520,6 +561,8 @@ class _LancarState extends State<_Lancar> {
           ),
         ]),
       ),
+      const SizedBox(height: 12),
+      _SeletorPeriodo(valor: periodo, aoMudar: (v) => setState(() => periodo = v)),
       const SizedBox(height: 12),
       for (final p in ps) ...[
         Builder(builder: (_) {
@@ -562,7 +605,7 @@ class _LancarState extends State<_Lancar> {
                   ),
                 ),
               ]),
-              if (ant != null) _ResultadoLanc(ant: ant, dAnt: dAnt!, data: data, saldo: s, aporte: ap),
+              if (_base(repo, p) case final b?) _ResultadoLanc(ant: b.base, dAnt: b.dBase, data: data, saldo: s, aporte: ap, apAntes: b.apAntes, periodo: periodo),
               // o saldo parece não incluir o aporte/resgate (o "rendimento" fica perto de −aporte)
               if (rend != null && s != null && ap != 0 && (rend + ap).abs() < ap.abs() * .5)
                 Container(
@@ -597,18 +640,18 @@ class _LancarState extends State<_Lancar> {
         var rendeu = 0.0, aportes = 0.0, antes = 0.0, depois = 0.0;
         var n = 0;
         for (final p in ps) {
-          final ant = _anterior(repo, p);
+          final b = _base(repo, p);
           final sv = lerValor(_sc(p.a.id).text);
-          if (ant == null || sv == null) continue;
-          final ap = _lerComSinal(_ac(p.a.id).text) ?? 0;
-          rendeu += sv - ant - ap;
+          if (b == null || sv == null) continue;
+          final ap = (_lerComSinal(_ac(p.a.id).text) ?? 0) + b.apAntes;
+          rendeu += sv - b.base - ap;
           aportes += ap;
-          antes += ant;
+          antes += b.base;
           depois += sv;
           n++;
         }
         if (n == 0) return const SizedBox();
-        return Padding(padding: const EdgeInsets.only(bottom: 12), child: _ResumoLanc(n: n, rendeu: rendeu, aportes: aportes, antes: antes, depois: depois));
+        return Padding(padding: const EdgeInsets.only(bottom: 12), child: _ResumoLanc(n: n, rendeu: rendeu, aportes: aportes, antes: antes, depois: depois, periodo: periodo, data: data));
       }),
       FilledButton.icon(onPressed: _salvar, icon: const Icon(Icons.check_rounded), label: const Text('Salvar lançamentos')),
     ]);
@@ -621,8 +664,9 @@ class _ResultadoLanc extends StatelessWidget {
   final double ant;
   final String dAnt, data;
   final double? saldo;
-  final double aporte;
-  const _ResultadoLanc({required this.ant, required this.dAnt, required this.data, required this.saldo, required this.aporte});
+  final double aporte, apAntes;
+  final int periodo;
+  const _ResultadoLanc({required this.ant, required this.dAnt, required this.data, required this.saldo, required this.aporte, this.apAntes = 0, this.periodo = 0});
 
   @override
   Widget build(BuildContext context) {
@@ -635,6 +679,7 @@ class _ResultadoLanc extends StatelessWidget {
         child: Text('Digite o saldo de hoje para ver quanto rendeu desde ${dataCurta(dAnt)}.', style: TextStyle(fontSize: 12.5, color: S.muted)),
       );
     }
+    final aporte = this.aporte + apAntes;
     final rend = s - ant - aporte;
     final igual = rend.abs() < .005;
     final cor = igual ? S.ink2 : (rend > 0 ? S.pos : S.neg);
@@ -664,7 +709,7 @@ class _ResultadoLanc extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(igual ? 'Não rendeu' : (rend > 0 ? 'Rendeu' : 'Perdeu'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: cor)),
+              Text('${igual ? 'Não rendeu' : (rend > 0 ? 'Rendeu' : 'Perdeu')}${_noPeriodo(periodo, data)}', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: cor)),
               FittedBox(
                 fit: BoxFit.scaleDown,
                 alignment: Alignment.centerLeft,
@@ -686,7 +731,7 @@ class _ResultadoLanc extends StatelessWidget {
         Divider(height: 18, color: cor.withValues(alpha: .18)),
         Row(children: [
           passo('Em ${dataCurta(dAnt)}', brl(ant)),
-          if (aporte != 0) ...[seta, passo(aporte > 0 ? 'Aporte' : 'Resgate', brl(aporte, sinal: true), corV: S.accent)],
+          if (aporte != 0) ...[seta, passo(periodo == 0 ? (aporte > 0 ? 'Aporte' : 'Resgate') : (aporte > 0 ? 'Aportes' : 'Resgates'), brl(aporte, sinal: true), corV: S.accent)],
           seta,
           passo('Agora', brl(s)),
         ]),
@@ -700,11 +745,63 @@ class _ResultadoLanc extends StatelessWidget {
   }
 }
 
+/// " na semana" / " em novembro" (vazio no modo dia).
+String _noPeriodo(int periodo, String data) => switch (periodo) {
+      1 => ' na semana',
+      2 => ' em ${mesesLongos[int.parse(data.substring(5, 7)) - 1].toLowerCase()}',
+      _ => '',
+    };
+
+/// Dia · Semana · Mês: de onde parte a conta do resultado.
+class _SeletorPeriodo extends StatelessWidget {
+  final int valor;
+  final ValueChanged<int> aoMudar;
+  const _SeletorPeriodo({required this.valor, required this.aoMudar});
+  @override
+  Widget build(BuildContext context) {
+    const nomes = ['Dia', 'Semana', 'Mês'];
+    const dicas = ['desde o último lançamento', 'desde segunda-feira', 'desde o dia 1º'];
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      Row(children: [
+        Text('Ver resultado por', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: S.ink2)),
+        const Spacer(),
+        Text(dicas[valor], style: TextStyle(fontSize: 12, color: S.muted)),
+      ]),
+      const SizedBox(height: 8),
+      Container(
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(color: S.c('tabs-bg'), borderRadius: BorderRadius.circular(99), border: Border.all(color: S.line)),
+        child: Row(children: [
+          for (var i = 0; i < 3; i++)
+            Expanded(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => aoMudar(i),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  padding: const EdgeInsets.symmetric(vertical: 9),
+                  decoration: BoxDecoration(
+                    color: i == valor ? S.surface : Colors.transparent,
+                    borderRadius: BorderRadius.circular(99),
+                    boxShadow: i == valor ? [BoxShadow(color: Colors.black.withValues(alpha: .08), blurRadius: 6, offset: const Offset(0, 2))] : null,
+                  ),
+                  child: Text(nomes[i], textAlign: TextAlign.center, style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: i == valor ? S.ink : S.muted)),
+                ),
+              ),
+            ),
+        ]),
+      ),
+    ]);
+  }
+}
+
 /// Resumo de todos os ativos do lançamento.
 class _ResumoLanc extends StatelessWidget {
   final int n;
   final double rendeu, aportes, antes, depois;
-  const _ResumoLanc({required this.n, required this.rendeu, required this.aportes, required this.antes, required this.depois});
+  final int periodo;
+  final String data;
+  const _ResumoLanc({required this.n, required this.rendeu, required this.aportes, required this.antes, required this.depois, required this.periodo, required this.data});
   @override
   Widget build(BuildContext context) {
     final cor = rendeu.abs() < .005 ? S.ink2 : (rendeu > 0 ? S.pos : S.neg);
@@ -719,7 +816,7 @@ class _ResumoLanc extends StatelessWidget {
     return CartaoSite(
       padding: const EdgeInsets.all(16),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Text('Resultado deste lançamento', style: TextStyle(fontFamily: S.fonteNum, fontSize: 16.5, fontWeight: FontWeight.w700, color: S.ink)),
+        Text(periodo == 0 ? 'Resultado deste lançamento' : 'Resultado${_noPeriodo(periodo, data)}', style: TextStyle(fontFamily: S.fonteNum, fontSize: 16.5, fontWeight: FontWeight.w700, color: S.ink)),
         Text('$n ativo${n == 1 ? '' : 's'} com saldo preenchido', style: TextStyle(fontSize: 12.5, color: S.muted)),
         const SizedBox(height: 10),
         Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
