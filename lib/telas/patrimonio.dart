@@ -368,6 +368,15 @@ class _LancarState extends State<_Lancar> {
   final saldoBase = <String, double?>{};
   final saldoOrig = <String, String>{};
   int periodo = 0; // 0 = desde o último lançamento, 1 = semana, 2 = mês
+  // investidos do Extrato que vão virar aporte neste lançamento (id do investido → ativo)
+  final usarInvest = <String, String>{};
+  final rolagem = ScrollController();
+
+  @override
+  void dispose() {
+    rolagem.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -400,6 +409,7 @@ class _LancarState extends State<_Lancar> {
       (aporteC[id] ??= TextEditingController()).text = a;
       saldoMexido[id] = false;
       saldoOrig[id] = s;
+      usarInvest.clear();
       saldoBase[id] = base ?? _anterior(repo, p);
     }
   }
@@ -476,6 +486,18 @@ class _LancarState extends State<_Lancar> {
     if (ops.isEmpty && apagar.isEmpty) return avisar(context, 'Preencha o saldo de pelo menos um ativo.');
     if (apagar.isNotEmpty) await repo.apagarVarios(apagar);
     if (ops.isNotEmpty) await repo.salvarVarios(ops);
+    if (usarInvest.isNotEmpty) {
+      final ligar = <Doc>[];
+      usarInvest.forEach((invId, ativoId) {
+        final inv = repo.porId(invId);
+        if (inv == null) return;
+        final filhos = [for (final a in widget.c.ativos) if (a.pai == ativoId) a.id];
+        final alvo = filhos.isEmpty ? ativoId : filhos.first;
+        ligar.add({...inv, 'ativo': alvo, 'pat': 'l_${alvo}_$data', 'patV': 0, 'patNovo': false});
+      });
+      await repo.salvarVarios(ligar);
+      usarInvest.clear();
+    }
     HapticFeedback.lightImpact();
     if (!mounted) return;
     avisar(context, 'Saldos de ${dataBr(data)} salvos.');
@@ -491,16 +513,17 @@ class _LancarState extends State<_Lancar> {
 
   /// Base de comparação do resultado: saldo de partida, a data dele e os aportes
   /// já lançados no período (o aporte digitado agora é somado à parte).
-  ({double base, String dBase, double apAntes})? _base(Repo repo, PosAtivo p) {
+  ({double base, String dBase, double apAntes, double apPeso})? _base(Repo repo, PosAtivo p) {
     if (periodo == 0) {
       final ant = _anterior(repo, p);
-      return ant == null ? null : (base: ant, dBase: _dataAnterior(repo, p)!, apAntes: 0);
+      return ant == null ? null : (base: ant, dBase: _dataAnterior(repo, p)!, apAntes: 0, apPeso: 0);
     }
     final ini = _inicioPeriodo();
     final ids = widget.c.pais.contains(p.a.id) ? [for (final a in widget.c.ativos) if (a.pai == p.a.id) a.id] : [p.a.id];
     var base = 0.0, ap = 0.0;
     String? dBase;
     var achou = false;
+    final movs = <Lancamento>[];
     for (final id in ids) {
       final ls = (widget.c.porAtivo[id] ?? const <Lancamento>[]).where((l) => l.data.compareTo(data) < 0).toList();
       if (ls.isEmpty) continue;
@@ -509,17 +532,72 @@ class _LancarState extends State<_Lancar> {
       Lancamento? partida;
       if (antes.isNotEmpty) {
         partida = antes.last;
-        ap += dentro.fold<double>(0, (t, l) => t + l.aporte);
+        movs.addAll(dentro);
       } else {
         // o ativo começou dentro do período: parte do primeiro lançamento dele
         partida = dentro.first;
-        ap += dentro.skip(1).fold<double>(0, (t, l) => t + l.aporte);
+        movs.addAll(dentro.skip(1));
       }
+      ap += movs.where((l) => l.ativo == id).fold<double>(0, (t, l) => t + l.aporte);
       achou = true;
       base += partida.saldo;
       if (dBase == null || partida.data.compareTo(dBase) < 0) dBase = partida.data;
     }
-    return achou ? (base: base, dBase: dBase!, apAntes: ap) : null;
+    if (!achou) return null;
+    // % pelo método de Dietz: cada aporte pesa pelo tempo que ficou aplicado no período
+    final fim = DateTime.parse(data);
+    final total = fim.difference(DateTime.parse(dBase!)).inDays;
+    var peso = 0.0;
+    if (total > 0) {
+      for (final l in movs) {
+        peso += l.aporte * fim.difference(DateTime.parse(l.data)).inDays / total;
+      }
+    }
+    return (base: base, dBase: dBase, apAntes: ap, apPeso: peso);
+  }
+
+  /// Rendimentos de lançamentos já salvos que fogem do normal (provável aporte não informado).
+  List<({Lancamento l, Ativo a, double rend, double pc})> _suspeitos() {
+    final out = <({Lancamento l, Ativo a, double rend, double pc})>[];
+    for (final a in widget.c.ativos) {
+      final ls = widget.c.porAtivo[a.id] ?? const <Lancamento>[];
+      for (var i = 1; i < ls.length; i++) {
+        final prev = ls[i - 1], l = ls[i];
+        if (prev.saldo <= 0 || l.d['okRend'] == true) continue;
+        final rend = l.saldo - prev.saldo - l.aporte;
+        final pc = rend / prev.saldo;
+        if (pc.abs() > .02 && rend.abs() >= 20) out.add((l: l, a: a, rend: rend, pc: pc));
+      }
+    }
+    out.sort((x, y) => y.l.data.compareTo(x.l.data));
+    return out;
+  }
+
+  /// Investidos do Extrato (aplicações/resgates) que ainda não estão no Patrimônio.
+  List<Investido> _investSoltos(Repo repo) => investidosSemAtivo(repo).where((i) => i.data.compareTo(data) <= 0).toList();
+
+  /// Ativos (do topo) em que o investido ainda cabe como aporte: depois do último lançamento deles.
+  List<PosAtivo> _alvosDe(Repo repo, Investido i) => [
+        for (final p in widget.c.posicoes)
+          if ((_dataAnterior(repo, p) ?? '0000').compareTo(i.data) < 0) p,
+      ];
+
+  void _usarInvestido(Investido i, PosAtivo p) {
+    final ant = usarInvest[i.id];
+    if (ant != null) _somarAporte(ant, -i.liquido);
+    if (ant == p.a.id) {
+      usarInvest.remove(i.id);
+    } else {
+      usarInvest[i.id] = p.a.id;
+      _somarAporte(p.a.id, i.liquido);
+    }
+  }
+
+  void _somarAporte(String id, double v) {
+    final atual = _lerComSinal(_ac(id).text) ?? 0;
+    final novo = atual + v;
+    _ac(id).text = novo.abs() < .005 ? '' : (novo < 0 ? '-${valorCampo(-novo)}' : valorCampo(novo));
+    _aporteMudou(id);
   }
 
   static double? _lerComSinal(String t) {
@@ -544,13 +622,16 @@ class _LancarState extends State<_Lancar> {
         ),
       );
     }
-    return ListView(padding: const EdgeInsets.fromLTRB(12, 0, 12, 150), children: [
+    final soltos = _investSoltos(repo);
+    final suspeitos = _suspeitos();
+    return ListView(controller: rolagem, padding: const EdgeInsets.fromLTRB(12, 0, 12, 150), children: [
       Cartao(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           const Text('Lançar valores do dia', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 4),
-          Text('Saldo hoje: o total que aparece no app do banco agora. Aporte (+) ou resgate (−): só o que você colocou ou tirou nesse dia — se só rendeu, deixe vazio.',
-              style: TextStyle(color: G.texto2, fontSize: 12.5, height: 1.35)),
+          const SizedBox(height: 8),
+          _Dica(rotulo: 'Saldo', texto: 'o total que aparece no app do banco agora, já com o dinheiro que você colocou ou tirou.'),
+          const SizedBox(height: 6),
+          _Dica(rotulo: 'Aporte', texto: 'todo o dinheiro que você colocou (+) ou tirou (−) desde o último lançamento daquele investimento. Se só rendeu, deixe vazio.'),
           const SizedBox(height: 12),
           CampoData(
             data: data,
@@ -562,6 +643,15 @@ class _LancarState extends State<_Lancar> {
         ]),
       ),
       const SizedBox(height: 12),
+      if (soltos.isNotEmpty) ...[
+        _InvestSoltos(
+          itens: soltos,
+          alvos: (i) => _alvosDe(repo, i),
+          escolhido: usarInvest,
+          aoEscolher: (i, p) => setState(() => _usarInvestido(i, p)),
+        ),
+        const SizedBox(height: 12),
+      ],
       _SeletorPeriodo(valor: periodo, aoMudar: (v) => setState(() => periodo = v)),
       const SizedBox(height: 12),
       for (final p in ps) ...[
@@ -582,7 +672,7 @@ class _LancarState extends State<_Lancar> {
               ]),
               Padding(
                 padding: const EdgeInsets.only(top: 2, bottom: 10),
-                child: Text(ant == null ? 'Primeiro lançamento: o saldo vira o valor aplicado.' : 'Último: ${brl(ant)} em ${dataBr(dAnt!)}', style: TextStyle(color: G.apagado, fontSize: 12.5)),
+                child: Text(ant == null ? 'Primeiro lançamento: o saldo vira o valor aplicado.' : 'Último lançamento: ${brl(ant)} em ${dataBr(dAnt!)}', style: TextStyle(color: G.apagado, fontSize: 12.5)),
               ),
               Row(children: [
                 Expanded(
@@ -600,36 +690,37 @@ class _LancarState extends State<_Lancar> {
                     controller: aporteC[p.a.id],
                     keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
                     inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,\-]'))],
-                    decoration: const InputDecoration(labelText: 'Aporte / resgate', hintText: 'só se mexeu'),
+                    decoration: InputDecoration(labelText: 'Aporte / resgate', hintText: ant == null ? '' : 'desde ${dataCurta(dAnt!)}'),
                     onChanged: (_) => setState(() => _aporteMudou(p.a.id)),
                   ),
                 ),
               ]),
-              if (_base(repo, p) case final b?) _ResultadoLanc(ant: b.base, dAnt: b.dBase, data: data, saldo: s, aporte: ap, apAntes: b.apAntes, periodo: periodo),
-              // o saldo parece não incluir o aporte/resgate (o "rendimento" fica perto de −aporte)
+              if (_base(repo, p) case final b?) _ResultadoLanc(ant: b.base, dAnt: b.dBase, data: data, saldo: s, aporte: ap, apAntes: b.apAntes, apPeso: b.apPeso, periodo: periodo),
+              // 1) o saldo parece não incluir o aporte/resgate (o "rendimento" fica perto de −aporte)
               if (rend != null && s != null && ap != 0 && (rend + ap).abs() < ap.abs() * .5)
-                Container(
-                  margin: const EdgeInsets.only(top: 8),
-                  padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
-                  decoration: BoxDecoration(color: S.second.withValues(alpha: .12), borderRadius: BorderRadius.circular(10)),
-                  child: Row(children: [
-                    Expanded(
-                      child: Text(
-                        ap > 0
-                            ? 'O saldo hoje parece não incluir este aporte. Ele deve ser o total do banco já com o dinheiro que você colocou.'
-                            : 'O saldo hoje parece ainda incluir este resgate. Ele deve ser o total do banco depois de tirar o dinheiro.',
-                        style: TextStyle(fontSize: 12.5, color: S.ink2, height: 1.35),
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () => setState(() {
-                        final v = s + ap;
-                        _sc(p.a.id).text = valorCampo(v < 0 ? 0 : v);
-                        saldoMexido[p.a.id] = true;
-                      }),
-                      child: Text(ap > 0 ? 'Somar ao saldo' : 'Descontar'),
-                    ),
-                  ]),
+                _Aviso(
+                  texto: ap > 0
+                      ? 'O saldo parece não incluir este aporte. O saldo deve ser o total do banco já com o dinheiro que você colocou.'
+                      : 'O saldo parece ainda incluir este resgate. O saldo deve ser o total do banco depois de tirar o dinheiro.',
+                  botao: ap > 0 ? 'Somar ${brl(ap)} ao saldo' : 'Descontar ${brl(-ap)} do saldo',
+                  aoTocar: () => setState(() {
+                    final v = s + ap;
+                    _sc(p.a.id).text = valorCampo(v < 0 ? 0 : v);
+                    saldoMexido[p.a.id] = true;
+                  }),
+                )
+              // 2) rendeu (ou caiu) demais: provável aporte/resgate não informado
+              else if (rend != null && s != null && ant! > 0 && (rend / ant).abs() > .02 && rend.abs() >= 20)
+                _Aviso(
+                  texto: rend > 0
+                      ? 'Subiu ${pct(rend / ant)} desde ${dataCurta(dAnt!)}, bem acima do normal. Se você colocou dinheiro nesse período, ele é aporte, não rendimento.'
+                      : 'Caiu ${pct(-rend / ant)} desde ${dataCurta(dAnt!)}, bem acima do normal. Se você tirou dinheiro nesse período, ele é resgate, não perda.',
+                  botao: rend > 0 ? 'Foi aporte de ${brl(rend)}' : 'Foi resgate de ${brl(-rend)}',
+                  aoTocar: () => setState(() {
+                    saldoMexido[p.a.id] = true;
+                    final novo = ap + rend;
+                    _ac(p.a.id).text = novo < 0 ? '-${valorCampo(-novo)}' : valorCampo(novo);
+                  }),
                 ),
             ]),
           );
@@ -637,7 +728,7 @@ class _LancarState extends State<_Lancar> {
         const SizedBox(height: 10),
       ],
       Builder(builder: (_) {
-        var rendeu = 0.0, aportes = 0.0, antes = 0.0, depois = 0.0;
+        var rendeu = 0.0, aportes = 0.0, antes = 0.0, depois = 0.0, peso = 0.0;
         var n = 0;
         for (final p in ps) {
           final b = _base(repo, p);
@@ -646,14 +737,30 @@ class _LancarState extends State<_Lancar> {
           final ap = (_lerComSinal(_ac(p.a.id).text) ?? 0) + b.apAntes;
           rendeu += sv - b.base - ap;
           aportes += ap;
+          peso += b.apPeso;
           antes += b.base;
           depois += sv;
           n++;
         }
         if (n == 0) return const SizedBox();
-        return Padding(padding: const EdgeInsets.only(bottom: 12), child: _ResumoLanc(n: n, rendeu: rendeu, aportes: aportes, antes: antes, depois: depois, periodo: periodo, data: data));
+        return Padding(padding: const EdgeInsets.only(bottom: 12), child: _ResumoLanc(n: n, rendeu: rendeu, aportes: aportes, antes: antes, depois: depois, peso: peso, periodo: periodo, data: data));
       }),
       FilledButton.icon(onPressed: _salvar, icon: const Icon(Icons.check_rounded), label: const Text('Salvar lançamentos')),
+      if (suspeitos.isNotEmpty) ...[
+        const SizedBox(height: 18),
+        _Suspeitos(
+          itens: suspeitos,
+          corrigir: (l) {
+            setState(() {
+              data = l.data;
+              periodo = 0;
+              _preencher();
+            });
+            rolagem.animateTo(0, duration: const Duration(milliseconds: 400), curve: Curves.easeOutCubic);
+          },
+          estaCerto: (l) => repo.salvar({...l.d, 'okRend': true}),
+        ),
+      ],
     ]);
   }
 }
@@ -664,9 +771,9 @@ class _ResultadoLanc extends StatelessWidget {
   final double ant;
   final String dAnt, data;
   final double? saldo;
-  final double aporte, apAntes;
+  final double aporte, apAntes, apPeso;
   final int periodo;
-  const _ResultadoLanc({required this.ant, required this.dAnt, required this.data, required this.saldo, required this.aporte, this.apAntes = 0, this.periodo = 0});
+  const _ResultadoLanc({required this.ant, required this.dAnt, required this.data, required this.saldo, required this.aporte, this.apAntes = 0, this.apPeso = 0, this.periodo = 0});
 
   @override
   Widget build(BuildContext context) {
@@ -685,7 +792,8 @@ class _ResultadoLanc extends StatelessWidget {
     final cor = igual ? S.ink2 : (rend > 0 ? S.pos : S.neg);
     final fundo = igual ? S.surface2 : (rend > 0 ? S.posSoft : S.negSoft);
     final dias = DateTime.parse(data).difference(DateTime.parse(dAnt)).inDays;
-    final pc = ant > 0 ? rend / ant : null;
+    final capital = ant + apPeso;
+    final pc = capital > 0 ? rend / capital : null;
     final varia = s - ant;
     Widget passo(String rotulo, String valor, {Color? corV}) => Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -745,6 +853,157 @@ class _ResultadoLanc extends StatelessWidget {
   }
 }
 
+/// Linha de explicação com rótulo em negrito ("Saldo: ...").
+class _Dica extends StatelessWidget {
+  final String rotulo, texto;
+  const _Dica({required this.rotulo, required this.texto});
+  @override
+  Widget build(BuildContext context) => Text.rich(
+        TextSpan(children: [
+          TextSpan(text: '$rotulo: ', style: TextStyle(fontWeight: FontWeight.w700, color: S.ink)),
+          TextSpan(text: texto),
+        ]),
+        style: TextStyle(color: S.ink2, fontSize: 13, height: 1.4),
+      );
+}
+
+/// Aviso amarelo com o texto inteiro e um botão de largura total embaixo.
+class _Aviso extends StatelessWidget {
+  final String texto, botao;
+  final VoidCallback aoTocar;
+  const _Aviso({required this.texto, required this.botao, required this.aoTocar});
+  @override
+  Widget build(BuildContext context) => Container(
+        margin: const EdgeInsets.only(top: 10),
+        padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+        decoration: BoxDecoration(color: S.second.withValues(alpha: .12), borderRadius: BorderRadius.circular(12), border: Border.all(color: S.second.withValues(alpha: .35))),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Icon(Icons.info_outline_rounded, size: 18, color: S.second),
+            const SizedBox(width: 8),
+            Expanded(child: Text(texto, style: TextStyle(fontSize: 13, color: S.ink, height: 1.4))),
+          ]),
+          const SizedBox(height: 8),
+          OutlinedButton(
+            onPressed: aoTocar,
+            style: OutlinedButton.styleFrom(foregroundColor: S.ink, side: BorderSide(color: S.second.withValues(alpha: .6)), padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10)),
+            child: Text(botao, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w700)),
+          ),
+        ]),
+      );
+}
+
+/// Aplicações/resgates registrados no Extrato que ainda não foram para o Patrimônio.
+class _InvestSoltos extends StatelessWidget {
+  final List<Investido> itens;
+  final List<PosAtivo> Function(Investido) alvos;
+  final Map<String, String> escolhido;
+  final void Function(Investido, PosAtivo) aoEscolher;
+  const _InvestSoltos({required this.itens, required this.alvos, required this.escolhido, required this.aoEscolher});
+  @override
+  Widget build(BuildContext context) {
+    final lista = itens.where((i) => alvos(i).isNotEmpty).take(6).toList();
+    if (lista.isEmpty) return const SizedBox();
+    return CartaoSite(
+      padding: const EdgeInsets.all(16),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Text('Movimentações do Extrato', style: TextStyle(fontFamily: S.fonteNum, fontSize: 16.5, fontWeight: FontWeight.w700, color: S.ink)),
+        const SizedBox(height: 4),
+        Text('Você registrou estes investimentos no Extrato, mas eles ainda não estão no Patrimônio. Toque onde o dinheiro foi para contar como aporte (ou resgate) e não virar rendimento.',
+            style: TextStyle(fontSize: 13, color: S.ink2, height: 1.4)),
+        for (final i in lista) ...[
+          Divider(height: 22, color: S.line),
+          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(i.desc, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: S.ink)),
+                Text('${dataBr(i.data)} · ${i.resgate ? 'resgate (voltou para a conta)' : 'aplicação (saiu da conta)'}', style: TextStyle(fontSize: 12.5, color: S.muted)),
+              ]),
+            ),
+            const SizedBox(width: 8),
+            Text(brl(i.liquido, sinal: true), style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w800, color: S.accent)),
+          ]),
+          const SizedBox(height: 8),
+          Wrap(spacing: 6, runSpacing: 6, children: [
+            for (final p in alvos(i))
+              Material(
+                color: escolhido[i.id] == p.a.id ? S.accent : S.surface,
+                shape: StadiumBorder(side: BorderSide(color: escolhido[i.id] == p.a.id ? S.accent : S.line)),
+                child: InkWell(
+                  customBorder: const StadiumBorder(),
+                  onTap: () => aoEscolher(i, p),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      if (escolhido[i.id] == p.a.id) ...[const Icon(Icons.check_rounded, size: 16, color: Colors.white), const SizedBox(width: 4)],
+                      Text(p.a.nome, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: escolhido[i.id] == p.a.id ? Colors.white : S.ink)),
+                    ]),
+                  ),
+                ),
+              ),
+          ]),
+          if (escolhido[i.id] != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Text('Entrou no campo de aporte. Ao salvar, fica ligado a este lançamento.', style: TextStyle(fontSize: 12, color: S.pos, fontWeight: FontWeight.w600)),
+            ),
+        ],
+      ]),
+    );
+  }
+}
+
+/// Lançamentos já salvos com rendimento fora do normal.
+class _Suspeitos extends StatelessWidget {
+  final List<({Lancamento l, Ativo a, double rend, double pc})> itens;
+  final ValueChanged<Lancamento> corrigir, estaCerto;
+  const _Suspeitos({required this.itens, required this.corrigir, required this.estaCerto});
+  @override
+  Widget build(BuildContext context) => CartaoSite(
+        padding: const EdgeInsets.all(16),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Text('Rendimentos para conferir', style: TextStyle(fontFamily: S.fonteNum, fontSize: 16.5, fontWeight: FontWeight.w700, color: S.ink)),
+          const SizedBox(height: 4),
+          Text('Variações acima de 2% num lançamento costumam ser aporte ou resgate que não foi informado. Confira cada uma.',
+              style: TextStyle(fontSize: 13, color: S.ink2, height: 1.4)),
+          for (final x in itens.take(8)) ...[
+            Divider(height: 22, color: S.line),
+            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(x.a.nome, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: S.ink)),
+                  Text('Lançamento de ${dataBr(x.l.data)}', style: TextStyle(fontSize: 12.5, color: S.muted)),
+                ]),
+              ),
+              const SizedBox(width: 8),
+              Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                Text('${x.rend >= 0 ? 'Rendeu' : 'Perdeu'} ${brl(x.rend, sinal: true)}', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800, color: x.rend >= 0 ? S.pos : S.neg)),
+                Text(pct(x.pc, sinal: true), style: TextStyle(fontSize: 12.5, color: S.muted)),
+              ]),
+            ]),
+            const SizedBox(height: 8),
+            Row(children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => corrigir(x.l),
+                  style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 10)),
+                  child: const Text('Corrigir este dia', textAlign: TextAlign.center),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextButton(
+                  onPressed: () => estaCerto(x.l),
+                  style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 10)),
+                  child: const Text('Está certo', textAlign: TextAlign.center),
+                ),
+              ),
+            ]),
+          ],
+        ]),
+      );
+}
+
 /// " na semana" / " em novembro" (vazio no modo dia).
 String _noPeriodo(int periodo, String data) => switch (periodo) {
       1 => ' na semana',
@@ -798,14 +1057,14 @@ class _SeletorPeriodo extends StatelessWidget {
 /// Resumo de todos os ativos do lançamento.
 class _ResumoLanc extends StatelessWidget {
   final int n;
-  final double rendeu, aportes, antes, depois;
+  final double rendeu, aportes, antes, depois, peso;
   final int periodo;
   final String data;
-  const _ResumoLanc({required this.n, required this.rendeu, required this.aportes, required this.antes, required this.depois, required this.periodo, required this.data});
+  const _ResumoLanc({required this.n, required this.rendeu, required this.aportes, required this.antes, required this.depois, this.peso = 0, required this.periodo, required this.data});
   @override
   Widget build(BuildContext context) {
     final cor = rendeu.abs() < .005 ? S.ink2 : (rendeu > 0 ? S.pos : S.neg);
-    final pc = antes > 0 ? rendeu / antes : null;
+    final pc = antes + peso > 0 ? rendeu / (antes + peso) : null;
     Widget lin(String r, String v, {Color? c, bool forte = false}) => Padding(
           padding: const EdgeInsets.symmetric(vertical: 3),
           child: Row(children: [
