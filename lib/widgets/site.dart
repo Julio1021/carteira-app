@@ -188,20 +188,26 @@ class BotaoSm extends StatelessWidget {
       );
 }
 
-/// Ícone de categoria do site: quadrado de cantos 12 com a cor a 17%.
+/// Ícone de categoria: desenho cheio na cor da categoria, sobre um quadrado
+/// de cantos arredondados com a mesma cor bem clarinha (no escuro, um pouco
+/// mais forte e o ícone mais claro, para não sumir).
 class IconeCatSite extends StatelessWidget {
   final Categoria cat;
   final bool entrada;
   final double tam;
   const IconeCatSite(this.cat, {super.key, this.entrada = false, this.tam = 40});
   @override
-  Widget build(BuildContext context) => Container(
-        width: tam,
-        height: tam,
-        decoration: BoxDecoration(color: cat.cor.withValues(alpha: .17), borderRadius: BorderRadius.circular(tam * .3)),
-        alignment: Alignment.center,
-        child: IconeSite(Ico.deCategoria(cat, entrada: entrada), tam: tam * .45, cor: cat.cor),
-      );
+  Widget build(BuildContext context) {
+    final esc = S.escuro;
+    final cor = esc ? Color.lerp(cat.cor, Colors.white, .28)! : cat.cor;
+    return Container(
+      width: tam,
+      height: tam,
+      decoration: BoxDecoration(color: cat.cor.withValues(alpha: esc ? .24 : .14), borderRadius: BorderRadius.circular(tam * .3)),
+      alignment: Alignment.center,
+      child: Icon(cat.icone, size: tam * .52, color: cor),
+    );
+  }
 }
 
 /// Linha de lançamento do site (.tx): ícone, título, "categoria · forma" e valor.

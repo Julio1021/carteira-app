@@ -136,4 +136,35 @@ void main() {
   test('norm tira acentos', () {
     expect(norm('Pagamento Conta Água'), 'PAGAMENTO CONTA AGUA');
   });
+
+  group('recebimento junto com outro valor', () {
+    Repo base() => Repo.memoria([
+          {'kind': 'renda', 'id': 'rd_va', 'nome': 'Vale alimentação', 'valor': 900, 'regra': 'dia', 'dia': 20},
+          {'kind': 'rendaapp', 'id': 'rd_13', 'nome': '13º salário', 'valor': 2000, 'regra': 'dia', 'dia': 20, 'freq': 'anual', 'mes': 11, 'cat': 'salario'},
+          {'kind': 'entrada', 'id': 'dep', 'desc': 'Pix Prefeitura', 'valor': 2900, 'data': '2026-11-20', 'cat': 'pix', 'ext': 'x1', 'conta': 'c1'},
+        ]);
+
+    test('divide o depósito sem mudar o total e marca os dois recebimentos', () async {
+      final r = base();
+      final va = r.rendas.firstWhere((x) => x.id == 'rd_va');
+      final deps = depositosPara(r, va, '2026-11-20', 900);
+      expect(deps.map((e) => e.id), ['dep']);
+      final ds = destinosResto(r, va, '2026-11-20', deps.first);
+      final d13 = ds.firstWhere((d) => d.rd == 'rd_13');
+      await r.salvarVarios(docsDivisao(r: va, parte: 900, resto: d13, dep: deps.first));
+      expect(r.entradas.length, 2);
+      expect(r.entradas.fold<double>(0, (a, e) => a + e.valor), 2900);
+      expect(r.entradas.every((e) => e.doExtrato), isTrue);
+      expect(statusRenda(r, va, '2026-11', hoje: hoje)!.rec!.valor, 900);
+      final r13 = r.rendas.firstWhere((x) => x.id == 'rd_13');
+      expect(statusRenda(r, r13, '2026-11', hoje: hoje)!.rec!.valor, 2000);
+      // desfazer volta ao depósito original
+      final x = desfazerDivisao(r, r.entradas.first.d['div'] as String);
+      await r.salvarVarios(x.salvar);
+      await r.apagarVarios(x.apagar);
+      expect(r.entradas.single.valor, 2900);
+      expect(r.entradas.single.desc, 'Pix Prefeitura');
+      expect(r.entradas.single.d['div'], isNull);
+    });
+  });
 }

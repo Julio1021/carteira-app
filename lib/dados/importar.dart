@@ -284,7 +284,7 @@ PlanoImport planoImport(Repo repo, Ofx o, {required String dono, String desde = 
     manuais[k] = (manuais[k] ?? 0) + 1;
   }
   final pgManuais = repo.gastos.where((g) => !g.doExtrato && g.d['pg'] != null).toList();
-  final manuaisE = repo.entradas.where((x) => !x.doExtrato && (x.d['emp'] != null || x.rd != null || x.d['rapido'] != null)).toList();
+  final manuaisE = repo.entradas.where((x) => !x.doExtrato && (x.d['emp'] != null || x.rd != null || x.d['rapido'] != null || x.d['div'] != null)).toList();
   final propMes = <String, ({double entrou, double saiu, String ult})>{};
   final rendas = repo.rendas.where((r) => r.valor > 0).toList();
   final ccs = cartoes(repo);
@@ -305,9 +305,15 @@ PlanoImport planoImport(Repo repo, Ofx o, {required String dono, String desde = 
         }
         continue;
       }
-      final jm = manuaisE.indexWhere((x) => (x.valor - t.valor).abs() < .01 && (diasEntre(x.data, t.data) - 1).abs() <= 5);
+      // um depósito dividido à mão (ex.: vale + 13º) casa pelo total
+      final jm = manuaisE.indexWhere((x) => ((x.d['div'] != null ? numD(x.d['divT']) : x.valor) - t.valor).abs() < .01 && (diasEntre(x.data, t.data) - 1).abs() <= 5);
       if (jm >= 0) {
-        manuaisE.removeAt(jm);
+        final grp = manuaisE[jm].d['div'];
+        if (grp != null) {
+          manuaisE.removeWhere((x) => x.d['div'] == grp);
+        } else {
+          manuaisE.removeAt(jm);
+        }
         p.jaImportados++;
         continue;
       }
