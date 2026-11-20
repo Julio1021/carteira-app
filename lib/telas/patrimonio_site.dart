@@ -201,85 +201,95 @@ class PosicaoAtualSite extends StatelessWidget {
   final ValueChanged<PosAtivo>? abrir;
   const PosicaoAtualSite({super.key, required this.c, required this.posicoes, this.verRelatorios, this.abrir});
 
-  Widget _lin(String r, Widget v) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(children: [
-          Expanded(child: Text(r, style: TextStyle(fontSize: 12.5, color: S.muted))),
-          v,
-        ]),
-      );
-
-  Widget _txt(String t, {bool forte = false, Color? cor}) => Text(t, style: TextStyle(fontSize: 13.5, fontWeight: forte ? FontWeight.w700 : FontWeight.w500, color: cor ?? S.ink));
-
   @override
   Widget build(BuildContext context) {
     final tot = c.total;
+    Widget pilula(double r) => Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          decoration: BoxDecoration(color: r >= 0 ? S.posSoft : S.negSoft, borderRadius: BorderRadius.circular(99)),
+          child: Text(pct(r, sinal: true), style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: r >= 0 ? S.pos : S.neg)),
+        );
     return CartaoSite(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        const CabecalhoSite('Posição atual', sub: 'Saldo, valor aplicado e resultado de cada ativo'),
-        if (verRelatorios != null) ...[
-          Align(alignment: Alignment.centerLeft, child: BotaoSm('Ver relatórios', onTap: verRelatorios!, seta: false)),
-          const SizedBox(height: 8),
-        ],
+        const CabecalhoSite('Posição atual', sub: 'Quanto você aplicou em cada investimento e quanto ele já rendeu'),
         for (var i = 0; i < posicoes.length; i++) ...[
-          if (i > 0) Divider(color: S.line, height: 18),
+          if (i > 0) Divider(height: 1, color: S.line),
           InkWell(
             onTap: abrir == null ? null : () => abrir!(posicoes[i]),
             borderRadius: BorderRadius.circular(8),
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: () {
+              padding: const EdgeInsets.symmetric(vertical: 11),
+              child: Builder(builder: (_) {
                 final p = posicoes[i];
-                final r = p.rent;
                 final corR = p.lucro >= 0 ? S.pos : S.neg;
-                return [
+                return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                   Row(children: [
-                    Container(width: 11, height: 11, decoration: BoxDecoration(color: p.cor, borderRadius: BorderRadius.circular(3))),
-                    const SizedBox(width: 10),
+                    Container(width: 10, height: 10, decoration: BoxDecoration(color: p.cor, borderRadius: BorderRadius.circular(3))),
+                    const SizedBox(width: 9),
                     Expanded(child: Text(p.a.nome, style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700, color: S.ink))),
+                    Text(brl(p.valor), style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w800, color: S.ink)),
                   ]),
-                  const SizedBox(height: 6),
-                  _lin('Classe', _txt(p.a.classe)),
-                  _lin('Saldo atual', _txt(brl(p.valor), forte: true)),
-                  _lin('Aplicado', _txt(brl(p.investido))),
-                  _lin('Resultado', _txt(brl(p.lucro, sinal: true), cor: corR)),
-                  _lin(
-                    'Rent.',
-                    r.isFinite
-                        ? Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                            decoration: BoxDecoration(color: (r >= 0 ? S.posSoft : S.negSoft), borderRadius: BorderRadius.circular(99)),
-                            child: Text(pct(r, sinal: true), style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: corR)),
-                          )
-                        : _txt('—'),
+                  const SizedBox(height: 4),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 19),
+                    child: Row(children: [
+                      Expanded(
+                        child: Text.rich(
+                          TextSpan(children: [
+                            TextSpan(text: 'Aplicou ${brl(p.investido)} · rendeu '),
+                            TextSpan(text: brl(p.lucro, sinal: true), style: TextStyle(fontWeight: FontWeight.w700, color: corR)),
+                          ]),
+                          style: TextStyle(fontSize: 12.5, color: S.muted, height: 1.35),
+                        ),
+                      ),
+                      if (p.rent.isFinite) ...[const SizedBox(width: 6), pilula(p.rent)],
+                    ]),
                   ),
-                  _lin('Part.', _txt(pct(tot > 0 ? p.valor / tot : 0))),
-                  if (p.ultima != null) _lin('Último lanç.', _txt(dataBr(p.ultima!.data))),
-                ];
-              }()),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 19, top: 2),
+                    child: Text(
+                      '${p.a.classe} · ${pct(tot > 0 ? p.valor / tot : 0)} da carteira${p.ultima != null ? ' · atualizado ${dataCurta(p.ultima!.data)}' : ''}',
+                      style: TextStyle(fontSize: 12, color: S.muted, height: 1.35),
+                    ),
+                  ),
+                ]);
+              }),
             ),
           ),
         ],
-        const SizedBox(height: 12),
+        const SizedBox(height: 6),
         Container(
           padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
           decoration: BoxDecoration(color: S.surface2, borderRadius: BorderRadius.circular(12)),
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            Text('Total', style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700, color: S.ink)),
+            Row(children: [
+              Expanded(child: Text('Total', style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w800, color: S.ink))),
+              Text(brl(tot), style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: S.ink)),
+            ]),
             const SizedBox(height: 4),
-            _lin('Saldo atual', _txt(brl(tot), forte: true)),
-            _lin('Aplicado', _txt(brl(c.investido), forte: true)),
-            _lin('Resultado', _txt(brl(c.rendeu, sinal: true), forte: true, cor: c.rendeu >= 0 ? S.pos : S.neg)),
-            if (c.investido > 0) _lin('Rent.', _txt(pct(c.rendeu / c.investido, sinal: true), forte: true)),
-            _lin('Part.', _txt('100%', forte: true)),
+            Row(children: [
+              Expanded(
+                child: Text.rich(
+                  TextSpan(children: [
+                    TextSpan(text: 'Aplicou ${brl(c.investido)} · rendeu '),
+                    TextSpan(text: brl(c.rendeu, sinal: true), style: TextStyle(fontWeight: FontWeight.w700, color: c.rendeu >= 0 ? S.pos : S.neg)),
+                  ]),
+                  style: TextStyle(fontSize: 12.5, color: S.muted, height: 1.35),
+                ),
+              ),
+              if (c.investido > 0) ...[const SizedBox(width: 6), pilula(c.rendeu / c.investido)],
+            ]),
           ]),
         ),
+        if (verRelatorios != null) ...[
+          const SizedBox(height: 10),
+          Align(alignment: Alignment.centerLeft, child: BotaoSm('Ver relatórios', onTap: verRelatorios!, seta: false)),
+        ],
       ]),
     );
   }
 }
-
 
 /// Reduz a lista de dias para no máximo [max] pontos (gráficos leves).
 List<LinhaDia> amostrarDias(List<LinhaDia> d, int max) {

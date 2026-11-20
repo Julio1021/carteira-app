@@ -252,7 +252,7 @@ class FaixaAvisosSite extends StatelessWidget {
                     style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800, color: S.ink),
                   ),
                   const SizedBox(height: 1),
-                  Text(ord.first.texto, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12.5, color: S.ink2, height: 1.35)),
+                  Text(ord.first.texto, style: TextStyle(fontSize: 12.5, color: S.ink2, height: 1.35)),
                 ]),
               ),
               const SizedBox(width: 6),
