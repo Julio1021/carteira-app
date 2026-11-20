@@ -252,7 +252,8 @@ class _FolhaReceberState extends State<_FolhaReceber> {
       }
       return;
     }
-    final dep = deps.where((e) => e.id == depId).firstOrNull;
+    final dId = depId ?? (deps.isEmpty ? '' : null);
+    final dep = deps.where((e) => e.id == dId).firstOrNull;
     final resto = destinos.where((d) => d.chave == restoK).firstOrNull ?? destinos.first;
     List<Doc> docs;
     double restoV;
@@ -263,7 +264,7 @@ class _FolhaReceberState extends State<_FolhaReceber> {
         return;
       }
       docs = docsDivisao(r: r, parte: v, resto: resto, dep: dep);
-    } else if (depId == '') {
+    } else if (dId == '') {
       final t = lerValor(cTotal.text);
       if (t == null || t <= v) {
         avisar(context, 'Informe o total do depósito; ele tem que ser maior que ${brl(v)}.');
@@ -307,10 +308,12 @@ class _FolhaReceberState extends State<_FolhaReceber> {
             if (rec != null && !recManual && rec!.valor > v + .009) rec!,
             ...depositosPara(repo, r, data, v).take(6),
           ];
-    final dep = deps.where((e) => e.id == depId).firstOrNull;
+    // sem depósito parecido no extrato, já vai direto para "informar o total"
+    final dId = depId ?? (deps.isEmpty ? '' : null);
+    final dep = deps.where((e) => e.id == dId).firstOrNull;
     final destinos = junto ? destinosResto(repo, r, dep?.data ?? data, dep) : const <DestinoResto>[];
     final resto = destinos.where((d) => d.chave == restoK).firstOrNull ?? destinos.firstOrNull;
-    final total = dep?.valor ?? (depId == '' ? (lerValor(cTotal.text) ?? 0) : 0);
+    final total = dep?.valor ?? (dId == '' ? (lerValor(cTotal.text) ?? 0) : 0);
     final corR = catEntrada(r.cat).cor;
     final partes = grp == null ? const <Entrada>[] : partesDivisao(repo, grp!);
 
@@ -347,39 +350,39 @@ class _FolhaReceberState extends State<_FolhaReceber> {
         ]),
         const SizedBox(height: 14),
         CampoValor(c, rotulo: junto ? 'Quanto era do ${r.nome}' : 'Valor recebido', grande: true),
-        if (!junto || depId == '') ...[
+        if (!junto || dId == '') ...[
           const Rotulo('Quando entrou'),
           CampoData(data: data, onMudar: (x) => setState(() => data = x)),
         ],
         if (junto) ...[
           const Rotulo('Em qual depósito ele veio?'),
-          if (deps.isEmpty && depId != '')
+          if (deps.isEmpty)
             Padding(
               padding: const EdgeInsets.only(bottom: 6),
-              child: Text('Não achei no extrato uma entrada maior que ${brl(v)} perto de ${dataCurta(data)}. Informe o total do depósito abaixo.',
+              child: Text('Não achei no extrato uma entrada maior que ${brl(v)} perto de ${dataCurta(data)}. Informe abaixo o total que caiu na conta.',
                   style: TextStyle(color: G.apagado, fontSize: 12.5)),
             ),
           for (final e in deps)
             _Deposito(
               e: e,
-              sel: e.id == depId,
+              sel: e.id == dId,
               onTap: () => setState(() {
                 depId = e.id;
                 restoK = null;
               }),
             ),
           _Deposito(
-            sel: depId == '',
+            sel: dId == '',
             onTap: () => setState(() {
               depId = '';
               restoK = null;
             }),
           ),
-          if (depId == '') ...[
+          if (dId == '') ...[
             const SizedBox(height: 10),
             CampoValor(cTotal, rotulo: 'Total que caiu na conta'),
           ],
-          if (depId != null && resto != null) ...[
+          if (dId != null && resto != null) ...[
             const Rotulo('O resto do depósito é'),
             Wrap(spacing: 8, runSpacing: 8, children: [
               for (final d in destinos)
