@@ -397,7 +397,7 @@ class _TelaImportarInterState extends State<TelaImportarInter> {
     final repo = RepoScope.ler(context);
     setState(() => ocupado = true);
     final docs = docsImportInter(repo, ex!, grupos, modo: modo, alvo: alvo, saldoFinal: lerValor(saldoC.text));
-    await repo.salvarVarios([...docs, ...p.salvarDocs]);
+    await repo.salvarVarios(docs);
     if (!mounted) return;
     setState(() {
       ocupado = false;

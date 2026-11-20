@@ -338,7 +338,7 @@ class LinkSite extends StatelessWidget {
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text(titulo, style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700, color: S.ink, height: 1.5)),
                   const SizedBox(height: 2),
-                  Text(sub, maxLines: conferir ? 2 : 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: corSub ?? S.muted, height: 1.5, fontWeight: conferir ? FontWeight.w600 : null)),
+                  Text(sub, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: S.muted, height: 1.5)),
                   if (progresso != null) ...[
                     const SizedBox(height: 6),
                     ClipRRect(
