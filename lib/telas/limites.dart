@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../widgets/animado.dart';
 import 'package:flutter/services.dart';
 
 import '../dados/categorias.dart';
@@ -155,7 +157,6 @@ class _Resumo extends StatelessWidget {
     final dias = diasRestantes(r.ym);
     final proj = tem ? projecaoMes(gasto, r.ym) : null;
     final uso = tem ? gasto / lim : 0.0;
-    final cor = uso > 1 ? G.neg : (uso >= .8 ? G.alerta : G.lavanda);
     return Cartao(
       padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -177,9 +178,14 @@ class _Resumo extends StatelessWidget {
               Text('  de ${brl(lim)}', style: TextStyle(fontSize: 14, color: t2)),
             ]),
           ),
-          const SizedBox(height: 10),
-          Barra(uso, cor: cor, altura: 6),
-          const SizedBox(height: 12),
+          const SizedBox(height: 6),
+          Builder(builder: (_) {
+            final h = hojeIso();
+            final atual = ymDe(h) == r.ym;
+            final frac = atual ? int.parse(h.substring(8, 10)) / diasNoMes(r.ym) : null;
+            return TuboLimite(uso: uso, limite: lim, hoje: frac, rotuloHoje: atual ? 'hoje, dia ${int.parse(h.substring(8, 10))}' : null);
+          }),
+          const SizedBox(height: 8),
           Row(children: [
             _Num(resta >= 0 ? 'Pode gastar' : 'Passou', brl(resta.abs()), cor: resta < 0 ? G.negTexto : null),
             if (dias > 0 && resta > 0) _Num('Por dia', brl(resta / dias)),

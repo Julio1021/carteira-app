@@ -389,3 +389,326 @@ class _ConfetePainter extends CustomPainter {
   @override
   bool shouldRepaint(_ConfetePainter o) => o.t != t;
 }
+
+// ───────────────────────── velocímetro do ritmo ─────────────────────────
+
+/// Cor da faixa do velocímetro: até 90% do ritmo verde, até 115% amarelo, depois vermelho.
+Color corRitmo(double r) => r <= .9 ? const Color(0xFF1D9E75) : (r <= 1.15 ? const Color(0xFFEF9F27) : const Color(0xFFE24B4A));
+Color corRitmoEscura(double r) => r <= .9 ? const Color(0xFF0F6E56) : (r <= 1.15 ? const Color(0xFF854F0B) : const Color(0xFFA32D2D));
+
+/// Velocímetro clássico: três faixas sólidas e ponteiro grosso. [ritmo] = gasto até
+/// hoje ÷ o que caberia gastar até hoje (1 = exatamente no ritmo).
+class VelocimetroRitmo extends StatefulWidget {
+  final double ritmo;
+  final String titulo, sub;
+  const VelocimetroRitmo({super.key, required this.ritmo, required this.titulo, required this.sub});
+  @override
+  State<VelocimetroRitmo> createState() => _VelocimetroRitmoState();
+}
+
+class _VelocimetroRitmoState extends State<VelocimetroRitmo> with TickerProviderStateMixin {
+  late final AnimationController treme = AnimationController(vsync: this, duration: const Duration(seconds: 6));
+  bool liga = false, iniciou = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (iniciou) return;
+    iniciou = true;
+    liga = animacoesLigadas(context);
+    if (liga) treme.repeat();
+  }
+
+  @override
+  void dispose() {
+    treme.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final alvo = widget.ritmo.isFinite ? widget.ritmo.clamp(0.0, 2.0).toDouble() : 0.0;
+    return LayoutBuilder(builder: (context, c) {
+      final w = math.min(c.maxWidth, 420.0);
+      final h = w * .62;
+      return Center(
+        child: TweenAnimationBuilder<double>(
+          tween: Tween(begin: liga ? 0 : alvo, end: alvo),
+          duration: const Duration(milliseconds: 1100),
+          curve: Curves.easeOutBack,
+          builder: (_, r, __) => AnimatedBuilder(
+            animation: treme,
+            builder: (_, __) {
+              final t = treme.value * 6;
+              final tremor = liga ? math.sin(t * 9) * .01 + math.sin(t * 2.3) * .015 : 0.0;
+              return SizedBox(
+                width: w,
+                height: h,
+                child: Stack(children: [
+                  CustomPaint(size: Size(w, h), painter: _VelPainter(r: r, tremor: tremor, marca: S.surface, texto: S.muted, ponteiro: S.escuro ? const Color(0xFFE8E6DF) : const Color(0xFF2C2C2A))),
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    top: h * .38,
+                    child: Column(children: [
+                      Text(widget.titulo, style: TextStyle(fontFamily: S.fonteNum, fontSize: w * .085, fontWeight: FontWeight.w800, color: corRitmoEscura(widget.ritmo), height: 1.1)),
+                      const SizedBox(height: 2),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: w * .16),
+                        child: Text(widget.sub, textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: S.muted, height: 1.3)),
+                      ),
+                    ]),
+                  ),
+                ]),
+              );
+            },
+          ),
+        ),
+      );
+    });
+  }
+}
+
+class _VelPainter extends CustomPainter {
+  final double r, tremor;
+  final Color marca, texto, ponteiro;
+  _VelPainter({required this.r, required this.tremor, required this.marca, required this.texto, required this.ponteiro});
+
+  @override
+  void paint(Canvas canvas, Size s) {
+    final w = s.width;
+    final cx = w / 2, cy = s.height * .93;
+    final R = w * .40;
+    final esp = w * .072;
+    double ang(double v) => math.pi + v.clamp(0, 2) / 2 * math.pi;
+    final rect = Rect.fromCircle(center: Offset(cx, cy), radius: R);
+    for (final (a, b, cor) in [(0.0, .9, corRitmo(0)), (.9, 1.15, corRitmo(1)), (1.15, 2.0, corRitmo(2))]) {
+      canvas.drawArc(rect, ang(a), ang(b) - ang(a), false, Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = esp
+        ..color = cor);
+    }
+    // separadores das faixas
+    final sep = Paint()
+      ..color = marca
+      ..strokeWidth = 3;
+    for (final v in [.9, 1.15]) {
+      final a = ang(v);
+      canvas.drawLine(Offset(cx + math.cos(a) * (R - esp / 2 - 1), cy + math.sin(a) * (R - esp / 2 - 1)), Offset(cx + math.cos(a) * (R + esp / 2 + 1), cy + math.sin(a) * (R + esp / 2 + 1)), sep);
+    }
+    // tracinhos
+    final tr = Paint()
+      ..color = texto
+      ..strokeCap = StrokeCap.round;
+    for (var i = 0; i <= 10; i++) {
+      final a = math.pi + i / 10 * math.pi;
+      final r1 = R - esp / 2 - 6, r2 = R - esp / 2 - (i % 5 == 0 ? 18 : 12);
+      tr.strokeWidth = i % 5 == 0 ? 3 : 2;
+      canvas.drawLine(Offset(cx + math.cos(a) * r1, cy + math.sin(a) * r1), Offset(cx + math.cos(a) * r2, cy + math.sin(a) * r2), tr);
+    }
+    // "devagar" e "rápido" nas pontas
+    void rot(String t, double x) {
+      final tp = TextPainter(text: TextSpan(text: t, style: TextStyle(fontFamily: 'Manrope', fontSize: 11.5, color: texto, fontWeight: FontWeight.w600)), textDirection: TextDirection.ltr)..layout();
+      tp.paint(canvas, Offset(x - tp.width / 2, cy + 6));
+    }
+
+    rot('devagar', cx - R);
+    rot('rápido', cx + R);
+    // ponteiro grosso
+    final a = ang(r) + tremor;
+    canvas.save();
+    canvas.translate(cx, cy);
+    canvas.rotate(a);
+    final larg = w * .022;
+    final comp = R - esp / 2 - 4;
+    final p = Path()
+      ..moveTo(0, -larg)
+      ..lineTo(comp, -1.5)
+      ..lineTo(comp, 1.5)
+      ..lineTo(0, larg)
+      ..close();
+    canvas.drawPath(p, Paint()..color = ponteiro);
+    canvas.restore();
+    canvas.drawCircle(Offset(cx, cy), larg + 7, Paint()..color = ponteiro);
+    canvas.drawCircle(Offset(cx, cy), larg - 1, Paint()..color = marca);
+  }
+
+  @override
+  bool shouldRepaint(_VelPainter o) => o.r != r || o.tremor != tremor || o.marca != marca || o.ponteiro != ponteiro;
+}
+
+// ───────────────────────── tubo deitado ─────────────────────────
+
+/// Tubo de vidro deitado com líquido: quanto do limite já foi usado, a marca de
+/// "hoje" (onde o gasto deveria estar) e a escala em reais embaixo.
+class TuboLimite extends StatefulWidget {
+  final double uso; // 0..1+
+  final double? hoje; // 0..1
+  final double limite;
+  final String? rotuloHoje;
+  const TuboLimite({super.key, required this.uso, required this.limite, this.hoje, this.rotuloHoje});
+  @override
+  State<TuboLimite> createState() => _TuboLimiteState();
+}
+
+class _TuboLimiteState extends State<TuboLimite> with SingleTickerProviderStateMixin {
+  late final AnimationController onda = AnimationController(vsync: this, duration: const Duration(milliseconds: 3000));
+  bool liga = false, iniciou = false;
+  final bolhas = [for (var i = 0; i < 12; i++) (x: (i * 37 % 100) / 100, y: (i * 53 % 100) / 100, r: 1.5 + (i % 4), v: .5 + (i % 3) * .3)];
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (iniciou) return;
+    iniciou = true;
+    liga = animacoesLigadas(context);
+    if (liga) onda.repeat();
+  }
+
+  @override
+  void dispose() {
+    onda.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final hj = widget.hoje;
+    final cor = widget.uso > 1 ? const Color(0xFFE24B4A) : (hj == null || widget.uso <= hj + .02 ? const Color(0xFF1D9E75) : const Color(0xFFBA7517));
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: liga ? 0 : widget.uso, end: widget.uso),
+      duration: const Duration(milliseconds: 1000),
+      curve: Curves.easeOutCubic,
+      builder: (_, u, __) => AnimatedBuilder(
+        animation: onda,
+        builder: (_, __) => SizedBox(
+          height: 92,
+          child: CustomPaint(
+            size: const Size(double.infinity, 92),
+            painter: _TuboPainter(
+              uso: u,
+              hoje: hj,
+              limite: widget.limite,
+              fase: onda.value * 2 * math.pi,
+              cor: cor,
+              vidro: S.surface2,
+              borda: S.line,
+              texto: S.muted,
+              tinta: S.ink,
+              selo: S.surface,
+              rotuloHoje: widget.rotuloHoje ?? 'hoje',
+              bolhas: bolhas,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TuboPainter extends CustomPainter {
+  final double uso, limite, fase;
+  final double? hoje;
+  final Color cor, vidro, borda, texto, tinta, selo;
+  final String rotuloHoje;
+  final List<({double x, double y, double r, double v})> bolhas;
+  _TuboPainter({required this.uso, required this.hoje, required this.limite, required this.fase, required this.cor, required this.vidro, required this.borda, required this.texto, required this.tinta, required this.selo, required this.rotuloHoje, required this.bolhas});
+
+  String _mil(double v) {
+    if (v <= 0) return 'R\$ 0';
+    if (v >= 1000) return '${(v / 1000).toStringAsFixed(v >= 10000 ? 0 : 1).replaceAll('.', ',').replaceAll(',0', '')} mil';
+    return 'R\$ ${v.round()}';
+  }
+
+  @override
+  void paint(Canvas canvas, Size s) {
+    final w = s.width;
+    const y0 = 22.0, y1 = 56.0;
+    const x0 = 2.0;
+    final x1 = w - 2;
+    final rr = RRect.fromLTRBR(x0, y0, x1, y1, const Radius.circular(17));
+    canvas.drawRRect(rr, Paint()..color = vidro);
+    canvas.save();
+    canvas.clipRRect(rr);
+    final fr = uso.clamp(0.0, 1.0);
+    final xe = x0 + (x1 - x0) * fr;
+    final cheio = uso >= 1;
+    final hj = hoje;
+    if (hj != null && !cheio) {
+      final xh = x0 + (x1 - x0) * hj.clamp(0, 1);
+      if (xe < xh) canvas.drawRect(Rect.fromLTRB(xe, y0, xh, y1), Paint()..color = const Color(0xFF1D9E75).withValues(alpha: .10));
+      if (xe > xh) canvas.drawRect(Rect.fromLTRB(xh, y0, xe, y1), Paint()..color = const Color(0xFFBA7517).withValues(alpha: .14));
+    }
+    final claro = Color.lerp(cor, Colors.white, .3)!;
+    final escuro = Color.lerp(cor, Colors.black, .25)!;
+    for (final (amp, desl, alfa) in [(4.5, 1.8, .5), (3.2, 0.0, 1.0)]) {
+      final p = Path()..moveTo(x0 - 4, y0);
+      for (var y = y0; y <= y1; y += 2) {
+        final wv = cheio || fr <= 0 ? 0.0 : math.sin((y - y0) / (y1 - y0) * 2 * math.pi + fase + desl) * amp;
+        p.lineTo(xe + wv, y);
+      }
+      p
+        ..lineTo(x0 - 4, y1)
+        ..close();
+      canvas.drawPath(
+        p,
+        Paint()
+          ..shader = LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [claro.withValues(alpha: alfa), (alfa < 1 ? claro : escuro).withValues(alpha: alfa)])
+              .createShader(Rect.fromLTRB(0, y0, w, y1)),
+      );
+    }
+    // bolhas indo para trás
+    final pb = Paint()..color = Colors.white.withValues(alpha: .5);
+    for (final b in bolhas) {
+      final x = x0 + 10 + ((b.x - fase / (2 * math.pi) * b.v * .3) % 1) * (xe - x0 - 22);
+      final y = y0 + 6 + b.y * (y1 - y0 - 12) + math.sin(fase * 2 + b.x * 9) * 1.5;
+      if (x < xe - 8 && x > x0 + 6) canvas.drawCircle(Offset(x, y), b.r, pb);
+    }
+    // reflexo do vidro
+    canvas.drawRRect(RRect.fromLTRBR(x0 + 14, y0 + 5, x1 - 14, y0 + 9, const Radius.circular(3)), Paint()..color = Colors.white.withValues(alpha: .35));
+    if (uso > 1) canvas.drawRect(Rect.fromLTRB(x0, y0, x1, y1), Paint()..color = const Color(0xFFE24B4A).withValues(alpha: .10 + .08 * math.sin(fase * 2)));
+    canvas.restore();
+    canvas.drawRRect(rr, Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5
+      ..color = borda);
+    // escala em reais
+    for (final q in [0.0, .25, .5, .75, 1.0]) {
+      final x = x0 + 17 + (x1 - x0 - 34) * q;
+      canvas.drawLine(Offset(x, y1 + 4), Offset(x, y1 + (q == .5 || q == 0 || q == 1 ? 10 : 7)), Paint()
+        ..color = texto
+        ..strokeWidth = 1.5);
+      final tp = TextPainter(text: TextSpan(text: _mil(limite * q), style: TextStyle(fontFamily: 'Manrope', fontSize: 10.5, color: texto)), textDirection: TextDirection.ltr)..layout();
+      tp.paint(canvas, Offset((x - tp.width / 2).clamp(0, w - tp.width), y1 + 13));
+    }
+    // marca de hoje
+    if (hj != null) {
+      final xh = x0 + (x1 - x0) * hj.clamp(0, 1);
+      final dash = Paint()
+        ..color = tinta
+        ..strokeWidth = 2;
+      for (var y = y0 - 2; y < y1 + 2; y += 6) {
+        canvas.drawLine(Offset(xh, y), Offset(xh, math.min(y + 3.5, y1 + 2)), dash);
+      }
+      canvas.drawPath(Path()
+        ..moveTo(xh - 5, y0 - 9)
+        ..lineTo(xh + 5, y0 - 9)
+        ..lineTo(xh, y0 - 2)
+        ..close(), Paint()..color = tinta);
+      final tp = TextPainter(text: TextSpan(text: rotuloHoje, style: TextStyle(fontFamily: 'Manrope', fontSize: 11, fontWeight: FontWeight.w800, color: tinta)), textDirection: TextDirection.ltr)..layout();
+      tp.paint(canvas, Offset((xh - tp.width / 2).clamp(0, w - tp.width), y0 - 22));
+    }
+    // selo com a % que acompanha a ponta da água
+    final pct = '${(uso * 100).round()}%';
+    final tp = TextPainter(text: TextSpan(text: pct, style: TextStyle(fontFamily: 'Bricolage', fontSize: 15, fontWeight: FontWeight.w800, color: escuro)), textDirection: TextDirection.ltr)..layout();
+    final sw = tp.width + 16;
+    var sx = (xe - sw - 10).clamp(x0 + 6, x1 - sw - 6).toDouble();
+    if (xe - x0 < sw + 22) sx = (xe + 8).clamp(x0 + 6, x1 - sw - 6).toDouble();
+    final sy = (y0 + y1) / 2 - 11;
+    canvas.drawRRect(RRect.fromLTRBR(sx, sy, sx + sw, sy + 22, const Radius.circular(11)), Paint()..color = selo.withValues(alpha: .9));
+    tp.paint(canvas, Offset(sx + 8, sy + 11 - tp.height / 2));
+  }
+
+  @override
+  bool shouldRepaint(_TuboPainter o) => o.uso != uso || o.fase != fase || o.cor != cor || o.hoje != hoje || o.vidro != vidro;
+}

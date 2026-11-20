@@ -401,8 +401,6 @@ class PrevisaoSite extends StatelessWidget {
     final fracDia = mesAtual ? int.parse(hoje.substring(8, 10)) / diasNoMes(r.ym) : (r.ym.compareTo(ymDe(hoje)) < 0 ? 1.0 : 0.0);
     final uso = lim > 0 ? g / lim : 0.0;
     final proj = lim > 0 ? projecaoMes(g, r.ym) : null;
-    final noRitmo = uso <= fracDia + .02;
-    final cor = uso > 1 ? S.neg : (noRitmo ? S.pos : S.second);
     final entradas = r.entrou + (mesAtual ? prev.aReceber : 0), saidas = r.saiu + r.agendado + (mesAtual ? prev.faltaPagar : 0);
     Widget linha(String d, String rot, double v, Color c, Color fundo) => Padding(
           padding: const EdgeInsets.only(bottom: 7),
@@ -418,47 +416,50 @@ class PrevisaoSite extends StatelessWidget {
         Text('Previsão do mês', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: S.ink, height: 1.5)),
         const SizedBox(height: 12),
         if (lim > 0) ...[
-          GestureDetector(
-            onTap: irLimites,
-            behavior: HitTestBehavior.opaque,
-            child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-              Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(r.temLimiteGeral ? 'Gasto do limite do mês' : 'Gasto do limite das categorias', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: S.muted)),
-                  const SizedBox(height: 2),
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: NumeroAnimado(g, formato: brl, style: TextStyle(fontFamily: S.fonteNum, fontSize: 22, fontWeight: FontWeight.w800, color: S.ink)),
+          Builder(builder: (_) {
+            final ideal = lim * fracDia;
+            final ritmo = fracDia > 0 ? uso / fracDia : uso;
+            final msg = uso > 1
+                ? 'Você passou ${brl(g - lim)} do limite do mês.'
+                : (proj == null
+                    ? 'Mês fechado: gastou ${brl(g)} de ${brl(lim)}.'
+                    : (ritmo <= .9
+                        ? 'Tranquilo: ${brl(ideal - g)} abaixo do ritmo. No ritmo atual, fecha o mês em ${brl(proj)}.'
+                        : (ritmo <= 1.15
+                            ? 'Atenção: perto do ritmo ideal. No ritmo atual, fecha o mês em ${brl(proj)}.'
+                            : 'Rápido demais: ${brl(g - ideal)} acima do ritmo. No ritmo atual, fecha o mês em ${brl(proj)}.')));
+            return GestureDetector(
+              onTap: irLimites,
+              behavior: HitTestBehavior.opaque,
+              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text(r.temLimiteGeral ? 'Gasto do limite do mês' : 'Gasto do limite das categorias', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: S.muted)),
+                      const SizedBox(height: 2),
+                      Wrap(crossAxisAlignment: WrapCrossAlignment.end, spacing: 6, children: [
+                        NumeroAnimado(g, formato: brl, style: TextStyle(fontFamily: S.fonteNum, fontSize: 21, fontWeight: FontWeight.w800, color: S.ink)),
+                        Padding(padding: const EdgeInsets.only(bottom: 3), child: Text('de ${brl(lim)}', style: TextStyle(fontSize: 12.5, color: S.muted))),
+                      ]),
+                    ]),
                   ),
-                  Text('de ${brl(lim)}', style: TextStyle(fontSize: 12.5, color: S.muted)),
-                  const SizedBox(height: 10),
-                  Text(
-                    uso > 1
-                        ? 'Você passou ${brl(g - lim)} do limite.'
-                        : (proj == null
-                            ? 'Faltam ${brl(lim - g)} para chegar ao limite.'
-                            : (noRitmo
-                                ? 'Dentro do ritmo: o nível está abaixo da linha de hoje. No ritmo atual, fecha o mês em ${brl(proj)}.'
-                                : 'Acima do ritmo: o nível passou da linha de hoje. No ritmo atual, fecha o mês em ${brl(proj)}.')),
-                    style: TextStyle(fontSize: 12.5, color: S.ink2, height: 1.45),
-                  ),
-                ]),
-              ),
-              const SizedBox(width: 14),
-              Padding(
-                padding: const EdgeInsets.only(right: 30),
-                child: Stack(alignment: Alignment.center, children: [
-                  TanqueLimite(uso: uso, hoje: mesAtual ? fracDia : null, cor: cor),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                    decoration: BoxDecoration(color: S.surface.withValues(alpha: .85), borderRadius: BorderRadius.circular(99)),
-                    child: Text('${(uso * 100).round()}%', style: TextStyle(fontFamily: S.fonteNum, fontSize: 16, fontWeight: FontWeight.w800, color: Color.lerp(cor, S.ink, .25))),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(color: S.surface2, borderRadius: BorderRadius.circular(99)),
+                    child: Text('${(uso * 100).round()}% usado', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800, color: S.ink2)),
                   ),
                 ]),
-              ),
-            ]),
-          ),
+                const SizedBox(height: 10),
+                VelocimetroRitmo(
+                  ritmo: ritmo,
+                  titulo: '${(ritmo * 100).round()}% do ritmo',
+                  sub: mesAtual ? '${brl(g)} gastos · o ideal até hoje é ${brl(ideal)}' : '${brl(g)} de ${brl(lim)}',
+                ),
+                const SizedBox(height: 6),
+                Text(msg, textAlign: TextAlign.center, style: TextStyle(fontSize: 12.5, color: S.ink2, height: 1.45)),
+              ]),
+            );
+          }),
           const SizedBox(height: 14),
         ],
         linha(Ico.cima, 'Entradas', entradas, S.pos, S.posSoft),
