@@ -128,7 +128,7 @@ class _RoscaModernaState extends State<RoscaModerna> with SingleTickerProviderSt
           ),
           if (widget.centro != null)
             Padding(
-              padding: EdgeInsets.all(tam * (widget.espessura + .12)),
+              padding: EdgeInsets.all(tam * (widget.espessura + .06)),
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 200),
                 transitionBuilder: (c, a) => FadeTransition(opacity: a, child: ScaleTransition(scale: Tween(begin: .9, end: 1.0).animate(a), child: c)),
