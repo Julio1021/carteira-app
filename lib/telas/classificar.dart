@@ -134,7 +134,7 @@ class _FolhaClassificarState extends State<FolhaClassificar> {
         Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Expanded(child: OpcaoCartao(sel: entrada == false, icone: Icons.sync_alt_rounded, titulo: 'Só mudei de conta', sub: 'Não conta como entrada', onTap: () => setState(() => entrada = false))),
           const SizedBox(width: 10),
-          Expanded(child: OpcaoCartao(sel: entrada == true, icone: Icons.south_west_rounded, titulo: 'Foi uma entrada', sub: 'Salário, vale, 13º...', onTap: () => setState(() => entrada = true))),
+          Expanded(child: OpcaoCartao(sel: entrada == true, icone: Icons.south_west_rounded, titulo: 'Foi uma entrada', sub: 'Salário, vale ou 13º', onTap: () => setState(() => entrada = true))),
         ]),
       ],
       if (entrada == true) ...[
@@ -154,9 +154,10 @@ class _FolhaClassificarState extends State<FolhaClassificar> {
             label: Text(partes.length == 1 ? 'Veio mais uma coisa junto' : 'Mais uma parte'),
           ),
         ),
-        _Resumo(e: e, partes: [
+        if (soma > 0)
+          _Resumo(e: e, partes: [
           for (final p in partes)
-            (ns.where((n) => n.chave == p.chave).firstOrNull?.desc ?? 'Escolha o tipo', lerValor(p.c.text) ?? 0),
+            (ns.where((n) => n.chave == p.chave).firstOrNull?.desc ?? 'Falta escolher o que foi', lerValor(p.c.text) ?? 0),
         ], sobra: sobra, transf: transf),
       ],
       const SizedBox(height: 18),
