@@ -6,6 +6,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'avisos.dart';
+
 import '../dados/categorias.dart';
 import '../dados/limites.dart';
 import '../dados/planejar.dart';
@@ -72,6 +74,7 @@ class InicioSite extends StatelessWidget {
   final ValueChanged<String> onMes;
   final VoidCallback irExtrato, irLimites, irPlanejar, irCartao, irImportar, irBuscar;
   final void Function(String filtro) irExtratoFiltro;
+  final void Function(String cat)? verCategoria;
   const InicioSite({
     super.key,
     required this.ym,
@@ -83,6 +86,7 @@ class InicioSite extends StatelessWidget {
     required this.irImportar,
     required this.irBuscar,
     required this.irExtratoFiltro,
+    this.verCategoria,
   });
 
   @override
@@ -105,6 +109,7 @@ class InicioSite extends StatelessWidget {
                   width: 440,
                   child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                     HeroSite(r: r, ym: ym, onMes: onMes, prev: prev, irEntradas: () => irExtratoFiltro('entradas'), irSaidas: () => irExtratoFiltro('saidas')),
+                    FaixaAvisosSite(verCategoria: verCategoria ?? (_) => irExtratoFiltro('saidas')),
                     e,
                     _atalhos(context),
                     if (temReceb) ...[e, RecebimentosSite(irPlanejar: irPlanejar)],
@@ -140,6 +145,7 @@ class InicioSite extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(12, 14, 12, 104),
       children: [
         HeroSite(r: r, ym: ym, onMes: onMes, prev: prev, irEntradas: () => irExtratoFiltro('entradas'), irSaidas: () => irExtratoFiltro('saidas')),
+        FaixaAvisosSite(verCategoria: verCategoria ?? (_) => irExtratoFiltro('saidas')),
         e,
         _atalhos(context),
         e,
@@ -314,9 +320,9 @@ class HeroSite extends StatelessWidget {
               if (emConta != null && ym == ymDe(hojeIso())) ...[
                 const SizedBox(height: 8),
                 Row(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
-                  const Flexible(child: Text('No fim do mês', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: _branco, fontSize: 13))),
-                  const SizedBox(width: 4),
-                  Text('≈ ${brl(emConta + prev.aReceber - prev.faltaPagar)}', style: const TextStyle(color: _branco, fontSize: 15, fontWeight: FontWeight.w800)),
+                  const Flexible(child: Text('Previsão para o fim do mês:', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: _branco, fontSize: 13))),
+                  const SizedBox(width: 5),
+                  Text(brl(emConta + prev.aReceber - prev.faltaPagar), style: const TextStyle(color: _branco, fontSize: 15, fontWeight: FontWeight.w800)),
                 ]),
               ],
               const SizedBox(height: 14),

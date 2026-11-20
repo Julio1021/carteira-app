@@ -203,7 +203,7 @@ class LinhaConta extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.only(left: 58, top: 4),
           child: Row(children: [
-            Expanded(child: Text('${i.b.variavel && !pago ? '≈ ' : ''}${brl(i.valor)}', style: TextStyle(fontFamily: S.fonteNum, fontSize: 16, fontWeight: FontWeight.w700, color: S.ink))),
+            Expanded(child: Text('${i.b.variavel && !pago ? 'cerca de ' : ''}${brl(i.valor)}', style: TextStyle(fontFamily: S.fonteNum, fontSize: 16, fontWeight: FontWeight.w700, color: S.ink))),
             if (!pago)
               BotaoSm('Pagar', primario: true, seta: false, onTap: () => abrirFolha(context, FolhaPagar(i)))
             else if (i.fonte != 'extrato')

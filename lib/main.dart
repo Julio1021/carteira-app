@@ -355,6 +355,7 @@ class _CascaState extends State<Casca> {
         irCartao: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TelaCartoes())),
         irImportar: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TelaImportarExtrato())),
         irBuscar: _buscar,
+        verCategoria: (c) => _irAba(1, filtro: 'saidas', cat: c),
       ),
       TelaExtrato(ym: ym, onMes: (m) => setState(() => ym = m), filtroInicial: filtroExtrato, catInicial: catExtrato, analiseInicial: analiseDemo),
       TelaPlanejar(irLimites: _abrirLimites),
@@ -390,17 +391,6 @@ class _CascaState extends State<Casca> {
                   extendBody: true,
                   body: Stack(children: [
                     SafeArea(bottom: false, child: corpo),
-                    Positioned(
-                      right: 16,
-                      bottom: 96 + MediaQuery.paddingOf(context).bottom,
-                      // só no Início: nas listas (Extrato, Planejar) ela cobria valores e o
-                      // botão "Pagar". Nas outras abas, os avisos ficam no menu da engrenagem.
-                      child: AnimatedSlide(
-                        offset: some || aba != 0 ? const Offset(2, 0) : Offset.zero,
-                        duration: const Duration(milliseconds: 260),
-                        child: FabAvisosSite(verCategoria: (c) => _irAba(1, filtro: 'saidas', cat: c)),
-                      ),
-                    ),
                   ]),
                   // some deslizando para baixo; volta com um pequeno "pulo"
                   bottomNavigationBar: AnimatedSlide(

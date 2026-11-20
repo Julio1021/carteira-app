@@ -206,3 +206,61 @@ class FabAvisosSite extends StatelessWidget {
     );
   }
 }
+
+
+/// Faixa de avisos no Início (no lugar do botão flutuante, que cobria conteúdo).
+class FaixaAvisosSite extends StatelessWidget {
+  final void Function(String cat) verCategoria;
+  const FaixaAvisosSite({super.key, required this.verCategoria});
+  @override
+  Widget build(BuildContext context) {
+    final repo = RepoScope.of(context);
+    final l = avisosDoMes(repo);
+    if (l.isEmpty) return const SizedBox.shrink();
+    final ord = [...l]..sort((a, b) => b.sev.compareTo(a.sev));
+    final grave = ord.first.sev >= 3;
+    final atencao = ord.first.sev >= 2;
+    final cor = grave ? S.neg : (atencao ? S.second : S.accent);
+    final vistos = repo.lista('av.vistos').toSet();
+    final novos = l.where((a) => !vistos.contains(a.k)).length;
+    return Padding(
+      padding: const EdgeInsets.only(top: 14),
+      child: Material(
+        color: cor.withValues(alpha: .10),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: cor.withValues(alpha: .35))),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () async {
+            await repo.guardarLista('av.vistos', {...vistos, ...l.map((a) => a.k)}.toList().reversed.take(300).toList());
+            if (context.mounted) abrirAvisos(context, verCategoria);
+          },
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 11, 10, 11),
+            child: Row(children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(color: cor, shape: BoxShape.circle),
+                alignment: Alignment.center,
+                child: const IconeSite(Ico.lampada, tam: 19, cor: Colors.white),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(
+                    l.length == 1 ? '1 aviso para você' : '${l.length} avisos para você${novos > 0 ? ' · $novos novo${novos == 1 ? '' : 's'}' : ''}',
+                    style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800, color: S.ink),
+                  ),
+                  const SizedBox(height: 1),
+                  Text(ord.first.texto, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12.5, color: S.ink2, height: 1.35)),
+                ]),
+              ),
+              const SizedBox(width: 6),
+              IconeSite(Ico.dir, tam: 16, cor: S.ink2),
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
+}
