@@ -373,12 +373,6 @@ class _LancarState extends State<_Lancar> {
   final rolagem = ScrollController();
 
   @override
-  void dispose() {
-    rolagem.dispose();
-    super.dispose();
-  }
-
-  @override
   void initState() {
     super.initState();
     _preencher();
@@ -436,6 +430,7 @@ class _LancarState extends State<_Lancar> {
     for (final c in [...saldoC.values, ...aporteC.values]) {
       c.dispose();
     }
+    rolagem.dispose();
     super.dispose();
   }
 
