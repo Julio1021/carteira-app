@@ -321,7 +321,7 @@ class _FolhaReceberState extends State<_FolhaReceber> {
     final dep = deps.where((e) => e.id == dId).firstOrNull;
     final destinos = junto ? destinosResto(repo, r, dep?.data ?? data, dep) : const <DestinoResto>[];
     final resto = destinos.where((d) => d.chave == restoK).firstOrNull ?? destinos.firstOrNull;
-    final total = dep != null ? (lerValor(cDep.text) ?? 0) : (dId == '' ? (lerValor(cTotal.text) ?? 0) : 0);
+    final double total = dep != null ? (lerValor(cDep.text) ?? 0.0) : (dId == '' ? (lerValor(cTotal.text) ?? 0.0) : 0.0);
     final corR = catEntrada(r.cat).cor;
     final partes = grp == null ? const <Entrada>[] : partesDivisao(repo, grp!);
 
