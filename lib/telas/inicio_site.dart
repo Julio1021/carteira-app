@@ -10,12 +10,15 @@ import 'avisos.dart';
 
 import '../dados/categorias.dart';
 import '../dados/limites.dart';
+import '../dados/objetivos.dart';
+import '../dados/patrimonio.dart';
 import '../dados/planejar.dart';
 import '../dados/repo.dart';
 import '../dados/resumo.dart';
 import '../tema.dart';
 import '../util/fmt.dart';
 import '../widgets/comum.dart';
+import '../widgets/animado.dart';
 import '../widgets/site.dart';
 import 'lancar.dart';
 
@@ -110,6 +113,7 @@ class InicioSite extends StatelessWidget {
                   child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                     HeroSite(r: r, ym: ym, onMes: onMes, prev: prev, irEntradas: () => irExtratoFiltro('entradas'), irSaidas: () => irExtratoFiltro('saidas')),
                     FaixaAvisosSite(verCategoria: verCategoria ?? (_) => irExtratoFiltro('saidas')),
+                    const ComemoracaoSite(),
                     e,
                     _atalhos(context),
                     if (temReceb) ...[e, RecebimentosSite(irPlanejar: irPlanejar)],
@@ -146,6 +150,7 @@ class InicioSite extends StatelessWidget {
       children: [
         HeroSite(r: r, ym: ym, onMes: onMes, prev: prev, irEntradas: () => irExtratoFiltro('entradas'), irSaidas: () => irExtratoFiltro('saidas')),
         FaixaAvisosSite(verCategoria: verCategoria ?? (_) => irExtratoFiltro('saidas')),
+        const ComemoracaoSite(),
         e,
         _atalhos(context),
         e,
@@ -217,7 +222,7 @@ class HeroSite extends StatelessWidget {
                     FittedBox(
                       fit: BoxFit.scaleDown,
                       alignment: Alignment.centerLeft,
-                      child: Text(brl(entrada ? r.entrou : r.saiu), style: const TextStyle(color: _branco, fontSize: 14.5, fontWeight: FontWeight.w700, height: 1.5)),
+                      child: NumeroAnimado(entrada ? r.entrou : r.saiu, formato: brl, style: const TextStyle(color: _branco, fontSize: 14.5, fontWeight: FontWeight.w700, height: 1.5)),
                     ),
                   ]),
                 ),
@@ -247,7 +252,10 @@ class HeroSite extends StatelessWidget {
           bottom: -110,
           child: Container(width: 260, height: 260, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withValues(alpha: .05))),
         ),
-        Container(
+        TrocaMesArrastando(
+          ym: ym,
+          aoTrocar: (d) => onMes(ymAdd(ym, d)),
+          child: Container(
           decoration: const BoxDecoration(border: Border(top: BorderSide(color: Color(0x2EFFFFFF)))),
           padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -287,7 +295,7 @@ class HeroSite extends StatelessWidget {
               Center(
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
-                  child: Text(brl(emConta ?? r.sobra), style: const TextStyle(fontFamily: S.fonteNum, color: _branco, fontSize: 34, fontWeight: FontWeight.w700, letterSpacing: -.68, height: 1.1)),
+                  child: NumeroAnimado(emConta ?? r.sobra, formato: brl, style: const TextStyle(fontFamily: S.fonteNum, color: _branco, fontSize: 34, fontWeight: FontWeight.w700, letterSpacing: -.68, height: 1.1)),
                 ),
               ),
               const SizedBox(height: 3),
@@ -322,7 +330,7 @@ class HeroSite extends StatelessWidget {
                 Row(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
                   const Flexible(child: Text('Previsão para o fim do mês:', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: _branco, fontSize: 13))),
                   const SizedBox(width: 5),
-                  Text(brl(emConta + prev.aReceber - prev.faltaPagar), style: const TextStyle(color: _branco, fontSize: 15, fontWeight: FontWeight.w800)),
+                  NumeroAnimado(emConta + prev.aReceber - prev.faltaPagar, formato: brl, style: const TextStyle(color: _branco, fontSize: 15, fontWeight: FontWeight.w800)),
                 ]),
               ],
               const SizedBox(height: 14),
@@ -330,6 +338,7 @@ class HeroSite extends StatelessWidget {
               const SizedBox(height: 10),
             Row(children: [kpi(true), const SizedBox(width: 8), kpi(false)]),
           ]),
+        ),
         ),
       ]),
     );
@@ -410,32 +419,44 @@ class PrevisaoSite extends StatelessWidget {
         if (lim > 0) ...[
           GestureDetector(
             onTap: irLimites,
-            child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+            behavior: HitTestBehavior.opaque,
+            child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(r.temLimiteGeral ? 'Do limite do mês' : 'Do limite das categorias', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: S.muted)),
+                  Text(r.temLimiteGeral ? 'Gasto do limite do mês' : 'Gasto do limite das categorias', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: S.muted)),
                   const SizedBox(height: 2),
-                  Row(crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
-                    Text(brl(g), style: TextStyle(fontFamily: S.fonteNum, fontSize: 20, fontWeight: FontWeight.w800, color: S.ink)),
-                    Flexible(child: Text(' de ${brl(lim)}', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12.5, color: S.muted))),
-                  ]),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: NumeroAnimado(g, formato: brl, style: TextStyle(fontFamily: S.fonteNum, fontSize: 22, fontWeight: FontWeight.w800, color: S.ink)),
+                  ),
+                  Text('de ${brl(lim)}', style: TextStyle(fontSize: 12.5, color: S.muted)),
+                  const SizedBox(height: 10),
+                  Text(
+                    uso > 1
+                        ? 'Você passou ${brl(g - lim)} do limite.'
+                        : (proj == null
+                            ? 'Faltam ${brl(lim - g)} para chegar ao limite.'
+                            : (noRitmo
+                                ? 'Dentro do ritmo: o nível está abaixo da linha de hoje. No ritmo atual, fecha o mês em ${brl(proj)}.'
+                                : 'Acima do ritmo: o nível passou da linha de hoje. No ritmo atual, fecha o mês em ${brl(proj)}.')),
+                    style: TextStyle(fontSize: 12.5, color: S.ink2, height: 1.45),
+                  ),
                 ]),
               ),
-              Text('${(uso * 100).round()}%', style: TextStyle(fontFamily: S.fonteNum, fontSize: 20, fontWeight: FontWeight.w800, color: cor)),
+              const SizedBox(width: 14),
+              Padding(
+                padding: const EdgeInsets.only(right: 30),
+                child: Stack(alignment: Alignment.center, children: [
+                  TanqueLimite(uso: uso, hoje: mesAtual ? fracDia : null, cor: cor),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                    decoration: BoxDecoration(color: S.surface.withValues(alpha: .85), borderRadius: BorderRadius.circular(99)),
+                    child: Text('${(uso * 100).round()}%', style: TextStyle(fontFamily: S.fonteNum, fontSize: 16, fontWeight: FontWeight.w800, color: Color.lerp(cor, S.ink, .25))),
+                  ),
+                ]),
+              ),
             ]),
-          ),
-          const SizedBox(height: 16),
-          _BarraHoje(uso: uso, hoje: mesAtual ? fracDia : null, cor: cor),
-          const SizedBox(height: 10),
-          Text(
-            uso > 1
-                ? 'Você passou ${brl(g - lim)} do limite.'
-                : (proj == null
-                    ? 'Faltam ${brl(lim - g)} para chegar ao limite.'
-                    : (noRitmo
-                        ? 'Você está gastando dentro do ritmo. No ritmo atual, fecha o mês em ${brl(proj)}.'
-                        : 'Você está gastando acima do ritmo. No ritmo atual, fecha o mês em ${brl(proj)}.')),
-            style: TextStyle(fontSize: 12.5, color: S.ink2, height: 1.5),
           ),
           const SizedBox(height: 14),
         ],
@@ -460,57 +481,6 @@ class PrevisaoSite extends StatelessWidget {
         ),
       ]),
     );
-  }
-}
-
-class _BarraHoje extends StatelessWidget {
-  final double uso;
-  final double? hoje;
-  final Color cor;
-  const _BarraHoje({required this.uso, required this.hoje, required this.cor});
-  @override
-  Widget build(BuildContext context) {
-    final verde = cor == S.pos;
-    return LayoutBuilder(builder: (_, c) {
-      final w = c.maxWidth;
-      final xh = hoje == null ? null : (w * hoje!).clamp(1.0, w - 1);
-      return SizedBox(
-        height: 30,
-        child: Stack(clipBehavior: Clip.none, children: [
-          Positioned(
-            left: 0,
-            right: 0,
-            top: 16,
-            height: 14,
-            child: Container(
-              decoration: BoxDecoration(color: S.surface2, borderRadius: BorderRadius.circular(99), boxShadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 2, offset: Offset(0, 1))]),
-              alignment: Alignment.centerLeft,
-              child: FractionallySizedBox(
-                widthFactor: math.min(1, uso),
-                heightFactor: 1,
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(99),
-                    gradient: LinearGradient(colors: verde ? const [Color(0xFF1F9D6B), Color(0xFF34C47A)] : [cor, Color.lerp(cor, Colors.white, .25)!]),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          if (xh != null)
-            Positioned(
-              left: xh - 13.5,
-              top: 0,
-              width: 27,
-              child: Column(children: [
-                Text('HOJE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: S.ink2, letterSpacing: .2, height: 1)),
-                const SizedBox(height: 2),
-                Container(width: 2, height: 22, decoration: BoxDecoration(color: S.ink, borderRadius: BorderRadius.circular(2))),
-              ]),
-            ),
-        ]),
-      );
-    });
   }
 }
 
@@ -542,29 +512,62 @@ class RecebimentosSite extends StatelessWidget {
         if (ag.isEmpty)
           Text('Cadastre seus recebimentos em Planejar.', style: TextStyle(color: S.muted, fontSize: 12.5))
         else
-          Stack(children: [
-            // a linha que liga os pontos
+          Builder(builder: (context) {
+            final h = hojeIso();
+            final n = ag.length;
+            // até onde a linha vai: o centro do último ponto que já passou + parte do caminho até o próximo
+            var prog = 0.0;
+            for (var k = 0; k < n; k++) {
+              if (ag[k].data.compareTo(h) <= 0 || ag[k].recebido) prog = (k + .5) / n;
+            }
+            final passados = ag.where((x) => x.data.compareTo(h) <= 0 || x.recebido).length;
+            if (passados < n) {
+              final ini = passados == 0 ? null : ag[passados - 1].data;
+              final fim = ag[passados].data;
+              final tot = ini == null ? 30 : diasEntre(ini, fim);
+              final foi = ini == null ? math.max(0, 30 - diasEntre(h, fim)) : diasEntre(ini, h);
+              final parte = tot <= 0 ? 0.0 : (foi / tot).clamp(0.0, 1.0);
+              prog = passados == 0 ? .5 / n * parte : prog + parte / n;
+            }
+            final proximo = ag.indexWhere((x) => !x.recebido && !x.atrasado && x.data.compareTo(h) >= 0);
+            return Stack(children: [
+            // a linha que liga os pontos (cinza) e a parte já percorrida (cor do tema)
             Positioned(left: 0, right: 0, top: 58, child: Container(height: 2, color: S.line)),
+            Positioned(
+              left: 0,
+              right: 0,
+              top: 57,
+              child: LayoutBuilder(
+                builder: (_, c) => Align(
+                  alignment: Alignment.centerLeft,
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween(begin: animacoesLigadas(context) ? 0 : prog, end: prog),
+                    duration: const Duration(milliseconds: 900),
+                    curve: Curves.easeOutCubic,
+                    builder: (_, v, __) => Container(width: c.maxWidth * v, height: 4, decoration: BoxDecoration(color: S.accent, borderRadius: BorderRadius.circular(99))),
+                  ),
+                ),
+              ),
+            ),
             Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              for (final x in ag)
+              for (var k = 0; k < n; k++)
                 Expanded(
-                  child: Padding(
+                  child: Builder(builder: (_) {
+                    final x = ag[k];
+                    return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
                     child: Column(children: [
                       Text('${x.data.substring(8, 10)}/${x.data.substring(5, 7)}', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: S.ink, height: 1.5)),
-                      // atrasado: o nome fica vermelho (o "· atrasado" escrito se perdia no corte)
                       Text(x.nome, maxLines: 2, textAlign: TextAlign.center, style: TextStyle(fontSize: 11.5, color: x.atrasado ? S.neg : S.ink2, fontWeight: x.atrasado ? FontWeight.w600 : FontWeight.w400, height: 1.5)),
-                      const SizedBox(height: 7),
-                      Container(
-                        width: 16,
-                        height: 16,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: x.atrasado ? S.neg : (x.recebido ? S.pos : S.surface),
-                          border: Border.all(color: x.atrasado ? S.neg : (x.recebido ? S.pos : S.muted), width: 2),
-                        ),
+                      const SizedBox(height: 4),
+                      SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: x.recebido
+                            ? _CheckEstoura(cor: S.pos)
+                            : _Ponto(cor: x.atrasado ? S.neg : (k == proximo ? S.accent : S.muted), cheio: x.atrasado, pulsa: k == proximo),
                       ),
-                      const SizedBox(height: 7),
+                      const SizedBox(height: 4),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
                         decoration: BoxDecoration(color: x.atrasado ? S.negSoft : (x.recebido ? S.posSoft : S.surface2), borderRadius: BorderRadius.circular(99)),
@@ -574,10 +577,12 @@ class RecebimentosSite extends StatelessWidget {
                         ),
                       ),
                     ]),
-                  ),
+                  );
+                  }),
                 ),
             ]),
-          ]),
+          ]);
+          }),
       ]),
     );
   }
@@ -617,6 +622,7 @@ class UltimosSite extends StatelessWidget {
   Widget build(BuildContext context) {
     final repo = RepoScope.of(context);
     final ult = r.ateHoje.take(6).toList();
+    final novos = idsNovos([for (final l in ult) str(l.doc['id'])]);
     return CartaoSite(
       padding: const EdgeInsets.all(16),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -624,7 +630,9 @@ class UltimosSite extends StatelessWidget {
         if (ult.isEmpty)
           Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Text('Nada lançado neste mês.', style: TextStyle(color: S.muted)))
         else
-          Padding(padding: const EdgeInsets.only(top: 6), child: ListaTxSite([for (final l in ult) linhaLancSite(context, repo, l)])),
+          Padding(padding: const EdgeInsets.only(top: 6), child: ListaTxSite([
+                for (final l in ult) EntradaNova(key: ValueKey(l.doc['id']), novo: novos.contains(str(l.doc['id'])), child: linhaLancSite(context, repo, l)),
+              ])),
       ]),
     );
   }
@@ -650,4 +658,167 @@ class _ToqueState extends State<_Toque> {
         onTap: widget.onTap,
         child: AnimatedScale(scale: baixo ? .94 : 1, duration: const Duration(milliseconds: 120), child: widget.child),
       );
+}
+
+
+/// Ponto da linha do tempo; o próximo recebimento pulsa de leve.
+class _Ponto extends StatefulWidget {
+  final Color cor;
+  final bool cheio, pulsa;
+  const _Ponto({required this.cor, required this.cheio, required this.pulsa});
+  @override
+  State<_Ponto> createState() => _PontoState();
+}
+
+class _PontoState extends State<_Ponto> with SingleTickerProviderStateMixin {
+  late final AnimationController an = AnimationController(vsync: this, duration: const Duration(milliseconds: 1600));
+  bool iniciou = false;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (iniciou) return;
+    iniciou = true;
+    if (widget.pulsa && animacoesLigadas(context)) an.repeat();
+  }
+
+  @override
+  void dispose() {
+    an.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+        animation: an,
+        builder: (_, __) => Stack(alignment: Alignment.center, children: [
+          if (widget.pulsa)
+            Container(
+              width: 16 + 14 * an.value,
+              height: 16 + 14 * an.value,
+              decoration: BoxDecoration(shape: BoxShape.circle, color: widget.cor.withValues(alpha: .28 * (1 - an.value))),
+            ),
+          Container(
+            width: 16,
+            height: 16,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: widget.cheio ? widget.cor : S.surface,
+              border: Border.all(color: widget.cor, width: widget.pulsa ? 3 : 2),
+            ),
+          ),
+        ]),
+      );
+}
+
+/// Recebimento que já entrou: a bolinha vira um check verde com um "estouro".
+class _CheckEstoura extends StatelessWidget {
+  final Color cor;
+  const _CheckEstoura({required this.cor});
+  @override
+  Widget build(BuildContext context) {
+    final liga = animacoesLigadas(context);
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: liga ? 0 : 1, end: 1),
+      duration: const Duration(milliseconds: 700),
+      curve: Curves.elasticOut,
+      builder: (_, v, __) => Transform.scale(
+        scale: v,
+        child: Container(
+          decoration: BoxDecoration(shape: BoxShape.circle, color: cor, boxShadow: [BoxShadow(color: cor.withValues(alpha: .35), blurRadius: 8 * v)]),
+          alignment: Alignment.center,
+          child: const Icon(Icons.check_rounded, size: 15, color: Colors.white),
+        ),
+      ),
+    );
+  }
+}
+
+
+/// Comemoração: mês anterior fechado dentro do limite e objetivos alcançados.
+/// O confete sai uma vez só; o cartão fica até a pessoa fechar.
+class ComemoracaoSite extends StatefulWidget {
+  const ComemoracaoSite({super.key});
+  @override
+  State<ComemoracaoSite> createState() => _ComemoracaoSiteState();
+}
+
+class _ComemoracaoSiteState extends State<ComemoracaoSite> {
+  bool soltou = false;
+
+  List<(String chave, String titulo, String texto)> _motivos(Repo repo) {
+    final out = <(String, String, String)>[];
+    final hoje = hojeIso();
+    final ant = ymAdd(ymDe(hoje), -1);
+    if (int.parse(hoje.substring(8, 10)) <= 10) {
+      final r = ResumoMes.de(repo, ant);
+      final lim = r.limiteTotal, g = r.gastoComLimite;
+      if (lim > 0 && g > 0 && g <= lim) {
+        final mes = mesesLongos[int.parse(ant.substring(5)) - 1];
+        out.add(('lim:$ant', '$mes fechou dentro do limite!', 'Você gastou ${brl(g)} de ${brl(lim)} e sobraram ${brl(lim - g)}.'));
+      }
+    }
+    final objs = objetivosDe(repo);
+    if (objs.isNotEmpty) {
+      final c = calcularCarteira(repo);
+      for (final o in objs) {
+        final p = progressoDe(o, c);
+        if (p.concluido) out.add(('obj:${o.id}', 'Objetivo alcançado: ${o.nome}!', 'Você chegou a ${brl(p.atual)} de ${brl(o.alvo)}.'));
+      }
+    }
+    final fechados = repo.lista('comemorou.fechado').toSet();
+    return out.where((m) => !fechados.contains(m.$1)).toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final repo = RepoScope.of(context);
+    final ms = _motivos(repo);
+    if (ms.isEmpty) return const SizedBox.shrink();
+    final jaSoltou = repo.lista('comemorou').toSet();
+    final novos = ms.where((m) => !jaSoltou.contains(m.$1)).toList();
+    if (novos.isNotEmpty && !soltou) {
+      soltou = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) return;
+        soltarConfete(context);
+        await repo.guardarLista('comemorou', {...jaSoltou, ...novos.map((m) => m.$1)}.toList());
+      });
+    }
+    final m = ms.first;
+    final ouro = const Color(0xFFD9A21B);
+    return Padding(
+      padding: const EdgeInsets.only(top: 14),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(14, 12, 6, 12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient: LinearGradient(colors: [ouro.withValues(alpha: .22), S.pos.withValues(alpha: .14)]),
+          border: Border.all(color: ouro.withValues(alpha: .45)),
+        ),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(color: ouro, shape: BoxShape.circle),
+            alignment: Alignment.center,
+            child: const Icon(Icons.emoji_events_rounded, color: Colors.white, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(m.$2, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: S.ink)),
+              const SizedBox(height: 2),
+              Text(m.$3, style: TextStyle(fontSize: 12.5, color: S.ink2, height: 1.4)),
+            ]),
+          ),
+          IconButton(
+            tooltip: 'Fechar',
+            visualDensity: VisualDensity.compact,
+            onPressed: () => repo.guardarLista('comemorou.fechado', {...repo.lista('comemorou.fechado'), m.$1}.toList()),
+            icon: Icon(Icons.close_rounded, size: 20, color: S.ink2),
+          ),
+        ]),
+      ),
+    );
+  }
 }
