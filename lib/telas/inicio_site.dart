@@ -10,6 +10,7 @@ import 'avisos.dart';
 
 import '../dados/categorias.dart';
 import '../dados/limites.dart';
+import '../dados/modelos.dart' show str;
 import '../dados/objetivos.dart';
 import '../dados/patrimonio.dart';
 import '../dados/planejar.dart';
