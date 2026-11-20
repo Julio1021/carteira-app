@@ -12,6 +12,7 @@ import 'busca.dart';
 import 'cartoes.dart';
 import 'emprestimos.dart';
 import 'importar.dart';
+import 'limites.dart';
 import 'retro.dart';
 
 Future<void> abrirMenuSite(BuildContext context, String ym) => showModalBottomSheet(
@@ -87,6 +88,7 @@ class _Menu extends StatelessWidget {
         }),
         link(Ico.cartao, 'Cartões de crédito', 'Faturas, limites e compras parceladas', () => ir(const TelaCartoes())),
         link('<path d="M7 12l3 3 7-7"/><circle cx="12" cy="12" r="9"/>', 'Empréstimos', 'Dinheiro que você emprestou e vai receber', () => ir(const TelaEmprestimos())),
+        link(Ico.ajustes, 'Limites de gastos', 'Limite geral e por categoria', () => ir(TelaLimites(ym: ym))),
         link(Ico.importar, 'Importar extrato do banco', 'Arquivo OFX ou CSV', () => ir(const TelaImportarExtrato())),
         link(Ico.buscar, 'Buscar lançamentos', 'Em todos os meses', () => ir(const TelaBusca())),
         link('<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/>', 'Retrospectiva', 'Como foi o mês passado', () {

@@ -117,16 +117,11 @@ class _Resumo extends StatelessWidget {
     final esquerda = <Widget>[
       _HeroPat(c: c, emConta: emConta, patrimonio: patrimonio, pctInv: pctInv, irLancar: () => ir(1)),
       const SizedBox(height: 14),
-      AtalhosSite(itens: [
-        (Ico.mais, 'Lançar', () => ir(1)),
-        ('<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>', 'Ativos', () => ir(2)),
-        ('<path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/>', 'Projetar', () => ir(3)),
-        ('<path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 6-6"/>', 'Relatórios', () => ir(3)),
-        (Ico.importar, 'Backup', () => Navigator.of(context).pushNamed('/ajustes')),
-      ]),
+      BotaoSite('Lançar valores de hoje', icone: Ico.mais, onTap: () => ir(1)),
     ];
     final finais = <Widget>[_Pendencias(c: c), CartaoObjetivos(c: c)];
-    final ns = ['Ativos', 'Origem', if (ultMeses.isNotEmpty) 'Mês a mês', if (amostra.length >= 2) 'Evolução', 'Alocação', if (ultMeses.isNotEmpty) 'Rentabilidade', if (amostra.length >= 2 && posicoes.length > 1) 'Por ativo', 'Posição'];
+    // Visão geral = resumo. Os detalhes ficam em Relatórios (por ano) e Análise (comparações).
+    final ns = ['Ativos', if (amostra.length >= 2) 'Evolução', 'Origem'];
     Widget assunto(String nome) => switch (nome) {
             'Ativos' => CartaoSite(
         padding: const EdgeInsets.all(16),
@@ -137,9 +132,9 @@ class _Resumo extends StatelessWidget {
             final rosca = Rosca(
               valores: [for (final p in posicoes) p.valor],
               cores: [for (final p in posicoes) p.cor],
-              centro: '${posicoes.length}',
-              sub: posicoes.length == 1 ? 'ativo' : 'ativos',
-              tam: larg ? 150 : 180,
+              centro: brl(c.total),
+              sub: 'Total',
+              tam: larg ? 170 : 200,
             );
             final linhas = [for (final p in posicoes) _LinhaPos(p: p, total: c.total)];
             if (!larg) return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [Center(child: rosca), const SizedBox(height: 14), ...linhas]);
@@ -1607,42 +1602,57 @@ class _RelatoriosState extends State<_Relatorios> {
     final meses = c.meses.where((m) => m.ym.startsWith(ano)).toList().reversed.toList();
     final amostra = [for (var i = 0; i < proj.length; i += (proj.length / 60).ceil().clamp(1, 1000).toInt()) proj[i], proj.last];
 
-    return ListView(padding: const EdgeInsets.fromLTRB(12, 0, 12, 150), children: [
-      if (!c.vazia) ...[
-        Row(children: [
-          const Expanded(child: Text('Relatório do ano', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700))),
-          DropdownButton<String>(
-            value: c.anos.contains(ano) ? ano : null,
-            dropdownColor: G.fundo2,
-            underline: const SizedBox.shrink(),
-            items: [for (final a in c.anos.reversed) DropdownMenuItem(value: a, child: Text(a, style: const TextStyle(fontWeight: FontWeight.w700)))],
-            onChanged: (v) => setState(() => ano = v ?? ano),
-          ),
-        ]),
-        const SizedBox(height: 8),
-        Row(children: [
-          Expanded(child: _Kpi('Rentabilidade', pct(c.rentAno(ano), sinal: true), c.rentAno(ano) >= 0 ? G.pos : G.neg)),
-          const SizedBox(width: 8),
-          Expanded(child: _Kpi('Rendeu', brl(c.rendimentoAno(ano), sinal: true), G.pos)),
-          const SizedBox(width: 8),
-          Expanded(child: _Kpi('Aportes', brl(c.aportesAno(ano)), G.texto)),
-        ]),
-        const SizedBox(height: 12),
-        if (meses.length >= 2) ...[
-          Cartao(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              const CabecalhoCartao('Rendimento de cada mês', sub: 'Quanto os investimentos renderam, sem contar aportes'),
-              GraficoBarras(
-                titulo: 'Rendimento de cada mês',
-                rotulos: [for (final m in meses.reversed) mesesAbr[int.parse(m.ym.substring(5, 7)) - 1]],
-                valores: [for (final m in meses.reversed) [m.ganho]],
-                cores: [G.pos],
-                nomes: const ['Rendeu'],
-                formatoY: curto,
-                altura: 190,
-              ),
+    final posicoes = c.posicoes.where((p) => p.valor > 0.005).toList()..sort((a, b) => b.valor.compareTo(a.valor));
+    Widget kpi(String t, String v, Color cor) => Expanded(
+          child: CartaoSite(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(t, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: S.muted)),
+              const SizedBox(height: 3),
+              FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(v, style: TextStyle(fontFamily: S.fonteNum, fontSize: 17, fontWeight: FontWeight.w800, color: cor))),
             ]),
           ),
+        );
+    return ListView(padding: const EdgeInsets.fromLTRB(12, 0, 12, 150), children: [
+      if (!c.vazia) ...[
+        if (posicoes.isNotEmpty) ...[
+          PosicaoAtualSite(c: c, posicoes: posicoes, abrir: (p) => Navigator.of(context).push(MaterialPageRoute(builder: (_) => TelaAtivo(id: p.a.id)))),
+          const SizedBox(height: 22),
+        ],
+        Text('Relatório do ano', style: TextStyle(fontFamily: S.fonteNum, fontSize: 19, fontWeight: FontWeight.w700, color: S.ink)),
+        const SizedBox(height: 10),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(children: [
+            for (final a in c.anos.reversed)
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: Material(
+                  color: a == ano ? S.ink : S.surface,
+                  shape: StadiumBorder(side: BorderSide(color: a == ano ? S.ink : S.line)),
+                  child: InkWell(
+                    customBorder: const StadiumBorder(),
+                    onTap: () => setState(() => ano = a),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: Text(a, style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: a == ano ? S.bg : S.ink2)),
+                    ),
+                  ),
+                ),
+              ),
+          ]),
+        ),
+        const SizedBox(height: 12),
+        Row(children: [
+          kpi('Rentabilidade', pct(c.rentAno(ano), sinal: true), c.rentAno(ano) >= 0 ? S.pos : S.neg),
+          const SizedBox(width: 8),
+          kpi('Rendeu', brl(c.rendimentoAno(ano), sinal: true), c.rendimentoAno(ano) >= 0 ? S.pos : S.neg),
+          const SizedBox(width: 8),
+          kpi('Aportes', brl(c.aportesAno(ano), sinal: true), S.accent),
+        ]),
+        const SizedBox(height: 12),
+        if (meses.isNotEmpty) ...[
+          GradeRentMeses(meses: meses.reversed.toList(), sub: 'Em $ano, descontando aportes e resgates'),
           const SizedBox(height: 12),
         ],
         // tabela: um mês por linha (antes era um cartão de 4 linhas por mês)

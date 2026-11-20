@@ -131,9 +131,7 @@ class InicioSite extends StatelessWidget {
         (Ico.mais, 'Gasto', () => abrirFormLanc(context)),
         (Ico.cima, 'Entrada', () => abrirFormLanc(context, entrada: true)),
         (Ico.cartao, 'Cartão', irCartao),
-        (Ico.importar, 'Importar', irImportar),
         (Ico.buscar, 'Buscar', irBuscar),
-        (Ico.ajustes, 'Limites', irLimites),
       ]);
 
   Widget _lista(BuildContext context, ResumoMes r, ({double aReceber, double faltaPagar}) prev, bool temReceb) {
@@ -221,7 +219,6 @@ class HeroSite extends StatelessWidget {
             ),
           ),
         );
-    final lim = r.limiteTotal, gl = r.gastoComLimite;
     return Container(
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
@@ -326,28 +323,6 @@ class HeroSite extends StatelessWidget {
             ] else
               const SizedBox(height: 10),
             Row(children: [kpi(true), const SizedBox(width: 8), kpi(false)]),
-            if (!mini && lim > 0) ...[
-              const SizedBox(height: 12),
-              Row(crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
-                const Expanded(child: Text('Limite de gastos', style: TextStyle(color: _branco, fontSize: 12))),
-                Text(brl(gl), style: const TextStyle(color: _branco, fontSize: 12.5, fontWeight: FontWeight.w700)),
-                Text(' de ${brl(lim)}', style: const TextStyle(color: _branco, fontSize: 10.4, fontWeight: FontWeight.w500)),
-              ]),
-              const SizedBox(height: 6),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(99),
-                child: SizedBox(
-                  height: 6,
-                  child: Stack(children: [
-                    const Positioned.fill(child: ColoredBox(color: Color(0x33FFFFFF))),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: FractionallySizedBox(widthFactor: (gl / lim).clamp(0, 1).toDouble(), heightFactor: 1, child: const ColoredBox(color: _branco)),
-                    ),
-                  ]),
-                ),
-              ),
-            ],
           ]),
         ),
       ]),

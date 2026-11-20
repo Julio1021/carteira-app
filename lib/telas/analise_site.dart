@@ -11,6 +11,7 @@ import '../dados/categorias.dart';
 import '../dados/modelos.dart';
 import '../dados/resumo.dart';
 import '../util/fmt.dart';
+import '../widgets/rosca.dart';
 import '../widgets/site.dart';
 
 /// Título de seção do site (.gx-sec): nome, período e uma linha até a borda.
@@ -174,45 +175,19 @@ class _Anel extends StatefulWidget {
 }
 
 class _AnelState extends State<_Anel> {
-  int? toque;
   @override
   Widget build(BuildContext context) {
     final cats = widget.cats;
     return LayoutBuilder(builder: (context, c) {
       final tam = math.min(c.maxWidth, c.maxHeight);
-      final raio = tam / 2;
-      final sel = toque != null && toque! < cats.length ? cats[toque!] : null;
       return Center(
-        child: SizedBox(
-          width: tam,
-          height: tam,
-          child: Stack(alignment: Alignment.center, children: [
-            PieChart(PieChartData(
-              startDegreeOffset: -90,
-              sectionsSpace: 2,
-              centerSpaceRadius: raio * .7,
-              pieTouchData: PieTouchData(touchCallback: (ev, resp) {
-                if (ev is! FlTapUpEvent) return;
-                final i = resp?.touchedSection?.touchedSectionIndex;
-                setState(() => toque = (i == null || i < 0 || i == toque) ? null : i);
-              }),
-              sections: [
-                for (var i = 0; i < cats.length; i++)
-                  PieChartSectionData(
-                    value: cats[i].value,
-                    color: toque == null || toque == i ? catGasto(cats[i].key).cor : catGasto(cats[i].key).cor.withValues(alpha: .35),
-                    radius: raio * (toque == i ? .34 : .3),
-                    showTitle: false,
-                  ),
-              ],
-            )),
-            Column(mainAxisSize: MainAxisSize.min, children: [
-              Text(sel == null ? 'Total' : catGasto(sel.key).nome, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: S.muted)),
-              Text(sel == null ? _reais(widget.total) : brl(sel.value),
-                  style: TextStyle(fontFamily: S.fonteNum, fontSize: 20, fontWeight: FontWeight.w700, color: S.ink)),
-              if (sel != null) Text(_pct(sel.value / widget.total), style: TextStyle(fontSize: 12, color: S.muted)),
-            ]),
-          ]),
+        child: RoscaModerna(
+          tam: tam,
+          valores: [for (final e in cats) e.value],
+          cores: [for (final e in cats) catGasto(e.key).cor],
+          centro: (sel) => sel == null || sel >= cats.length
+              ? CentroRosca(rotulo: 'Total', valor: brl(widget.total))
+              : CentroRosca(rotulo: catGasto(cats[sel].key).nome, valor: brl(cats[sel].value), sub: _pct(cats[sel].value / widget.total), cor: catGasto(cats[sel].key).cor),
         ),
       );
     });

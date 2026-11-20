@@ -197,9 +197,9 @@ class _EvolucaoAtivoSiteState extends State<EvolucaoAtivoSite> {
 class PosicaoAtualSite extends StatelessWidget {
   final Carteira c;
   final List<PosAtivo> posicoes;
-  final VoidCallback verRelatorios;
+  final VoidCallback? verRelatorios;
   final ValueChanged<PosAtivo>? abrir;
-  const PosicaoAtualSite({super.key, required this.c, required this.posicoes, required this.verRelatorios, this.abrir});
+  const PosicaoAtualSite({super.key, required this.c, required this.posicoes, this.verRelatorios, this.abrir});
 
   Widget _lin(String r, Widget v) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
@@ -218,8 +218,10 @@ class PosicaoAtualSite extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         const CabecalhoSite('Posição atual', sub: 'Saldo, valor aplicado e resultado de cada ativo'),
-        Align(alignment: Alignment.centerLeft, child: BotaoSm('Ver relatórios', onTap: verRelatorios, seta: false)),
-        const SizedBox(height: 8),
+        if (verRelatorios != null) ...[
+          Align(alignment: Alignment.centerLeft, child: BotaoSm('Ver relatórios', onTap: verRelatorios!, seta: false)),
+          const SizedBox(height: 8),
+        ],
         for (var i = 0; i < posicoes.length; i++) ...[
           if (i > 0) Divider(color: S.line, height: 18),
           InkWell(
@@ -273,6 +275,56 @@ class PosicaoAtualSite extends StatelessWidget {
             _lin('Part.', _txt('100%', forte: true)),
           ]),
         ),
+      ]),
+    );
+  }
+}
+
+
+/// Reduz a lista de dias para no máximo [max] pontos (gráficos leves).
+List<LinhaDia> amostrarDias(List<LinhaDia> d, int max) {
+  if (d.length <= max) return d;
+  return [for (var i = 0; i < max; i++) d[(i * (d.length - 1) / (max - 1)).round()]];
+}
+
+/// Rentabilidade de cada mês do ano numa grade colorida (verde ganho, vermelho perda).
+class GradeRentMeses extends StatelessWidget {
+  final List<MesPat> meses; // do ano, em ordem
+  final String titulo, sub;
+  const GradeRentMeses({super.key, required this.meses, this.titulo = 'Rentabilidade de cada mês', this.sub = 'Descontando aportes e resgates'});
+  @override
+  Widget build(BuildContext context) {
+    final maxA = meses.fold<double>(0, (a, m) => math.max(a, m.rent.isFinite ? m.rent.abs() : 0));
+    return CartaoSite(
+      padding: const EdgeInsets.all(16),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        CabecalhoSite(titulo, sub: sub),
+        LayoutBuilder(builder: (context, cons) {
+          const gap = 8.0;
+          final col = cons.maxWidth >= 520 ? 6 : 4;
+          final w = (cons.maxWidth - gap * (col - 1)) / col;
+          return Wrap(spacing: gap, runSpacing: gap, children: [
+            for (final m in meses)
+              Builder(builder: (_) {
+                final r = m.rent.isFinite ? m.rent : 0.0;
+                final base = r >= 0 ? S.pos : S.neg;
+                final forca = maxA <= 0 ? .3 : (.18 + .62 * (r.abs() / maxA));
+                final fundo = Color.lerp(S.surface, base, forca)!;
+                final escuroTxt = forca < .45;
+                final corTxt = escuroTxt ? (r >= 0 ? S.pos : S.neg) : Colors.white;
+                return Container(
+                  width: w,
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  decoration: BoxDecoration(color: fundo, borderRadius: BorderRadius.circular(10)),
+                  child: Column(children: [
+                    Text(mesesAbr[int.parse(m.ym.substring(5)) - 1], style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: escuroTxt ? S.ink2 : Colors.white.withValues(alpha: .9))),
+                    const SizedBox(height: 2),
+                    Text(pct(r, sinal: true), style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: corTxt)),
+                  ]),
+                );
+              }),
+          ]);
+        }),
       ]),
     );
   }

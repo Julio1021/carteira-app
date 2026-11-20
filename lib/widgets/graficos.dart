@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'rosca.dart';
 
 import '../tema.dart';
 import '../util/fmt.dart';
@@ -530,58 +531,17 @@ class Rosca extends StatefulWidget {
 }
 
 class _RoscaState extends State<Rosca> {
-  int? toc;
   @override
   Widget build(BuildContext context) {
     final tot = widget.valores.fold<double>(0, (a, b) => a + (b > 0 ? b : 0));
-    final raio = widget.tam / 2;
-    return SizedBox(
-      width: widget.tam,
-      height: widget.tam,
-      child: Stack(alignment: Alignment.center, children: [
-        _Entrada(
-          builder: (t) => PieChart(
-            PieChartData(
-              startDegreeOffset: -90,
-              sectionsSpace: 2.5,
-              centerSpaceRadius: raio * .62,
-              pieTouchData: PieTouchData(touchCallback: (ev, resp) {
-                if (ev is! FlTapUpEvent) return;
-                final i = resp?.touchedSection?.touchedSectionIndex;
-                final novo = (i == null || i < 0 || i == toc) ? null : i;
-                setState(() => toc = novo);
-                widget.onToque?.call(novo);
-              }),
-              sections: tot <= 0
-                  ? [PieChartSectionData(value: 1, color: G.v(0x1F), radius: raio * .3, showTitle: false)]
-                  : [
-                      for (var i = 0; i < widget.valores.length; i++)
-                        if (widget.valores[i] > 0)
-                          PieChartSectionData(
-                            value: widget.valores[i] * t + (t < 1 ? 0.0001 : 0),
-                            color: toc == null || toc == i ? widget.cores[i % widget.cores.length] : widget.cores[i % widget.cores.length].withValues(alpha: .3),
-                            radius: raio * (toc == i ? .36 : .3),
-                            showTitle: false,
-                          ),
-                    ],
-            ),
-          ),
-        ),
-        // centro: o total, ou a fatia tocada (em %)
-        AnimatedSwitcher(
-          duration: const Duration(milliseconds: 220),
-          transitionBuilder: (c, an) => FadeTransition(opacity: an, child: ScaleTransition(scale: Tween(begin: .85, end: 1.0).animate(an), child: c)),
-          child: toc != null && tot > 0 && toc! < widget.valores.length
-              ? Column(key: ValueKey(toc), mainAxisSize: MainAxisSize.min, children: [
-                  Text('${(widget.valores[toc!] / tot * 100).toStringAsFixed(0)}%', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: widget.cores[toc! % widget.cores.length])),
-                  Text('do total', style: TextStyle(color: G.apagado, fontSize: 11.5)),
-                ])
-              : Column(key: const ValueKey('c'), mainAxisSize: MainAxisSize.min, children: [
-                  Text(widget.centro, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
-                  if (widget.sub.isNotEmpty) Text(widget.sub, textAlign: TextAlign.center, style: TextStyle(color: G.apagado, fontSize: 11.5)),
-                ]),
-        ),
-      ]),
+    return RoscaModerna(
+      valores: widget.valores,
+      cores: widget.cores,
+      tam: widget.tam,
+      onToque: widget.onToque,
+      centro: (sel) => sel != null && tot > 0 && sel < widget.valores.length
+          ? CentroRosca(rotulo: 'do total', valor: '${(widget.valores[sel] / tot * 100).toStringAsFixed(1).replaceAll('.', ',')}%', cor: widget.cores[sel % widget.cores.length])
+          : CentroRosca(rotulo: widget.sub, valor: widget.centro),
     );
   }
 }

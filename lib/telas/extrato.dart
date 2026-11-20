@@ -9,11 +9,7 @@ import '../widgets/comum.dart';
 import '../widgets/painel.dart';
 import '../widgets/movimento.dart';
 import 'analise.dart';
-import 'busca.dart';
 import 'lancar.dart';
-import 'limites.dart';
-import 'importar.dart';
-import 'cartoes.dart';
 import 'inicio_site.dart';
 import '../widgets/site.dart';
 
@@ -90,27 +86,113 @@ class _TelaExtratoState extends State<TelaExtrato> {
     });
   }
 
-  Future<void> _filtros(BuildContext context, List<String> cats) async {
-    final todas = {...cats, for (final c in categoriasGasto) c.id}.toList();
-    final r = await showModalBottomSheet<String>(
+  Widget _chipAtivo(String t, Color cor, VoidCallback tirar) => Material(
+        color: S.accentSoft,
+        shape: StadiumBorder(side: BorderSide(color: S.accent.withValues(alpha: .5))),
+        child: InkWell(
+          customBorder: const StadiumBorder(),
+          onTap: tirar,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 6, 8, 6),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              Container(width: 8, height: 8, decoration: BoxDecoration(color: cor, shape: BoxShape.circle)),
+              const SizedBox(width: 6),
+              Text(t, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: S.ink)),
+              const SizedBox(width: 4),
+              Icon(Icons.close_rounded, size: 16, color: S.ink2),
+            ]),
+          ),
+        ),
+      );
+
+  /// Folha de filtros: conta/cartão e categoria, aplicados juntos.
+  Future<void> _filtros(BuildContext context, List<String> cats, List<(String, String, Color?)> origens) async {
+    final todas = [...cats, for (final c in categoriasGasto) if (!cats.contains(c.id)) c.id];
+    String? c0 = cat, o0 = origem;
+    final ok = await showModalBottomSheet<bool>(
       context: context,
+      isScrollControlled: true,
       backgroundColor: S.surface,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(22))),
-      builder: (c) => SafeArea(
-        child: ListView(shrinkWrap: true, padding: const EdgeInsets.fromLTRB(14, 14, 14, 20), children: [
-          Text('Filtrar por categoria', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: S.ink)),
-          const SizedBox(height: 10),
-          ListaTxSite([
-            InkWell(onTap: () => Navigator.pop(c, ''), child: Padding(padding: const EdgeInsets.all(14), child: Text('Todas as categorias', style: TextStyle(fontWeight: FontWeight.w600, color: cat == null ? S.accent : S.ink)))),
-            for (final id in todas)
-              LinhaTxSite(cat: catGasto(id), titulo: catGasto(id).nome, sub: cats.contains(id) ? 'Tem gastos neste mês' : 'Sem gastos neste mês', valor: cat == id ? '✓' : '', corValor: S.accent, onTap: () => Navigator.pop(c, id)),
-          ]),
-        ]),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, set) {
+          Widget chip(String t, bool on, VoidCallback f, {Color? ponto}) => Material(
+                color: on ? S.accentSoft : S.surface,
+                shape: StadiumBorder(side: BorderSide(color: on ? S.accent : S.line, width: on ? 1.5 : 1)),
+                child: InkWell(
+                  customBorder: const StadiumBorder(),
+                  onTap: f,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      if (ponto != null) ...[Container(width: 9, height: 9, decoration: BoxDecoration(color: ponto, shape: BoxShape.circle)), const SizedBox(width: 7)],
+                      Text(t, style: TextStyle(fontSize: 13.5, fontWeight: on ? FontWeight.w700 : FontWeight.w600, color: on ? S.accent : S.ink)),
+                    ]),
+                  ),
+                ),
+              );
+          Widget titulo(String t) => Padding(
+                padding: const EdgeInsets.only(top: 18, bottom: 10),
+                child: Text(t, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: S.ink)),
+              );
+          return SafeArea(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(ctx).height * .85),
+              child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                Center(child: Container(margin: const EdgeInsets.only(top: 10), width: 40, height: 4, decoration: BoxDecoration(color: S.line, borderRadius: BorderRadius.circular(2)))),
+                Flexible(
+                  child: ListView(shrinkWrap: true, padding: const EdgeInsets.fromLTRB(18, 14, 18, 8), children: [
+                    Text('Filtros', style: TextStyle(fontFamily: S.fonteNum, fontSize: 20, fontWeight: FontWeight.w700, color: S.ink)),
+                    if (origens.isNotEmpty) ...[
+                      titulo('Conta ou cartão'),
+                      Wrap(spacing: 8, runSpacing: 8, children: [
+                        chip('Todas', o0 == null, () => set(() => o0 = null)),
+                        for (final (id, nome, cor) in origens) chip(nome, o0 == id, () => set(() => o0 = o0 == id ? null : id), ponto: cor ?? S.ink2),
+                      ]),
+                    ],
+                    titulo('Categoria'),
+                    Wrap(spacing: 8, runSpacing: 8, children: [
+                      chip('Todas', c0 == null, () => set(() => c0 = null)),
+                      for (final id in todas) chip(catGasto(id).nome, c0 == id, () => set(() => c0 = c0 == id ? null : id), ponto: catGasto(id).cor),
+                    ]),
+                    const SizedBox(height: 6),
+                    Text('As categorias com gastos neste mês aparecem primeiro.', style: TextStyle(fontSize: 12.5, color: S.muted)),
+                  ]),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 8, 18, 14),
+                  child: Row(children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => set(() {
+                          c0 = null;
+                          o0 = null;
+                        }),
+                        style: OutlinedButton.styleFrom(minimumSize: const Size(0, 48)),
+                        child: const Text('Limpar'),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      flex: 2,
+                      child: FilledButton(
+                        onPressed: () => Navigator.pop(ctx, true),
+                        style: FilledButton.styleFrom(minimumSize: const Size(0, 48)),
+                        child: const Text('Aplicar filtros'),
+                      ),
+                    ),
+                  ]),
+                ),
+              ]),
+            ),
+          );
+        },
       ),
     );
-    if (r == null || !mounted) return;
+    if (ok != true || !mounted) return;
     setState(() {
-      cat = r.isEmpty ? null : r;
+      cat = c0;
+      origem = o0;
       if (cat != null && filtro != 'saidas') filtro = 'saidas';
     });
   }
@@ -183,6 +265,7 @@ class _TelaExtratoState extends State<TelaExtrato> {
       for (final c in repo.contas) (c.id, c.nome, null),
       for (final c in repo.doTipo('cartao')) (str(c['id']), str(c['nome'], 'Cartão'), corDeTexto(c['cor'])),
     ];
+    final nFiltros = (cat != null ? 1 : 0) + (origem != null ? 1 : 0);
     final m = MediaQuery.paddingOf(context);
     return CustomScrollView(slivers: [
       SliverPadding(
@@ -196,14 +279,6 @@ class _TelaExtratoState extends State<TelaExtrato> {
                 filtro = 'saidas';
               })),
           const SizedBox(height: 18),
-          AtalhosSite(itens: [
-            (Ico.mais, 'Gasto', () => abrirFormLanc(context)),
-            (Ico.cima, 'Entrada', () => abrirFormLanc(context, entrada: true)),
-            (Ico.cartao, 'Cartão', () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TelaCartoes()))),
-            (Ico.importar, 'Importar', () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TelaImportarExtrato()))),
-            (Ico.buscar, 'Buscar', () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => TelaBusca(inicial: buscaC.text)))),
-            (Ico.ajustes, 'Limites', () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => TelaLimites(ym: widget.ym)))),
-          ]),
           const SizedBox(height: 18),
           // abas com o tracinho embaixo da escolhida
           Container(
@@ -251,16 +326,6 @@ class _TelaExtratoState extends State<TelaExtrato> {
                       })),
               ]),
             ),
-            if (origens.isNotEmpty) ...[
-              const SizedBox(height: 10),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(children: [
-                  pilula('Todas', origem == null, () => setState(() => origem = null), origem: true),
-                  for (final (id, nome, cor) in origens) pilula(nome, origem == id, () => setState(() => origem = origem == id ? null : id), ponto: cor, origem: true),
-                ]),
-              ),
-            ],
             const SizedBox(height: 10),
             Row(children: [
               Expanded(
@@ -294,25 +359,45 @@ class _TelaExtratoState extends State<TelaExtrato> {
               ),
               const SizedBox(width: 8),
               Material(
-                color: cat != null ? S.accentSoft : S.surface2,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: cat != null ? S.accent : S.line)),
+                color: nFiltros > 0 ? S.accentSoft : S.surface2,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: nFiltros > 0 ? S.accent : S.line)),
                 child: InkWell(
                   borderRadius: BorderRadius.circular(12),
-                  onTap: () => _filtros(context, catsDoMes),
+                  onTap: () => _filtros(context, catsDoMes, origens),
                   child: SizedBox(
                     height: 46,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 14),
                       child: Row(children: [
-                        IconeSite('<path d="M3 6h18M7 12h10M10 18h4"/>', tam: 18, cor: cat != null ? S.accent : S.ink),
+                        IconeSite('<path d="M3 6h18M7 12h10M10 18h4"/>', tam: 18, cor: nFiltros > 0 ? S.accent : S.ink),
                         const SizedBox(width: 7),
-                        Text(cat != null ? catGasto(cat).nome : 'Filtros', style: TextStyle(fontWeight: FontWeight.w700, color: cat != null ? S.accent : S.ink)),
+                        Text('Filtros', style: TextStyle(fontWeight: FontWeight.w700, color: nFiltros > 0 ? S.accent : S.ink)),
+                        if (nFiltros > 0) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            width: 20,
+                            height: 20,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(color: S.accent, shape: BoxShape.circle),
+                            child: Text('$nFiltros', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: S.ctaInk)),
+                          ),
+                        ],
                       ]),
                     ),
                   ),
                 ),
               ),
             ]),
+            if (nFiltros > 0)
+              Padding(
+                padding: const EdgeInsets.only(top: 10),
+                child: Wrap(spacing: 6, runSpacing: 6, children: [
+                  if (cat != null) _chipAtivo(catGasto(cat).nome, catGasto(cat).cor, () => setState(() => cat = null)),
+                  if (origem != null)
+                    for (final (id, nome, cor) in origens)
+                      if (id == origem) _chipAtivo(nome, cor ?? S.ink2, () => setState(() => origem = null)),
+                ]),
+              ),
             if (q.isNotEmpty || cat != null || filtro != 'tudo' || origem != null)
               Padding(
                 padding: const EdgeInsets.fromLTRB(4, 12, 4, 0),

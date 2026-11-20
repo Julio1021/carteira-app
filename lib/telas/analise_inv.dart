@@ -12,7 +12,9 @@ import '../dados/patrimonio.dart';
 import '../tema.dart';
 import '../util/fmt.dart';
 import '../widgets/comum.dart';
+import '../widgets/rosca.dart';
 import '../widgets/site.dart';
+import 'patrimonio_site.dart' show EvolucaoAtivoSite, amostrarDias;
 
 String _mesAno(String ym) => '${_abr(ym)}/${ym.substring(2, 4)}';
 String _abr(String ym) => mesesLongos[int.parse(ym.substring(5, 7)) - 1].substring(0, 3).toLowerCase();
@@ -123,6 +125,10 @@ class _AnaliseInvestState extends State<AnaliseInvest> {
             _CardIndices(cmp: cmp, idx: idx),
             if (rp != null) ...[const SizedBox(height: 14), _CardRenda(rp: rp)],
             if (ativos.isNotEmpty) ...[const SizedBox(height: 14), _CardAtivos(lista: ativos)],
+            if (c.dias.length >= 2 && c.posicoes.where((p) => p.valor > 0.005).length > 1) ...[
+              const SizedBox(height: 14),
+              EvolucaoAtivoSite(amostra: amostrarDias(c.dias, 90), posicoes: c.posicoes.where((p) => p.valor > 0.005).toList()),
+            ],
             if (inst.isNotEmpty) ...[
               const SizedBox(height: 14),
               _CardDiversificacao(fatias: porClasse ? cls : inst, porClasse: porClasse, onTrocar: (v) => setState(() => porClasse = v)),
@@ -725,41 +731,17 @@ class _CardDiversificacaoState extends State<_CardDiversificacao> {
         ),
         const SizedBox(height: 16),
         Center(
-          child: SizedBox(
-            width: 190,
-            height: 190,
-            child: Stack(alignment: Alignment.center, children: [
-              PieChart(PieChartData(
-                startDegreeOffset: -90,
-                sectionsSpace: 2,
-                centerSpaceRadius: 68,
-                pieTouchData: PieTouchData(touchCallback: (ev, resp) {
-                  if (ev is! FlTapUpEvent) return;
-                  final i = resp?.touchedSection?.touchedSectionIndex;
-                  setState(() => toque = (i == null || i < 0 || i == toque) ? null : i);
-                }),
-                sections: [
-                  for (var i = 0; i < fatias.length; i++)
-                    PieChartSectionData(
-                      value: fatias[i].valor,
-                      color: t == null || t == i ? cores[i] : cores[i].withValues(alpha: .3),
-                      radius: t == i ? 24 : 20,
-                      showTitle: false,
-                    ),
-                ],
-              )),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 38),
-                child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  Text(t == null ? 'Total' : fatias[t].nome, textAlign: TextAlign.center, maxLines: 2, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: S.muted)),
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(t == null ? brl(tot) : '${(fatias[t].valor / tot * 100).toStringAsFixed(1).replaceAll('.', ',')}%',
-                        style: TextStyle(fontFamily: S.fonteNum, fontSize: 17, fontWeight: FontWeight.w800, color: S.ink)),
-                  ),
-                ]),
-              ),
-            ]),
+          child: RoscaModerna(
+            key: ValueKey(widget.porClasse),
+            tam: 210,
+            valores: [for (final f in fatias) f.valor],
+            cores: cores,
+            selecionado: t,
+            controlado: true,
+            onToque: (i) => setState(() => toque = i),
+            centro: (sel) => sel == null
+                ? CentroRosca(rotulo: 'Total', valor: brl(tot))
+                : CentroRosca(rotulo: fatias[sel].nome, valor: '${(fatias[sel].valor / tot * 100).toStringAsFixed(1).replaceAll('.', ',')}%', sub: brl(fatias[sel].valor), cor: cores[sel]),
           ),
         ),
         const SizedBox(height: 14),
