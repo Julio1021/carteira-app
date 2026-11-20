@@ -685,7 +685,7 @@ class _LancarState extends State<_Lancar> {
                   ),
                 ),
               ]),
-              if (_base(repo, p) case final b?) _ResultadoLanc(ant: b.base, dAnt: b.dBase, data: data, saldo: s, aporte: ap, apAntes: b.apAntes, apPeso: b.apPeso, periodo: periodo),
+              if (_base(repo, p) case final b?) _ResultadoLanc(ant: b.base, dAnt: b.dBase, data: data, saldo: s, aporte: ap, apAntes: b.apAntes, apPeso: b.apPeso, periodo: periodo, aberto: ps.length <= 3),
               // 1) o saldo parece não incluir o aporte/resgate (o "rendimento" fica perto de −aporte)
               if (rend != null && s != null && ap != 0 && (rend + ap).abs() < ap.abs() * .5)
                 _Aviso(
@@ -759,17 +759,27 @@ class _LancarState extends State<_Lancar> {
 
 /// Resultado de um ativo no lançamento: quanto rendeu (ou perdeu) e o caminho
 /// saldo anterior → aporte/resgate → saldo de agora.
-class _ResultadoLanc extends StatelessWidget {
+class _ResultadoLanc extends StatefulWidget {
   final double ant;
   final String dAnt, data;
   final double? saldo;
   final double aporte, apAntes, apPeso;
   final int periodo;
-  const _ResultadoLanc({required this.ant, required this.dAnt, required this.data, required this.saldo, required this.aporte, this.apAntes = 0, this.apPeso = 0, this.periodo = 0});
+
+  /// Começa com o detalhe (antes → aporte → agora) aberto?
+  final bool aberto;
+  const _ResultadoLanc({required this.ant, required this.dAnt, required this.data, required this.saldo, required this.aporte, this.apAntes = 0, this.apPeso = 0, this.periodo = 0, this.aberto = true});
+  @override
+  State<_ResultadoLanc> createState() => _ResultadoLancState();
+}
+
+class _ResultadoLancState extends State<_ResultadoLanc> {
+  late bool aberto = widget.aberto;
 
   @override
   Widget build(BuildContext context) {
-    final s = saldo;
+    final ant = widget.ant, dAnt = widget.dAnt, data = widget.data, periodo = widget.periodo, apAntes = widget.apAntes, apPeso = widget.apPeso;
+    final s = widget.saldo;
     if (s == null) {
       return Container(
         margin: const EdgeInsets.only(top: 10),
@@ -778,7 +788,7 @@ class _ResultadoLanc extends StatelessWidget {
         child: Text('Digite o saldo de hoje para ver quanto rendeu desde ${dataCurta(dAnt)}.', style: TextStyle(fontSize: 12.5, color: S.muted)),
       );
     }
-    final aporte = this.aporte + apAntes;
+    final aporte = widget.aporte + apAntes;
     final rend = s - ant - aporte;
     final igual = rend.abs() < .005;
     final cor = igual ? S.ink2 : (rend > 0 ? S.pos : S.neg);
@@ -801,8 +811,14 @@ class _ResultadoLanc extends StatelessWidget {
     final seta = Padding(padding: const EdgeInsets.symmetric(horizontal: 4), child: Icon(Icons.arrow_forward_rounded, size: 15, color: S.muted));
     return Container(
       margin: const EdgeInsets.only(top: 10),
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       decoration: BoxDecoration(color: fundo, borderRadius: BorderRadius.circular(12)),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () => setState(() => aberto = !aberto),
+          child: Padding(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
           Icon(igual ? Icons.remove_rounded : (rend > 0 ? Icons.trending_up_rounded : Icons.trending_down_rounded), color: cor, size: 22),
@@ -827,7 +843,14 @@ class _ResultadoLanc extends StatelessWidget {
             const SizedBox(height: 3),
             Text(dias <= 0 ? 'no dia' : 'em $dias dia${dias == 1 ? '' : 's'}', style: TextStyle(fontSize: 11.5, color: S.muted)),
           ]),
+          const SizedBox(width: 4),
+          AnimatedRotation(turns: aberto ? .5 : 0, duration: const Duration(milliseconds: 200), child: Icon(Icons.expand_more_rounded, color: S.muted, size: 22)),
         ]),
+        AnimatedSize(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+          alignment: Alignment.topCenter,
+          child: !aberto ? const SizedBox(width: double.infinity) : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Divider(height: 18, color: cor.withValues(alpha: .18)),
         Row(children: [
           passo('Em ${dataCurta(dAnt)}', brl(ant)),
@@ -840,7 +863,12 @@ class _ResultadoLanc extends StatelessWidget {
           'O saldo ${varia >= 0 ? 'subiu' : 'caiu'} ${brl(varia.abs())}${aporte != 0 ? ': ${brl(aporte.abs())} de ${aporte > 0 ? 'aporte' : 'resgate'} e ${brl(rend.abs())} de ${rend >= 0 ? 'rendimento' : 'perda'}' : ''}.',
           style: TextStyle(fontSize: 12, color: S.ink2, height: 1.35),
         ),
+          ]),
+        ),
       ]),
+          ),
+        ),
+      ),
     );
   }
 }
