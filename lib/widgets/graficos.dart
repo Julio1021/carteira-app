@@ -53,25 +53,34 @@ class _Moldura extends StatelessWidget {
     final s = dentroDeCartao(context) ? 10.0 : 0.0;
     return LayoutBuilder(builder: (context, k) {
       final w = k.maxWidth.isFinite ? k.maxWidth : 320.0;
+      // o botão de ampliar fica numa faixa própria, acima do gráfico (não cobre o último ponto)
+      final topo = onExpandir != null ? 34.0 : 0.0;
       return SizedBox(
-        height: altura,
+        height: altura + topo,
         width: w,
         child: OverflowBox(
           minWidth: w + 2 * s,
           maxWidth: w + 2 * s,
           child: Stack(children: [
-            Positioned.fill(child: grafico),
+            Positioned.fill(top: topo, child: grafico),
             if (onExpandir != null)
               Positioned(
                 top: 0,
                 right: s,
                 child: Material(
                   color: G.v(0x0C),
-                  shape: const CircleBorder(),
+                  shape: const StadiumBorder(),
                   child: InkWell(
-                    customBorder: const CircleBorder(),
+                    customBorder: const StadiumBorder(),
                     onTap: onExpandir,
-                    child: Padding(padding: const EdgeInsets.all(6), child: Icon(Icons.open_in_full_rounded, size: 15, color: G.apagado, semanticLabel: 'Tela cheia')),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      child: Row(mainAxisSize: MainAxisSize.min, children: [
+                        Icon(Icons.open_in_full_rounded, size: 14, color: G.texto2, semanticLabel: 'Tela cheia'),
+                        const SizedBox(width: 5),
+                        Text('Ampliar', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: G.texto2)),
+                      ]),
+                    ),
                   ),
                 ),
               ),
