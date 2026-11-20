@@ -487,7 +487,7 @@ class _TelaLancarValoresState extends State<TelaLancarValores> {
           scrollPadding: const EdgeInsets.only(bottom: 160),
           style: TextStyle(fontFamily: S.fonteNum, fontSize: 22, fontWeight: FontWeight.w700, color: S.ink),
           decoration: InputDecoration(
-            labelText: 'Saldo no banco agora',
+            labelText: data == hojeIso() ? 'Saldo no banco agora' : 'Saldo no banco em ${dataCurta(data)}',
             prefixText: 'R\$ ',
             hintText: ant == null ? '0,00' : valorCampo(ant),
             hintStyle: TextStyle(color: S.muted.withValues(alpha: .6)),
