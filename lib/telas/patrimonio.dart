@@ -562,12 +562,7 @@ class _LancarState extends State<_Lancar> {
                   ),
                 ),
               ]),
-              if (rend != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Text('Rendimento: ${brl(rend, sinal: true)}${ant! > 0 ? ' (${pct(rend / ant, sinal: true)})' : ''}',
-                      style: TextStyle(color: rend >= 0 ? G.pos : G.neg, fontWeight: FontWeight.w600, fontSize: 12.5)),
-                ),
+              if (ant != null) _ResultadoLanc(ant: ant, dAnt: dAnt!, data: data, saldo: s, aporte: ap),
               // o saldo parece não incluir o aporte/resgate (o "rendimento" fica perto de −aporte)
               if (rend != null && s != null && ap != 0 && (rend + ap).abs() < ap.abs() * .5)
                 Container(
@@ -598,8 +593,152 @@ class _LancarState extends State<_Lancar> {
         }),
         const SizedBox(height: 10),
       ],
+      Builder(builder: (_) {
+        var rendeu = 0.0, aportes = 0.0, antes = 0.0, depois = 0.0;
+        var n = 0;
+        for (final p in ps) {
+          final ant = _anterior(repo, p);
+          final sv = lerValor(_sc(p.a.id).text);
+          if (ant == null || sv == null) continue;
+          final ap = _lerComSinal(_ac(p.a.id).text) ?? 0;
+          rendeu += sv - ant - ap;
+          aportes += ap;
+          antes += ant;
+          depois += sv;
+          n++;
+        }
+        if (n == 0) return const SizedBox();
+        return Padding(padding: const EdgeInsets.only(bottom: 12), child: _ResumoLanc(n: n, rendeu: rendeu, aportes: aportes, antes: antes, depois: depois));
+      }),
       FilledButton.icon(onPressed: _salvar, icon: const Icon(Icons.check_rounded), label: const Text('Salvar lançamentos')),
     ]);
+  }
+}
+
+/// Resultado de um ativo no lançamento: quanto rendeu (ou perdeu) e o caminho
+/// saldo anterior → aporte/resgate → saldo de agora.
+class _ResultadoLanc extends StatelessWidget {
+  final double ant;
+  final String dAnt, data;
+  final double? saldo;
+  final double aporte;
+  const _ResultadoLanc({required this.ant, required this.dAnt, required this.data, required this.saldo, required this.aporte});
+
+  @override
+  Widget build(BuildContext context) {
+    final s = saldo;
+    if (s == null) {
+      return Container(
+        margin: const EdgeInsets.only(top: 10),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(color: S.surface2, borderRadius: BorderRadius.circular(12)),
+        child: Text('Digite o saldo de hoje para ver quanto rendeu desde ${dataCurta(dAnt)}.', style: TextStyle(fontSize: 12.5, color: S.muted)),
+      );
+    }
+    final rend = s - ant - aporte;
+    final igual = rend.abs() < .005;
+    final cor = igual ? S.ink2 : (rend > 0 ? S.pos : S.neg);
+    final fundo = igual ? S.surface2 : (rend > 0 ? S.posSoft : S.negSoft);
+    final dias = DateTime.parse(data).difference(DateTime.parse(dAnt)).inDays;
+    final pc = ant > 0 ? rend / ant : null;
+    final varia = s - ant;
+    Widget passo(String rotulo, String valor, {Color? corV}) => Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(rotulo, style: TextStyle(fontSize: 11.5, color: S.muted)),
+            const SizedBox(height: 1),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(valor, style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: corV ?? S.ink)),
+            ),
+          ]),
+        );
+    final seta = Padding(padding: const EdgeInsets.symmetric(horizontal: 4), child: Icon(Icons.arrow_forward_rounded, size: 15, color: S.muted));
+    return Container(
+      margin: const EdgeInsets.only(top: 10),
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      decoration: BoxDecoration(color: fundo, borderRadius: BorderRadius.circular(12)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+          Icon(igual ? Icons.remove_rounded : (rend > 0 ? Icons.trending_up_rounded : Icons.trending_down_rounded), color: cor, size: 22),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(igual ? 'Não rendeu' : (rend > 0 ? 'Rendeu' : 'Perdeu'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: cor)),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(brl(rend, sinal: true), style: TextStyle(fontFamily: S.fonteNum, fontSize: 22, fontWeight: FontWeight.w800, color: cor, height: 1.15)),
+              ),
+            ]),
+          ),
+          Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+            if (pc != null)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                decoration: BoxDecoration(color: cor.withValues(alpha: .12), borderRadius: BorderRadius.circular(99)),
+                child: Text(pct(pc, sinal: true), style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800, color: cor)),
+              ),
+            const SizedBox(height: 3),
+            Text(dias <= 0 ? 'no dia' : 'em $dias dia${dias == 1 ? '' : 's'}', style: TextStyle(fontSize: 11.5, color: S.muted)),
+          ]),
+        ]),
+        Divider(height: 18, color: cor.withValues(alpha: .18)),
+        Row(children: [
+          passo('Em ${dataCurta(dAnt)}', brl(ant)),
+          if (aporte != 0) ...[seta, passo(aporte > 0 ? 'Aporte' : 'Resgate', brl(aporte, sinal: true), corV: S.accent)],
+          seta,
+          passo('Agora', brl(s)),
+        ]),
+        const SizedBox(height: 6),
+        Text(
+          'O saldo ${varia >= 0 ? 'subiu' : 'caiu'} ${brl(varia.abs())}${aporte != 0 ? ': ${brl(aporte.abs())} de ${aporte > 0 ? 'aporte' : 'resgate'} e ${brl(rend.abs())} de ${rend >= 0 ? 'rendimento' : 'perda'}' : ''}.',
+          style: TextStyle(fontSize: 12, color: S.ink2, height: 1.35),
+        ),
+      ]),
+    );
+  }
+}
+
+/// Resumo de todos os ativos do lançamento.
+class _ResumoLanc extends StatelessWidget {
+  final int n;
+  final double rendeu, aportes, antes, depois;
+  const _ResumoLanc({required this.n, required this.rendeu, required this.aportes, required this.antes, required this.depois});
+  @override
+  Widget build(BuildContext context) {
+    final cor = rendeu.abs() < .005 ? S.ink2 : (rendeu > 0 ? S.pos : S.neg);
+    final pc = antes > 0 ? rendeu / antes : null;
+    Widget lin(String r, String v, {Color? c, bool forte = false}) => Padding(
+          padding: const EdgeInsets.symmetric(vertical: 3),
+          child: Row(children: [
+            Expanded(child: Text(r, style: TextStyle(fontSize: 13, color: S.ink2))),
+            Text(v, style: TextStyle(fontSize: forte ? 14.5 : 13.5, fontWeight: FontWeight.w700, color: c ?? S.ink)),
+          ]),
+        );
+    return CartaoSite(
+      padding: const EdgeInsets.all(16),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Text('Resultado deste lançamento', style: TextStyle(fontFamily: S.fonteNum, fontSize: 16.5, fontWeight: FontWeight.w700, color: S.ink)),
+        Text('$n ativo${n == 1 ? '' : 's'} com saldo preenchido', style: TextStyle(fontSize: 12.5, color: S.muted)),
+        const SizedBox(height: 10),
+        Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+          Expanded(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text('${rendeu >= 0 ? 'Rendeu' : 'Perdeu'} ${brl(rendeu, sinal: true)}', style: TextStyle(fontFamily: S.fonteNum, fontSize: 24, fontWeight: FontWeight.w800, color: cor)),
+            ),
+          ),
+          if (pc != null) Text(pct(pc, sinal: true), style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: cor)),
+        ]),
+        Divider(height: 20, color: S.line),
+        lin('Antes', brl(antes)),
+        if (aportes != 0) lin(aportes > 0 ? 'Aportes' : 'Resgates', brl(aportes, sinal: true), c: S.accent),
+        lin(rendeu >= 0 ? 'Rendimento' : 'Perda', brl(rendeu, sinal: true), c: cor),
+        lin('Depois', brl(depois), forte: true),
+      ]),
+    );
   }
 }
 
