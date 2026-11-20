@@ -553,7 +553,7 @@ class RecebimentosSite extends StatelessWidget {
                     child: Column(children: [
                       Text('${x.data.substring(8, 10)}/${x.data.substring(5, 7)}', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: S.ink, height: 1.5)),
                       // atrasado: o nome fica vermelho (o "· atrasado" escrito se perdia no corte)
-                      Text(x.nome, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 11.5, color: x.atrasado ? S.neg : S.ink2, fontWeight: x.atrasado ? FontWeight.w600 : FontWeight.w400, height: 1.5)),
+                      Text(x.nome, maxLines: 2, textAlign: TextAlign.center, style: TextStyle(fontSize: 11.5, color: x.atrasado ? S.neg : S.ink2, fontWeight: x.atrasado ? FontWeight.w600 : FontWeight.w400, height: 1.5)),
                       const SizedBox(height: 7),
                       Container(
                         width: 16,

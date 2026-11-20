@@ -39,85 +39,82 @@ class _CartaoContasState extends State<CartaoContas> {
     ];
     final emConta = repo.contas.isEmpty ? null : saldoEmConta(repo);
     TextStyle b([Color? c]) => TextStyle(fontWeight: FontWeight.w700, color: c ?? S.ink);
+    final antTot = m.atrasoAnt.fold<double>(0, (a, i) => a + i.valor);
+    final sobra = emConta == null ? null : emConta - m.falta;
     return CartaoSite(
       padding: const EdgeInsets.all(16),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Contas a pagar', style: TextStyle(fontFamily: S.fonteNum, fontSize: 16.5, fontWeight: FontWeight.w700, letterSpacing: -.08, color: S.ink, height: 1.5)),
-              const SizedBox(height: 2),
-              if (temContas)
-                Text.rich(TextSpan(children: [
-                  const TextSpan(text: 'Falta pagar '),
-                  TextSpan(text: brl(m.falta), style: b()),
-                  TextSpan(text: ' em ${mesLongo(ym).toLowerCase()}'),
-                ]), style: TextStyle(fontSize: 12.5, color: S.muted, height: 1.5))
-              else
-                Text('Aluguel, luz, internet, parcelas e boletos', style: TextStyle(fontSize: 12.5, color: S.muted, height: 1.5)),
+              Text('Contas a pagar', style: TextStyle(fontFamily: S.fonteNum, fontSize: 16.5, fontWeight: FontWeight.w700, letterSpacing: -.08, color: S.ink, height: 1.4)),
+              Text(temContas ? mesLongo(ym) : 'Aluguel, luz, internet, parcelas e boletos', style: TextStyle(fontSize: 12.5, color: S.muted, height: 1.4)),
             ]),
           ),
-          if (atr.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: 18, left: 12),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(color: S.negSoft, borderRadius: BorderRadius.circular(999)),
-                child: Text('${atr.length} atrasada${atr.length > 1 ? 's' : ''}', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: S.neg)),
-              ),
-            ),
+          BotaoSm('Nova conta', seta: false, onTap: () => abrirFolha(context, const FormConta())),
         ]),
-        const SizedBox(height: 12),
-        BotaoSite('Nova conta', icone: Ico.mais, onTap: () => abrirFolha(context, const FormConta())),
         if (!temContas) ...[
           const SizedBox(height: 12),
           Text('O app mostra o que vence primeiro, avisa o que está atrasado e calcula quanto falta pagar.', style: TextStyle(color: S.ink2, fontSize: 13, height: 1.45)),
         ] else ...[
-          const SizedBox(height: 18),
-          Row(crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
-            Text('Falta pagar', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: S.muted)),
-            const SizedBox(width: 10),
-            Flexible(
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(brl(m.falta), style: TextStyle(fontFamily: S.fonteNum, fontSize: 26, fontWeight: FontWeight.w700, letterSpacing: -.26, color: atr.isNotEmpty ? S.neg : S.ink)),
-              ),
-            ),
-          ]),
-          Text.rich(TextSpan(children: [
-            TextSpan(text: '${ab.length} conta${ab.length == 1 ? '' : 's'}'),
-            if (atr.isNotEmpty) ...[const TextSpan(text: ' · '), TextSpan(text: '${atr.length} atrasada${atr.length > 1 ? 's' : ''}', style: b(S.neg))],
-          ]), style: TextStyle(fontSize: 12.5, color: S.muted, height: 1.5)),
-          const SizedBox(height: 10),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(99),
-            child: SizedBox(
-              height: 8,
-              child: Stack(children: [
-                Positioned.fill(child: ColoredBox(color: S.surface2)),
-                Align(alignment: Alignment.centerLeft, child: FractionallySizedBox(widthFactor: pct.clamp(0, 1).toDouble(), heightFactor: 1, child: ColoredBox(color: S.pos))),
+          const SizedBox(height: 14),
+          // resumo: um número só, explicado
+          Container(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+            decoration: BoxDecoration(color: atr.isNotEmpty ? S.negSoft : S.surface2, borderRadius: BorderRadius.circular(14)),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                Expanded(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text('Falta pagar', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: S.ink2)),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(brl(m.falta), style: TextStyle(fontFamily: S.fonteNum, fontSize: 26, fontWeight: FontWeight.w800, letterSpacing: -.26, color: atr.isNotEmpty ? S.neg : S.ink)),
+                    ),
+                  ]),
+                ),
+                Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                  Text('${ab.length} conta${ab.length == 1 ? '' : 's'}', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: S.ink)),
+                  if (atr.isNotEmpty) Text('${atr.length} atrasada${atr.length > 1 ? 's' : ''}', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800, color: S.neg)),
+                ]),
               ]),
-            ),
+              const SizedBox(height: 10),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(99),
+                child: SizedBox(
+                  height: 7,
+                  child: Stack(children: [
+                    Positioned.fill(child: ColoredBox(color: S.surface.withValues(alpha: .8))),
+                    Align(alignment: Alignment.centerLeft, child: FractionallySizedBox(widthFactor: pct.clamp(0, 1).toDouble(), heightFactor: 1, child: ColoredBox(color: S.pos))),
+                  ]),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text.rich(TextSpan(children: [
+                TextSpan(text: 'Pagou ${brl(m.pago)} de ${brl(m.total)} das contas de ${mesesLongos[int.parse(ym.substring(5)) - 1].toLowerCase()}'),
+                if (antTot > 0) TextSpan(text: '. Mais ${brl(antTot)} atrasados de meses anteriores', style: b(S.neg)),
+                const TextSpan(text: '.'),
+              ]), style: TextStyle(fontSize: 12.5, color: S.ink2, height: 1.45)),
+              if (sobra != null && ym == ymDe(hojeIso()))
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text.rich(TextSpan(children: [
+                    TextSpan(text: sobra >= 0 ? 'Pagando tudo, sobram ' : 'Pagando tudo, faltam '),
+                    TextSpan(text: brl(sobra.abs()), style: b(sobra >= 0 ? S.pos : S.neg)),
+                    const TextSpan(text: ' em conta.'),
+                  ]), style: TextStyle(fontSize: 12.5, color: S.ink2, height: 1.45)),
+                ),
+            ]),
           ),
-          const SizedBox(height: 8),
-          Text.rich(TextSpan(children: [
-            const TextSpan(text: 'Pago '),
-            TextSpan(text: brl(m.pago), style: b()),
-            const TextSpan(text: ' de '),
-            TextSpan(text: brl(m.total), style: b()),
-            if (emConta != null && ym == ymDe(hojeIso())) ...[
-              const TextSpan(text: ' · faltará em conta '),
-              TextSpan(text: brl(emConta - m.falta), style: b(emConta - m.falta < 0 ? S.neg : null)),
-            ],
-          ]), style: TextStyle(fontSize: 12.5, color: S.muted, height: 1.5)),
           for (final (st, nome, cor) in grupos)
             if (ab.any((i) => i.st == st)) ...[
-              const SizedBox(height: 14),
-              Text.rich(TextSpan(children: [
-                TextSpan(text: nome),
-                TextSpan(text: '   ${ab.where((i) => i.st == st).length} · ${brl(ab.where((i) => i.st == st).fold<double>(0, (a, i) => a + i.valor))}', style: const TextStyle(fontWeight: FontWeight.w500)),
-              ]), style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: cor)),
-              const SizedBox(height: 2),
+              const SizedBox(height: 16),
+              Row(children: [
+                Expanded(child: Text(nome, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: cor))),
+                Text('${ab.where((i) => i.st == st).length} · ${brl(ab.where((i) => i.st == st).fold<double>(0, (a, i) => a + i.valor))}', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: cor)),
+              ]),
+              const SizedBox(height: 4),
               for (final i in ab.where((i) => i.st == st)) LinhaConta(i),
             ],
           if (m.pagas.isNotEmpty) ...[
@@ -159,8 +156,6 @@ class LinhaConta extends StatelessWidget {
     final corSt = switch (i.st) { 'atrasada' => S.neg, 'hoje' => S.second, 'pago' => S.pos, _ => S.muted };
     final meta = <String>[
       catGasto(i.b.cat).nome,
-      if (i.b.rep == 'parcelas') 'Parcela ${i.n}/${i.b.parc}' else if (i.b.rep == 'mensal') 'Todo mês' else 'Uma vez',
-      if (i.b.variavel) 'valor estimado',
       i.b.pag,
     ].join(' · ');
     final mesAnt = !pago && i.ym.compareTo(ymDe(hojeIso())) < 0;
@@ -186,13 +181,10 @@ class LinhaConta extends StatelessWidget {
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text.rich(TextSpan(children: [
                 TextSpan(text: i.b.nome),
-                if (mesAnt) TextSpan(text: ' · mês anterior', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: S.muted)),
-              ]), maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700, color: S.ink, height: 1.5)),
-              const SizedBox(height: 2),
-              Text.rich(TextSpan(children: [
-                TextSpan(text: i.statusTexto),
-                TextSpan(text: ' · $meta', style: TextStyle(fontWeight: FontWeight.w500, color: S.muted)),
-              ]), style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: corSt, height: 1.5)),
+                if (i.b.rep == 'parcelas') TextSpan(text: ' ${i.n}/${i.b.parc}', style: TextStyle(fontWeight: FontWeight.w600, color: S.muted)),
+              ]), style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700, color: S.ink, height: 1.4)),
+              Text(i.statusTexto + (mesAnt ? ' (mês anterior)' : ''), style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: corSt, height: 1.4)),
+              Text(meta + (i.b.variavel && !pago ? ' · valor estimado' : ''), style: TextStyle(fontSize: 12, color: S.muted, height: 1.4)),
             ]),
           ),
           GestureDetector(
@@ -205,7 +197,7 @@ class LinhaConta extends StatelessWidget {
           child: Row(children: [
             Expanded(child: Text('${i.b.variavel && !pago ? 'cerca de ' : ''}${brl(i.valor)}', style: TextStyle(fontFamily: S.fonteNum, fontSize: 16, fontWeight: FontWeight.w700, color: S.ink))),
             if (!pago)
-              BotaoSm('Pagar', primario: true, seta: false, onTap: () => abrirFolha(context, FolhaPagar(i)))
+              BotaoSm('Pagar', seta: false, onTap: () => abrirFolha(context, FolhaPagar(i)))
             else if (i.fonte != 'extrato')
               BotaoSm('Desfazer', seta: false, onTap: () async {
                 if (!await confirmar(context, 'Desfazer pagamento?', '${i.b.nome} volta a ficar em aberto${i.p?['criouGasto'] == true ? ' e o gasto lançado junto é apagado' : ''}.', sim: 'Desfazer')) return;
