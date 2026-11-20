@@ -710,7 +710,9 @@ class _LancarState extends State<_Lancar> {
                   texto: rend > 0
                       ? 'Subiu ${pct(rend / ant)} desde ${dataCurta(dAnt!)}, bem acima do normal. Se você colocou dinheiro nesse período, ele é aporte, não rendimento.'
                       : 'Caiu ${pct(-rend / ant)} desde ${dataCurta(dAnt!)}, bem acima do normal. Se você tirou dinheiro nesse período, ele é resgate, não perda.',
-                  botao: rend > 0 ? 'Foi aporte de ${brl(rend)}' : 'Foi resgate de ${brl(-rend)}',
+                  botao: ap == 0
+                      ? (rend > 0 ? 'Foi aporte de ${brl(rend)}' : 'Foi resgate de ${brl(-rend)}')
+                      : (rend > 0 ? 'Somar ${brl(rend)} ao aporte' : 'Somar ${brl(-rend)} ao resgate'),
                   aoTocar: () => setState(() {
                     saldoMexido[p.a.id] = true;
                     final novo = ap + rend;
