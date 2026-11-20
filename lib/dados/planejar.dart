@@ -709,6 +709,10 @@ List<DestinoResto> destinosResto(Repo repo, Renda r, String data, Entrada? dep) 
 
   if (dep != null) add(DestinoResto('Manter: ${dep.desc}', dep.desc, dep.cat, dep.rd));
   final ym = ymDe(data);
+  final mes = int.parse(ym.substring(5, 7));
+  final temRenda13 = repo.rendas.any((o) => o.nome.contains('13'));
+  // novembro e dezembro: o caso mais comum é vir junto com o 13º
+  if ((mes == 11 || mes == 12) && !temRenda13) add(const DestinoResto('13º salário', '13º salário', 'salario'));
   for (final o in repo.rendas.where((o) => o.id != r.id && o.valor > 0)) {
     for (final m in [ym, ymAdd(ym, 1), ymAdd(ym, -1)]) {
       final st = statusRenda(repo, o, m);
