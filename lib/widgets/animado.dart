@@ -429,8 +429,9 @@ class _VelocimetroRitmoState extends State<VelocimetroRitmo> with TickerProvider
   Widget build(BuildContext context) {
     final alvo = widget.ritmo.isFinite ? widget.ritmo.clamp(0.0, 2.0).toDouble() : 0.0;
     return LayoutBuilder(builder: (context, c) {
-      final w = math.min(c.maxWidth, 420.0);
-      final h = w * .62;
+      final w = math.min(c.maxWidth, 400.0);
+      // arco em cima, textos embaixo (o ponteiro nunca passa por cima do número)
+      final h = 8 + w * .40 + w * .075 / 2 + 22;
       return Center(
         child: TweenAnimationBuilder<double>(
           tween: Tween(begin: liga ? 0 : alvo, end: alvo),
@@ -443,22 +444,12 @@ class _VelocimetroRitmoState extends State<VelocimetroRitmo> with TickerProvider
               final tremor = liga ? math.sin(t * 9) * .01 + math.sin(t * 2.3) * .015 : 0.0;
               return SizedBox(
                 width: w,
-                height: h,
-                child: Stack(children: [
+                child: Column(children: [
                   CustomPaint(size: Size(w, h), painter: _VelPainter(r: r, tremor: tremor, marca: S.surface, texto: S.muted, ponteiro: S.escuro ? const Color(0xFFE8E6DF) : const Color(0xFF2C2C2A))),
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    top: h * .38,
-                    child: Column(children: [
-                      Text(widget.titulo, style: TextStyle(fontFamily: S.fonteNum, fontSize: w * .085, fontWeight: FontWeight.w800, color: corRitmoEscura(widget.ritmo), height: 1.1)),
-                      const SizedBox(height: 2),
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: w * .16),
-                        child: Text(widget.sub, textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: S.muted, height: 1.3)),
-                      ),
-                    ]),
-                  ),
+                  const SizedBox(height: 4),
+                  Text(widget.titulo, style: TextStyle(fontFamily: S.fonteNum, fontSize: 26, fontWeight: FontWeight.w800, color: S.escuro ? corRitmo(widget.ritmo) : corRitmoEscura(widget.ritmo), height: 1.15)),
+                  const SizedBox(height: 2),
+                  Text(widget.sub, textAlign: TextAlign.center, style: TextStyle(fontSize: 12.5, color: S.muted, height: 1.35)),
                 ]),
               );
             },
@@ -477,9 +468,9 @@ class _VelPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size s) {
     final w = s.width;
-    final cx = w / 2, cy = s.height * .93;
     final R = w * .40;
-    final esp = w * .072;
+    final esp = w * .075;
+    final cx = w / 2, cy = 8 + R + esp / 2;
     double ang(double v) => math.pi + v.clamp(0, 2) / 2 * math.pi;
     final rect = Rect.fromCircle(center: Offset(cx, cy), radius: R);
     for (final (a, b, cor) in [(0.0, .9, corRitmo(0)), (.9, 1.15, corRitmo(1)), (1.15, 2.0, corRitmo(2))]) {
