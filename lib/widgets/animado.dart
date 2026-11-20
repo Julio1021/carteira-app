@@ -703,3 +703,61 @@ class _TuboPainter extends CustomPainter {
   @override
   bool shouldRepaint(_TuboPainter o) => o.uso != uso || o.fase != fase || o.cor != cor || o.hoje != hoje || o.vidro != vidro;
 }
+
+/// Balança o filho de tempos em tempos (um "chacoalhão" a cada [periodo]),
+/// para chamar atenção para algo que precisa ser conferido.
+class Balanca extends StatefulWidget {
+  final Widget child;
+  final bool ligado;
+  final Duration periodo;
+  const Balanca({super.key, required this.child, this.ligado = true, this.periodo = const Duration(milliseconds: 2600)});
+  @override
+  State<Balanca> createState() => _BalancaState();
+}
+
+class _BalancaState extends State<Balanca> with SingleTickerProviderStateMixin {
+  late final AnimationController a = AnimationController(vsync: this, duration: widget.periodo);
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _ajustar();
+  }
+
+  @override
+  void didUpdateWidget(Balanca old) {
+    super.didUpdateWidget(old);
+    _ajustar();
+  }
+
+  void _ajustar() {
+    final roda = widget.ligado && animacoesLigadas(context);
+    if (roda && !a.isAnimating) a.repeat();
+    if (!roda && a.isAnimating) {
+      a.stop();
+      a.value = 0;
+    }
+  }
+
+  @override
+  void dispose() {
+    a.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!widget.ligado) return widget.child;
+    return AnimatedBuilder(
+      animation: a,
+      child: widget.child,
+      builder: (_, c) {
+        final t = a.value;
+        // chacoalha nos primeiros 25% do ciclo e descansa no resto
+        final f = t < .25 ? 1 - t / .25 : 0.0;
+        final ang = .22 * math.sin(t * math.pi * 2 * 7) * f;
+        return Transform.rotate(angle: ang, child: Transform.scale(scale: 1 + .08 * f, child: c));
+      },
+    );
+  }
+}

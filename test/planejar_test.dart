@@ -137,59 +137,51 @@ void main() {
     expect(norm('Pagamento Conta Água'), 'PAGAMENTO CONTA AGUA');
   });
 
-  group('recebimento junto com outro valor', () {
+  group('o que foi um depósito', () {
     Repo base() => Repo.memoria([
-          {'kind': 'renda', 'id': 'rd_va', 'nome': 'Vale alimentação', 'valor': 900, 'regra': 'dia', 'dia': 20},
-          {'kind': 'rendaapp', 'id': 'rd_13', 'nome': '13º salário', 'valor': 2000, 'regra': 'dia', 'dia': 20, 'freq': 'anual', 'mes': 11, 'cat': 'salario'},
-          {'kind': 'entrada', 'id': 'dep', 'desc': 'Pix Prefeitura', 'valor': 2900, 'data': '2026-11-20', 'cat': 'pix', 'ext': 'x1', 'conta': 'c1'},
+          {'kind': 'renda', 'id': 'rd_va', 'nome': 'Vale alimentação', 'valor': 880, 'regra': 'dia', 'dia': 20},
+          {'kind': 'entrada', 'id': 't1', 'desc': 'Transferência de outra conta sua', 'valor': 3487.20, 'data': '2026-11-18', 'cat': 'proprias', 'ext': 'x9', 'pend': true},
+          {'kind': 'entrada', 'id': 'm1', 'desc': 'Vale alimentação', 'valor': 880, 'data': '2026-11-18', 'cat': 'beneficios', 'rd': 'rd_va'},
         ]);
 
-    test('divide o depósito sem mudar o total e marca os dois recebimentos', () async {
+    test('transferência vira vale + 13º, apaga o vale marcado à mão e desfaz', () async {
       final r = base();
-      final va = r.rendas.firstWhere((x) => x.id == 'rd_va');
-      final deps = depositosPara(r, va, '2026-11-20', 900);
-      expect(deps.map((e) => e.id), ['dep']);
-      final ds = destinosResto(r, va, '2026-11-20', deps.first);
-      final d13 = ds.firstWhere((d) => d.rd == 'rd_13');
-      await r.salvarVarios(docsDivisao(r: va, parte: 900, resto: d13, dep: deps.first));
+      final t = r.entradas.firstWhere((e) => e.id == 't1');
+      expect(transfPendentes(r).single.id, 't1');
+      final ns = naturezas(r, t.data);
+      final va = ns.firstWhere((n) => n.rd == 'rd_va');
+      expect(va.valor, 880);
+      final n13 = ns.firstWhere((n) => n.desc == '13º salário');
+      final ps = [(va, 880.0), (n13, 2607.20)];
+      final apagar = manuaisSubstituidos(r, t, ps);
+      expect(apagar, ['m1']);
+      await r.salvarVarios(docsPartes(t, ps));
+      await r.apagarVarios(apagar);
       expect(r.entradas.length, 2);
-      expect(r.entradas.fold<double>(0, (a, e) => a + e.valor), 2900);
+      expect(transfPendentes(r), isEmpty);
       expect(r.entradas.every((e) => e.doExtrato), isTrue);
-      expect(statusRenda(r, va, '2026-11', hoje: hoje)!.rec!.valor, 900);
-      final r13 = r.rendas.firstWhere((x) => x.id == 'rd_13');
-      expect(statusRenda(r, r13, '2026-11', hoje: hoje)!.rec!.valor, 2000);
-      // desfazer volta ao depósito original
+      expect(r.entradas.firstWhere((e) => e.id == 't1').d['ext'], 'x9');
+      expect((r.entradas.fold<double>(0, (a, e) => a + e.valor) * 100).round(), 348720);
+      expect(statusRenda(r, r.rendas.single, '2026-11', hoje: hoje)!.rec!.valor, 880);
       final x = desfazerDivisao(r, r.entradas.first.d['div'] as String);
       await r.salvarVarios(x.salvar);
       await r.apagarVarios(x.apagar);
-      expect(r.entradas.single.valor, 2900);
-      expect(r.entradas.single.desc, 'Pix Prefeitura');
-      expect(r.entradas.single.d['div'], isNull);
+      final e = r.entradas.single;
+      expect(e.valor, 3487.20);
+      expect(e.cat, 'proprias');
+      expect(e.d['ext'], 'x9');
+      expect(transfPendentes(r).single.id, 't1');
     });
 
-    test('linha somada das transferências: separa só o depósito e deixa a sobra', () async {
-      final r = Repo.memoria([
-        {'kind': 'renda', 'id': 'rd_va', 'nome': 'Vale alimentação', 'valor': 880, 'regra': 'dia', 'dia': 20},
-        {'kind': 'entrada', 'id': 'pr', 'desc': 'Transferências das suas outras contas para o Inter (saldo do mês)', 'valor': 3855.08, 'data': '2026-11-18', 'cat': 'salario', 'ext': 'proprias|c1|2026-11'},
-      ]);
-      final va = r.rendas.single;
-      final dep = depositosPara(r, va, '2026-11-20', 880).single;
-      expect(linhaSomada(dep), isTrue);
-      final ds = destinosResto(r, va, dep.data, dep);
-      expect(ds.first.desc, '13º salário');
-      await r.salvarVarios(docsDivisao(r: va, parte: 880, resto: ds.first, dep: dep, total: 3847.20));
-      final por = {for (final e in r.entradas) e.desc: e};
-      expect(r.entradas.length, 3);
-      expect(por['Vale alimentação']!.valor, 880);
-      expect(por['13º salário']!.valor, 2967.20);
-      expect(r.entradas.firstWhere((e) => e.id == 'pr').valor, 7.88);
-      expect(r.entradas.firstWhere((e) => e.id == 'pr').cat, 'proprias');
-      expect((r.entradas.fold<double>(0, (a, e) => a + e.valor) * 100).round(), 385508);
-      final x = desfazerDivisao(r, por['Vale alimentação']!.d['div'] as String);
-      await r.salvarVarios(x.salvar);
-      await r.apagarVarios(x.apagar);
-      expect(r.entradas.single.valor, 3855.08);
-      expect(r.entradas.single.cat, 'salario');
+    test('o que não foi dito continua como transferência entre contas', () async {
+      final r = base();
+      final t = r.entradas.firstWhere((e) => e.id == 't1');
+      final va = naturezas(r, t.data).firstWhere((n) => n.rd == 'rd_va');
+      await r.salvarVarios(docsPartes(t, [(va, 880.0)]));
+      final orig = r.entradas.firstWhere((e) => e.id == 't1');
+      expect(orig.valor, 2607.20);
+      expect(orig.entreContas, isTrue);
+      expect(transfPendentes(r), isEmpty);
     });
   });
 }

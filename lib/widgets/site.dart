@@ -7,6 +7,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../dados/categorias.dart';
 import '../tema.dart';
 import '../tema_site.dart';
+import 'animado.dart';
 
 /// Cores do tema do site em uso (Linho & Safira se nenhum estiver ativo).
 class S {
@@ -215,22 +216,35 @@ class LinhaTxSite extends StatelessWidget {
   final Categoria cat;
   final bool entrada;
   final String titulo, sub, valor;
-  final Color? corValor;
+  final Color? corValor, corSub;
   final VoidCallback? onTap;
-  const LinhaTxSite({super.key, required this.cat, this.entrada = false, required this.titulo, required this.sub, required this.valor, this.corValor, this.onTap});
+  /// Precisa ser conferido: o ícone balança e ganha um ponto de aviso.
+  final bool conferir;
+  const LinhaTxSite({super.key, required this.cat, this.entrada = false, required this.titulo, required this.sub, required this.valor, this.corValor, this.corSub, this.onTap, this.conferir = false});
   @override
   Widget build(BuildContext context) => InkWell(
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
           child: Row(children: [
-            IconeCatSite(cat, entrada: entrada),
+            conferir
+                ? Balanca(
+                    child: Stack(clipBehavior: Clip.none, children: [
+                      IconeCatSite(cat, entrada: entrada),
+                      Positioned(
+                        right: -3,
+                        top: -3,
+                        child: Container(width: 12, height: 12, decoration: BoxDecoration(color: S.neg, shape: BoxShape.circle, border: Border.all(color: S.c('card'), width: 2))),
+                      ),
+                    ]),
+                  )
+                : IconeCatSite(cat, entrada: entrada),
             const SizedBox(width: 11),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(titulo, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w600, color: S.ink, height: 1.5)),
                 const SizedBox(height: 2),
-                Text(sub, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: S.muted, height: 1.5)),
+                Text(sub, maxLines: conferir ? 2 : 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: corSub ?? S.muted, height: 1.5, fontWeight: conferir ? FontWeight.w600 : null)),
               ]),
             ),
             const SizedBox(width: 11),
@@ -324,7 +338,7 @@ class LinkSite extends StatelessWidget {
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text(titulo, style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700, color: S.ink, height: 1.5)),
                   const SizedBox(height: 2),
-                  Text(sub, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: S.muted, height: 1.5)),
+                  Text(sub, maxLines: conferir ? 2 : 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: corSub ?? S.muted, height: 1.5, fontWeight: conferir ? FontWeight.w600 : null)),
                   if (progresso != null) ...[
                     const SizedBox(height: 6),
                     ClipRRect(

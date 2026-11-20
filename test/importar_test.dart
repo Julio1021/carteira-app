@@ -85,6 +85,51 @@ void main() {
     });
   });
 
+  group('transferências entre suas contas', () {
+    const ofxProp = '''
+OFXHEADER:100
+<OFX><BANKMSGSRSV1><STMTTRNRS><STMTRS>
+<BANKACCTFROM><BANKID>077<ACCTID>12345</BANKACCTFROM>
+<BANKTRANLIST><DTSTART>20261101<DTEND>20261120
+<STMTTRN><TRNTYPE>CREDIT<DTPOSTED>20261118<TRNAMT>3487.20<FITID>1<NAME>Julio Cesar De Franca Motta</NAME><MEMO>PIX RECEBIDO - Cp :1-Julio Cesar De Franca Motta</STMTTRN>
+<STMTTRN><TRNTYPE>CREDIT<DTPOSTED>20261110<TRNAMT>500.00<FITID>2<NAME>Julio Cesar De Franca Motta</NAME><MEMO>PIX RECEBIDO - Cp :1-Julio Cesar De Franca Motta</STMTTRN>
+<STMTTRN><TRNTYPE>DEBIT<DTPOSTED>20261112<TRNAMT>-132.12<FITID>3<NAME>Julio Cesar De Franca Motta</NAME><MEMO>PIX ENVIADO - Cp :2-Julio Cesar De Franca Motta</STMTTRN>
+</BANKTRANLIST>
+<LEDGERBAL><BALAMT>100<DTASOF>20261120</LEDGERBAL>
+</STMTRS></STMTTRNRS></BANKMSGSRSV1></OFX>
+''';
+    const dono = 'Julio Cesar De Franca Motta';
+
+    test('cada uma entra separada; as que chegam ficam para conferir', () {
+      final r = Repo.memoria(const []);
+      final o = lerOfx(ofxProp);
+      final p = planoImport(r, o, dono: dono);
+      final ps = p.entradas.where((x) => x.cat == 'proprias').toList();
+      expect(ps.map((x) => x.valor), containsAll([3487.20, 500.0, -132.12]));
+      r.salvarVarios(docsImportacao(r, o, p, dono: dono, over: const {}));
+      expect(r.entradas.where((e) => e.d['pend'] == true).length, 2);
+      final p2 = planoImport(r, o, dono: dono);
+      expect(p2.entradas, isEmpty);
+      expect(p2.jaImportados, 3);
+    });
+
+    test('a soma antiga do mês sai e uma divisão feita nela passa para a transferência certa', () {
+      final r = Repo.memoria([
+        {'kind': 'entrada', 'id': 'soma', 'desc': 'Transferências das suas outras contas para o Inter (saldo do mês)', 'valor': 367.88, 'data': '2026-11-18', 'cat': 'proprias', 'ext': 'proprias|c1|2026-11', 'div': 'dv1', 'divT': 3855.08, 'divO': {'desc': 'x', 'cat': 'salario'}},
+        {'kind': 'entrada', 'id': 'va', 'desc': 'Vale alimentação', 'valor': 880, 'data': '2026-11-18', 'cat': 'beneficios', 'rd': 'rd_va', 'ext': 'proprias|c1|2026-11#va', 'div': 'dv1', 'divT': 3855.08},
+        {'kind': 'entrada', 'id': 'd13', 'desc': '13º salário', 'valor': 2607.20, 'data': '2026-11-18', 'cat': 'salario', 'ext': 'proprias|c1|2026-11#d13', 'div': 'dv1', 'divT': 3855.08},
+      ]);
+      final o = lerOfx(ofxProp);
+      final p = planoImport(r, o, dono: dono);
+      expect(p.apagarEntradas, ['soma']);
+      expect(p.entradas.map((x) => x.valor), isNot(contains(3487.20)));
+      expect(p.entradas.where((x) => x.cat == 'proprias').map((x) => x.valor), containsAll([500.0, -132.12]));
+      expect(p.salvarDocs.length, 2);
+      expect(p.salvarDocs.every((d) => d['divT'] == 3487.20 && (d['ext'] as String).startsWith('2026-11-18|3487.20|')), isTrue);
+      expect(p.salvarDocs.where((d) => d['divO'] != null).length, 1);
+    });
+  });
+
   group('PDF do Inter', () {
     List<ItemTexto> linha(double y, List<(double, String)> partes) => [for (final (x, s) in partes) ItemTexto(s, x, y)];
     test('lê aplicações e resgates e calcula o saldo por tipo', () {

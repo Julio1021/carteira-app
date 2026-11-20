@@ -79,7 +79,7 @@ class _TelaImportarExtratoState extends State<TelaImportarExtrato> {
     final docs = docsImportacao(repo, ofx!, p, dono: dono, over: over, pularDup: pularDup);
     final ni = docs.where((d) => d['kind'] == 'invest').length;
     if (p.apagarEntradas.isNotEmpty) await repo.apagarVarios(p.apagarEntradas);
-    await repo.salvarVarios(docs);
+    await repo.salvarVarios([...docs, ...p.salvarDocs]);
     if (!mounted) return;
     final ng = docs.where((d) => d['kind'] == 'gasto').length, ne = docs.where((d) => d['kind'] == 'entrada').length;
     setState(() {
@@ -160,7 +160,8 @@ class _TelaImportarExtratoState extends State<TelaImportarExtrato> {
     final p = planoImport(rp, o, dono: dono, over: over, propInvest: propInv);
     final gastos = p.gastos.where((x) => x.cat != 'ignorar').toList();
     final entram = gastos.where((x) => !(x.dup && pularDup)).toList();
-    final ents = p.entradas.where((x) => x.cat != 'ignorar').toList();
+    final ents = p.entradas.where((x) => x.cat != 'ignorar' && x.cat != 'proprias').toList();
+    final props = p.entradas.where((x) => x.cat == 'proprias').toList();
     final candidatos = candidatosDono(o.tx);
     return Stack(children: [
       ListView(padding: const EdgeInsets.fromLTRB(12, 4, 12, 110), children: [
@@ -174,6 +175,7 @@ class _TelaImportarExtratoState extends State<TelaImportarExtrato> {
             Row(children: [
               Expanded(child: _Num('${entram.length}', 'gastos novos')),
               Expanded(child: _Num('${ents.length}', 'entradas')),
+              if (props.isNotEmpty) Expanded(child: _Num('${props.length}', 'entre contas')),
               if (p.invest.isNotEmpty) Expanded(child: _Num('${p.invest.length}', 'investidos')),
               Expanded(child: _Num('${p.jaImportados}', 'já estavam')),
             ]),
@@ -183,7 +185,7 @@ class _TelaImportarExtratoState extends State<TelaImportarExtrato> {
         Cartao(
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             const Text('Seu nome no extrato', style: TextStyle(fontWeight: FontWeight.w700)),
-            Text('Pix entre suas próprias contas não viram gasto nem entrada.', style: TextStyle(color: G.apagado, fontSize: 12.5)),
+            Text('Pix entre suas próprias contas aparecem separados e não contam como gasto nem entrada. Depois você confere se algum foi salário, vale ou 13º.', style: TextStyle(color: G.apagado, fontSize: 12.5)),
             const SizedBox(height: 10),
             TextField(controller: donoC, decoration: const InputDecoration(hintText: 'Nome completo, como aparece no Pix'), onSubmitted: (v) => setState(() => dono = v.trim())),
             if (candidatos.isNotEmpty) ...[
@@ -235,6 +237,18 @@ class _TelaImportarExtratoState extends State<TelaImportarExtrato> {
                 title: Text(x.desc, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600)),
                 subtitle: Text('${dataCurta(x.t.data)} · ${catEntrada(x.cat).nome}', style: TextStyle(color: G.apagado, fontSize: 12.5)),
                 trailing: Text(brl(x.valor, sinal: true), style: TextStyle(fontWeight: FontWeight.w700, color: G.pos)),
+              ),
+          ]),
+        ],
+        if (props.isNotEmpty) ...[
+          const Rotulo('Entre suas contas (você confere depois)'),
+          CaixaLista([
+            for (final x in props)
+              ListTile(
+                leading: IconeCategoria(catEntrada('proprias'), tam: 36),
+                title: Text(x.valor >= 0 ? 'De outra conta sua' : 'Para outra conta sua', style: const TextStyle(fontWeight: FontWeight.w600)),
+                subtitle: Text('${dataCurta(x.t.data)} · não conta como ${x.valor >= 0 ? 'entrada' : 'gasto'}', style: TextStyle(color: G.apagado, fontSize: 12.5)),
+                trailing: Text('${x.valor >= 0 ? '+' : '−'} ${brl(x.valor.abs())}', style: TextStyle(fontWeight: FontWeight.w700, color: G.apagado)),
               ),
           ]),
         ],
@@ -383,7 +397,7 @@ class _TelaImportarInterState extends State<TelaImportarInter> {
     final repo = RepoScope.ler(context);
     setState(() => ocupado = true);
     final docs = docsImportInter(repo, ex!, grupos, modo: modo, alvo: alvo, saldoFinal: lerValor(saldoC.text));
-    await repo.salvarVarios(docs);
+    await repo.salvarVarios([...docs, ...p.salvarDocs]);
     if (!mounted) return;
     setState(() {
       ocupado = false;

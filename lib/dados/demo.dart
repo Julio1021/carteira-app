@@ -46,6 +46,10 @@ List<Doc> dadosDemo() {
   out.add({'kind': 'pagar', 'id': 'pg_demo4', 'nome': 'Geladeira', 'valor': 350.0, 'rep': 'parcelas', 'parc': 6, 'dia': 3, 'ini': ymAdd(ym, -1), 'cat': 'compras', 'pag': 'Boleto', 'criado': criado});
   out.add({'kind': 'pagto', 'id': 'pp_pg_demo1_${ymAdd(ym, -2)}', 'conta': 'pg_demo1', 'mes': ymAdd(ym, -2), 'pago': true, 'valor': 1300.0, 'data': '${ymAdd(ym, -2)}-10'});
   out.add({'kind': 'pagto', 'id': 'pp_pg_demo2_${ymAdd(ym, -2)}', 'conta': 'pg_demo2', 'mes': ymAdd(ym, -2), 'pago': true, 'valor': 120.0, 'data': '${ymAdd(ym, -2)}-15'});
+  // transferências entre suas contas: uma chegou e ainda não foi conferida
+  final dTr = addDias(h, -2);
+  out.add({'kind': 'entrada', 'id': 'e_demo_prop1', 'desc': 'Transferência de outra conta sua', 'valor': 3300.0, 'data': dTr, 'cat': 'proprias', 'ext': 'demo|prop1', 'pend': true, 'criado': 5});
+  out.add({'kind': 'entrada', 'id': 'e_demo_prop2', 'desc': 'Transferência para outra conta sua', 'valor': -150.0, 'data': dTr, 'cat': 'proprias', 'ext': 'demo|prop2', 'criado': 6});
   out.add({'kind': 'renda', 'id': 'rd_salario', 'nome': 'Salário', 'valor': 4800.0, 'regra': 'util', 'mesSeg': false});
   out.add({'kind': 'renda', 'id': 'rd_va', 'nome': 'Vale alimentação', 'valor': 900.0, 'regra': 'dia', 'dia': 20});
   out.add({'kind': 'rendaapp', 'id': 'rd_demo_freela', 'nome': 'Freela', 'valor': 800.0, 'regra': 'dia', 'dia': 25, 'var': true, 'cat': 'vendas'});

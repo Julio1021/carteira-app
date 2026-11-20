@@ -200,11 +200,15 @@ class _TelaExtratoState extends State<TelaExtrato> {
   Widget _lista(BuildContext context, bool doisPaineis) {
     final repo = RepoScope.of(context);
     final r = ResumoMes.de(repo, widget.ym);
-    void abrir(Lanc l) => doisPaineis ? setState(() => aberto = aberto?['id'] == l.doc['id'] ? null : l.doc) : abrirFormLanc(context, doc: l.doc);
+    void abrir(Lanc l) => abreClassificar(l)
+        ? abrirLancamento(context, l)
+        : (doisPaineis ? setState(() => aberto = aberto?['id'] == l.doc['id'] ? null : l.doc) : abrirFormLanc(context, doc: l.doc));
     final q = buscaC.text.trim().toLowerCase();
     var lista = r.lancamentos.where((l) {
-      if (filtro == 'saidas' && !l.ehGasto) return false;
-      if (filtro == 'entradas' && !l.ehEntrada) return false;
+      // transferência para outra conta sua aparece em Saídas; a que chegou, em Entradas
+      final saidaProp = l.ehEntrada && l.e!.valor < 0;
+      if (filtro == 'saidas' && !l.ehGasto && !saidaProp) return false;
+      if (filtro == 'entradas' && (!l.ehEntrada || saidaProp)) return false;
       if (filtro == 'investido' && !l.ehInvest) return false;
       if (cat != null && (!l.ehGasto || l.g!.cat != cat)) return false;
       if (q.isNotEmpty && !l.desc.toLowerCase().contains(q)) return false;

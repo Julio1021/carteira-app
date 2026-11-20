@@ -256,6 +256,9 @@ class PlanoImport {
   final Map<String, ({int n, double v})> ignorados = {};
   final List<Doc> pagFatura = [];
   final List<String> apagarEntradas = [];
+  /// Registros que já existem e mudam (ex.: partes de uma divisão antiga
+  /// que passam a apontar para a transferência certa).
+  final List<Doc> salvarDocs = [];
   int jaImportados = 0;
   int get duplicados => gastos.where((g) => g.dup).length;
   void ignorar(String motivo, double v) {
@@ -287,10 +290,39 @@ PlanoImport planoImport(Repo repo, Ofx o, {required String dono, String desde = 
   }
   final pgManuais = repo.gastos.where((g) => !g.doExtrato && g.d['pg'] != null).toList();
   final manuaisE = repo.entradas.where((x) => !x.doExtrato && (x.d['emp'] != null || x.rd != null || x.d['rapido'] != null || x.d['div'] != null)).toList();
-  final propMes = <String, ({double entrou, double saiu, String ult})>{};
   final rendas = repo.rendas.where((r) => r.valor > 0).toList();
   final ccs = cartoes(repo);
   final emps = emprestimos(repo);
+
+  // Linhas antigas que somavam as transferências entre suas contas no mês:
+  // agora cada transferência entra separada, então as somas dos meses deste
+  // arquivo saem. Se uma soma já tinha sido dividida (ex.: vale + 13º), as
+  // partes passam a apontar para a transferência de mesmo valor.
+  final mesesArq = {for (final t in o.tx) if (desde.isEmpty || t.data.compareTo(desde) >= 0) ymDe(t.data)};
+  final migra = <int, ({String grp, List<Entrada> partes, double soma, Doc? divO})>{};
+  if (proprias) {
+    final usados = <int>{};
+    for (final a in repo.entradas.where((e) => linhaSomada(e))) {
+      final ym = (a.d['ext'] as String).split('|').last;
+      if (!mesesArq.contains(ym)) continue;
+      p.apagarEntradas.add(a.id);
+      final grp = a.d['div'];
+      if (grp is! String) continue;
+      final partes = repo.entradas.where((e) => e.d['div'] == grp && e.id != a.id).toList();
+      if (partes.isEmpty) continue;
+      final soma = partes.fold<double>(0, (x, e) => x + e.valor);
+      int? melhor;
+      for (var k = 0; k < o.tx.length; k++) {
+        final t = o.tx[k];
+        if (usados.contains(k) || t.valor <= 0 || ymDe(t.data) != ym || existE.containsKey(chaves[k])) continue;
+        if (classificaEntrada(t, dono).acao != 'propria' || t.valor < soma - .009) continue;
+        if (melhor == null || t.valor < o.tx[melhor].valor) melhor = k;
+      }
+      if (melhor == null) continue;
+      usados.add(melhor);
+      migra[melhor] = (grp: grp, partes: partes, soma: soma, divO: a.d['divO'] is Map ? Map<String, dynamic>.from(a.d['divO'] as Map) : null);
+    }
+  }
 
   for (var i = 0; i < o.tx.length; i++) {
     final t = o.tx[i];
@@ -319,6 +351,50 @@ PlanoImport planoImport(Repo repo, Ofx o, {required String dono, String desde = 
         p.jaImportados++;
         continue;
       }
+      // Pix de outra conta sua: entra separado, sem contar como entrada, e
+      // fica marcado para você conferir se foi salário, vale, 13º...
+      if (ke.acao == 'propria') {
+        if (!proprias) {
+          p.ignorar('Transferências entre suas contas', t.valor);
+          continue;
+        }
+        if (existE.containsKey(ext)) {
+          p.jaImportados++;
+          continue;
+        }
+        final v = (t.valor * 100).round() / 100;
+        final m = migra[i];
+        if (m != null) {
+          // já tinha sido dividida na soma antiga: as partes passam a ser desta transferência
+          final sobra = ((v - m.soma) * 100).round() / 100;
+          for (var k = 0; k < m.partes.length; k++) {
+            final e = m.partes[k];
+            final d = Map<String, dynamic>.from(e.d)
+              ..remove('_u')
+              ..remove('divO');
+            d['ext'] = '$ext#${e.id}';
+            d['divT'] = v;
+            if (k == 0 && sobra <= 0) d['divO'] = {'desc': 'Transferência de outra conta sua', 'cat': 'proprias'};
+            p.salvarDocs.add(d);
+          }
+          if (sobra > 0) {
+            p.entradas.add(ItemImport(
+              t: t,
+              ext: ext,
+              ch: '__proprias',
+              cat: 'proprias',
+              desc: 'Transferência de outra conta sua',
+              valor: sobra,
+              extra: {'div': m.grp, 'divT': v, 'divO': {'desc': 'Transferência de outra conta sua', 'cat': 'proprias'}},
+            ));
+          } else {
+            p.jaImportados++;
+          }
+          continue;
+        }
+        p.entradas.add(ItemImport(t: t, ext: ext, ch: '__proprias', cat: 'proprias', desc: 'Transferência de outra conta sua', valor: v, extra: const {'pend': true}));
+        continue;
+      }
       // salário ou vale reconhecido pelo valor e pela data
       Renda? melhor;
       var dist = 99;
@@ -341,13 +417,6 @@ PlanoImport planoImport(Repo repo, Ofx o, {required String dono, String desde = 
           continue;
         }
         p.entradas.add(ItemImport(t: t, ext: ext, ch: '__rd_${melhor.id}', cat: melhor.cat, desc: melhor.nome, valor: (t.valor * 100).round() / 100, rd: melhor.id));
-        continue;
-      }
-      if (ke.acao == 'propria') {
-        final ym = ymDe(t.data);
-        final x = propMes[ym] ?? (entrou: 0.0, saiu: 0.0, ult: t.data);
-        propMes[ym] = (entrou: x.entrou + t.valor, saiu: x.saiu, ult: t.data.compareTo(x.ult) > 0 ? t.data : x.ult);
-        if (!proprias) p.ignorar('Transferências entre suas contas', t.valor);
         continue;
       }
       if (existE.containsKey(ext)) {
@@ -404,10 +473,15 @@ PlanoImport planoImport(Repo repo, Ofx o, {required String dono, String desde = 
       addInvest(t, ext, false, 'Pix para suas contas (investir)');
       continue;
     }
-    if (k.acao == 'ignorar' && k.motivo.contains('suas contas')) {
-      final ym = ymDe(t.data);
-      final x = propMes[ym] ?? (entrou: 0.0, saiu: 0.0, ult: t.data);
-      propMes[ym] = (entrou: x.entrou, saiu: x.saiu + t.valor.abs(), ult: x.ult);
+    // Pix para outra conta sua: aparece separado (não conta como gasto)
+    if (k.acao == 'ignorar' && k.motivo.contains('suas contas') && proprias) {
+      if (existE.containsKey(ext)) {
+        p.jaImportados++;
+      } else {
+        final v = (t.valor.abs() * 100).round() / 100;
+        p.entradas.add(ItemImport(t: t, ext: ext, ch: '__proprias', cat: 'proprias', desc: 'Transferência para outra conta sua', valor: -v));
+      }
+      continue;
     }
     if (k.acao == 'ignorar') {
       p.ignorar(k.motivo, t.valor);
@@ -443,57 +517,6 @@ PlanoImport planoImport(Repo repo, Ofx o, {required String dono, String desde = 
       }
     }
     p.gastos.add(item);
-  }
-  // transferências entre suas contas: uma entrada por mês com o saldo líquido
-  if (proprias) {
-    final cid = contaIdOfx(o);
-    propMes.forEach((ym, x) {
-      final liq = ((x.entrou - x.saiu) * 100).round() / 100;
-      final ext = 'proprias|$cid|$ym';
-      final ex = existE[ext] ?? existE['proprias|$ym'];
-      if (liq <= 0) {
-        if (ex != null) p.apagarEntradas.add(ex.id);
-        return;
-      }
-      if (ex != null && (ex.valor - liq).abs() < .01 && ex.d['ext'] == ext) {
-        p.jaImportados++;
-        return;
-      }
-      // linha já dividida (ex.: vale + 13º separados dela): as partes saem da conta
-      final grp = ex?.d['div'];
-      if (ex != null && grp is String) {
-        if ((numD(ex.d['divT']) - liq).abs() < .01) {
-          p.jaImportados++;
-          return;
-        }
-        final partes = repo.entradas.where((e) => e.d['div'] == grp && e.id != ex.id).fold<double>(0, (a, e) => a + e.valor);
-        final sobra = ((liq - partes) * 100).round() / 100;
-        if (sobra <= 0) {
-          p.jaImportados++;
-          return;
-        }
-        p.entradas.add(ItemImport(
-          t: TxOfx(tipo: '', data: x.ult, valor: sobra),
-          ext: ext,
-          ch: '__proprias',
-          cat: 'proprias',
-          desc: ex.desc,
-          valor: sobra,
-          upd: ex.id,
-          extra: {'div': grp, 'divT': liq, if (ex.d['divO'] != null) 'divO': ex.d['divO']},
-        ));
-        return;
-      }
-      p.entradas.add(ItemImport(
-        t: TxOfx(tipo: '', data: x.ult, valor: liq),
-        ext: ext,
-        ch: '__proprias',
-        cat: 'proprias',
-        desc: 'Transferências das suas outras contas para o ${nomeBanco(o)} (saldo do mês)',
-        valor: liq,
-        upd: ex?.id,
-      ));
-    });
   }
   // pagamentos de fatura que já existem não entram de novo
   final cpags = repo.doTipo('cpag').toList();

@@ -673,14 +673,14 @@ List<Doc> docsRecebimento(Repo repo, Emprestimo e, double valor, String data, {r
   return out;
 }
 
-// ---------- recebimento que veio junto com outro valor ----------
+// ---------- o que foi um depósito (dividir em partes) ----------
 
 /// Depósitos já lançados que podem conter o recebimento [r]: entradas perto
 /// da data, maiores que a parte dele e que não são dele mesmo.
 List<Entrada> depositosPara(Repo repo, Renda r, String data, double parte) {
   final ini = addDias(data, -12), fim = addDias(data, 12);
   return repo.entradas.where((e) {
-    if (e.rd == r.id) return false;
+    if (e.rd == r.id || linhaSomada(e)) return false;
     if (e.data.compareTo(ini) < 0 || e.data.compareTo(fim) > 0) return false;
     return e.valor > parte + .009;
   }).toList()
@@ -690,132 +690,112 @@ List<Entrada> depositosPara(Repo repo, Renda r, String data, double parte) {
     });
 }
 
-/// Linha que o app monta na importação somando as transferências entre as
-/// suas contas no mês: não é um depósito só.
+/// Linha antiga que a importação montava somando as transferências entre as
+/// suas contas no mês (não existe mais nas importações novas).
 bool linhaSomada(Entrada e) => e.d['ext'] is String && (e.d['ext'] as String).startsWith('proprias|') && !(e.d['ext'] as String).contains('#');
 
-/// Como chamar o resto do depósito depois de tirar a parte do recebimento.
-class DestinoResto {
+/// Transferência de outra conta sua que você ainda não conferiu.
+bool transfPendente(Entrada e) => e.d['pend'] == true && e.valor > 0;
+List<Entrada> transfPendentes(Repo repo) => repo.entradas.where(transfPendente).toList()..sort((a, b) => b.data.compareTo(a.data));
+
+/// O que uma parte do dinheiro foi: nome, categoria e, se for de um
+/// recebimento cadastrado, o id dele.
+class Natureza {
   final String rotulo, desc, cat;
   final String? rd;
-  const DestinoResto(this.rotulo, this.desc, this.cat, [this.rd]);
+  /// Valor esperado (dos recebimentos cadastrados), para já preencher.
+  final double? valor;
+  const Natureza(this.rotulo, this.desc, this.cat, [this.rd, this.valor]);
   String get chave => '$desc|$cat|${rd ?? ''}';
 }
 
-/// Opções para o resto: manter como está, outro recebimento que ainda não
-/// entrou perto dessa data (13º, salário...), ou um nome comum.
-List<DestinoResto> destinosResto(Repo repo, Renda r, String data, Entrada? dep) {
-  final out = <DestinoResto>[];
+/// Opções para "o que foi esse dinheiro?": primeiro os recebimentos
+/// cadastrados que caem perto dessa data e ainda não foram confirmados pelo
+/// extrato; depois nomes comuns.
+List<Natureza> naturezas(Repo repo, String data) {
+  final out = <Natureza>[];
   final vistos = <String>{};
-  void add(DestinoResto d) {
-    if (vistos.add(d.desc.toLowerCase())) out.add(d);
+  void add(Natureza n) {
+    if (vistos.add(n.desc.toLowerCase())) out.add(n);
   }
 
-  if (dep != null && !linhaSomada(dep) && !dep.entreContas) add(DestinoResto('Manter: ${dep.desc}', dep.desc, dep.cat, dep.rd));
   final ym = ymDe(data);
-  final mes = int.parse(ym.substring(5, 7));
-  final temRenda13 = repo.rendas.any((o) => o.nome.contains('13'));
-  // novembro e dezembro: o caso mais comum é vir junto com o 13º
-  if ((mes == 11 || mes == 12) && !temRenda13) add(const DestinoResto('13º salário', '13º salário', 'salario'));
-  for (final o in repo.rendas.where((o) => o.id != r.id && o.valor > 0)) {
+  for (final o in repo.rendas.where((o) => o.valor > 0)) {
     for (final m in [ym, ymAdd(ym, 1), ymAdd(ym, -1)]) {
       final st = statusRenda(repo, o, m);
       if (st == null || diasEntre(st.data, data).abs() > 25) continue;
-      if (st.rec != null && st.rec!.id != dep?.id) continue;
-      add(DestinoResto(o.nome, o.nome, o.cat, o.id));
+      // já veio do extrato: não oferece de novo (marcado à mão ainda pode)
+      if (st.rec != null && (st.rec!.doExtrato || st.rec!.d['div'] != null)) continue;
+      add(Natureza(o.nome, o.nome, o.cat, o.id, valorEsperado(repo, o)));
       break;
     }
   }
-  if (!out.any((d) => d.desc.contains('13'))) add(const DestinoResto('13º salário', '13º salário', 'salario'));
-  add(const DestinoResto('Salário', 'Salário', 'salario'));
-  add(dep == null || linhaSomada(dep) || dep.entreContas ? const DestinoResto('Outra entrada', 'Outra entrada', 'outros_e') : DestinoResto('Outra entrada', dep.desc, dep.cat));
+  final mes = int.parse(ym.substring(5, 7));
+  if ((mes == 11 || mes == 12) && !out.any((n) => n.desc.contains('13'))) add(const Natureza('13º salário', '13º salário', 'salario'));
+  add(const Natureza('Salário', 'Salário', 'salario'));
+  add(const Natureza('Vale alimentação', 'Vale alimentação', 'beneficios'));
+  add(const Natureza('Outra entrada', 'Outra entrada', 'outros_e'));
   return out;
 }
 
 double _c2(double v) => (v * 100).round() / 100;
 
-/// Divide um depósito em duas entradas: a parte do recebimento [r] e o resto.
-/// Com [dep], o depósito que já está no app é dividido (o total no extrato
-/// não muda). Sem ele, cria as duas entradas a partir do [total] informado.
-List<Doc> docsDivisao({required Renda r, required double parte, required DestinoResto resto, Entrada? dep, double? total, String? data}) {
+/// Divide o depósito [e] nas [partes] (o que foi cada pedaço). O que sobrar
+/// continua no lançamento original (numa transferência entre suas contas,
+/// continua sem contar como entrada). O total no extrato não muda.
+List<Doc> docsPartes(Entrada e, List<(Natureza, double)> partes) {
   final agora = DateTime.now().millisecondsSinceEpoch;
-  // o depósito foi só uma parte da linha (ex.: a soma das transferências do
-  // mês): a linha fica com a sobra e o depósito vira duas entradas novas
-  if (dep != null && total != null && total < dep.valor - .009) {
-    final grp = dep.d['div'] is String ? dep.d['div'] as String : novoId('dv');
-    final tot = dep.d['divT'] != null ? numD(dep.d['divT']) : dep.valor;
-    final base = Map<String, dynamic>.from(dep.d)..remove('_u');
-    final sobra = {
-      ...base,
-      'valor': _c2(dep.valor - total),
-      'cat': linhaSomada(dep) ? 'proprias' : dep.cat,
-      'div': grp,
-      'divT': tot,
-    };
-    if (dep.d['divO'] == null && dep.d['div'] == null) sobra['divO'] = {'desc': dep.desc, 'cat': dep.cat, if (dep.rd != null) 'rd': dep.rd};
-    final ext = dep.d['ext'];
-    Doc nova(String desc, String cat, String? rd, double v, int k) {
-      final id = novoId('e') + '$k';
-      final d = <String, dynamic>{...base, 'id': id, 'valor': _c2(v), 'desc': desc, 'cat': cat, 'div': grp, 'divT': tot, 'criado': agora + k}
-        ..remove('rd')
-        ..remove('divO')
-        ..remove('ext');
-      if (rd != null) d['rd'] = rd;
+  final grp = e.d['div'] is String ? e.d['div'] as String : novoId('dv');
+  final tot = e.d['divT'] != null ? numD(e.d['divT']) : e.valor;
+  final base = Map<String, dynamic>.from(e.d)
+    ..remove('_u')
+    ..remove('pend');
+  final primeira = e.d['div'] == null && e.d['divO'] == null;
+  final orig = {'desc': e.desc, 'cat': e.cat, if (e.rd != null) 'rd': e.rd};
+  final soma = partes.fold<double>(0, (a, p) => a + p.$2);
+  final sobra = _c2(e.valor - soma);
+  final ext = e.d['ext'];
+  final out = <Doc>[];
+  Doc parte(Natureza n, double v, {String? id}) {
+    final d = <String, dynamic>{...base, 'valor': _c2(v), 'desc': n.desc, 'cat': n.cat, 'div': grp, 'divT': tot}
+      ..remove('rd')
+      ..remove('divO');
+    if (n.rd != null) d['rd'] = n.rd;
+    if (id != null) {
+      d['id'] = id;
+      d['criado'] = agora + out.length;
+      d.remove('ext');
       if (ext is String && ext.isNotEmpty) d['ext'] = '$ext#$id';
-      return d;
     }
+    return d;
+  }
 
-    return [sobra, nova(r.nome, r.cat, r.id, parte, 1), nova(resto.desc, resto.cat, resto.rd, total - parte, 2)];
+  if (sobra > .009) {
+    // o lançamento original fica com a sobra
+    out.add({...base, 'valor': sobra, 'div': grp, 'divT': tot, if (primeira) 'divO': orig});
+    for (final (n, v) in partes) {
+      out.add(parte(n, v, id: '${novoId('e')}${out.length}'));
+    }
+  } else {
+    // a primeira parte fica no lançamento original (mantém o vínculo com o extrato)
+    for (var k = 0; k < partes.length; k++) {
+      final (n, v) = partes[k];
+      final d = k == 0 ? parte(n, v) : parte(n, v, id: '${novoId('e')}$k');
+      if (k == 0 && primeira) d['divO'] = orig;
+      if (k == 0 && e.d['divO'] != null) d['divO'] = e.d['divO'];
+      out.add(d);
+    }
   }
-  if (dep != null) {
-    final grp = dep.d['div'] is String ? dep.d['div'] as String : novoId('dv');
-    final tot = dep.d['divT'] != null ? numD(dep.d['divT']) : dep.valor;
-    final base = Map<String, dynamic>.from(dep.d)..remove('_u');
-    final restoDoc = {
-      ...base,
-      'valor': _c2(dep.valor - parte),
-      'desc': resto.desc,
-      'cat': resto.cat,
-      'div': grp,
-      'divT': tot,
-    }..remove('rd');
-    // guarda como era o depósito original (só na primeira divisão), para desfazer
-    if (dep.d['divO'] == null && dep.d['div'] == null) restoDoc['divO'] = {'desc': dep.desc, 'cat': dep.cat, if (dep.rd != null) 'rd': dep.rd};
-    if (resto.rd != null) restoDoc['rd'] = resto.rd;
-    final id = novoId('e');
-    final ext = dep.d['ext'];
-    final parteDoc = {
-      ...base,
-      'id': id,
-      'valor': _c2(parte),
-      'desc': r.nome,
-      'cat': r.cat,
-      'rd': r.id,
-      'div': grp,
-      'divT': tot,
-      'criado': agora,
-    }..remove('divO')..remove('ext');
-    // a parte herda a origem do extrato (não soma de novo no saldo em conta)
-    if (ext is String && ext.isNotEmpty) parteDoc['ext'] = '$ext#$id';
-    return [restoDoc, parteDoc];
-  }
-  final grp = novoId('dv');
-  final tot = _c2(total ?? 0);
-  final dt = data ?? hojeIso();
+  return out;
+}
+
+/// Recebimentos marcados à mão que este depósito confirma: somem, porque
+/// agora o dinheiro está no depósito (senão contaria duas vezes).
+List<String> manuaisSubstituidos(Repo repo, Entrada e, List<(Natureza, double)> partes) {
+  final rds = {for (final (n, _) in partes) if (n.rd != null) n.rd!};
   return [
-    {...docRecebido(r, parte, dt), 'div': grp, 'divT': tot},
-    {
-      'kind': 'entrada',
-      'id': novoId('e'),
-      'desc': resto.desc,
-      'valor': _c2(tot - parte),
-      'data': dt,
-      'cat': resto.cat,
-      if (resto.rd != null) 'rd': resto.rd,
-      'div': grp,
-      'divT': tot,
-      'criado': agora + 1,
-    },
+    for (final x in repo.entradas)
+      if (x.id != e.id && x.rd != null && rds.contains(x.rd) && !x.doExtrato && x.d['div'] == null && diasEntre(x.data, e.data).abs() <= 15) x.id,
   ];
 }
 
@@ -838,5 +818,9 @@ List<Entrada> partesDivisao(Repo repo, String grp) => repo.entradas.where((e) =>
   doc['desc'] = o['desc'] ?? base.desc;
   doc['cat'] = o['cat'] ?? base.cat;
   if (o['rd'] is String) doc['rd'] = o['rd'];
+  final ext = base.d['ext'];
+  if (ext is String && ext.contains('#')) doc['ext'] = ext.split('#').first;
+  // transferência entre suas contas volta para "a conferir"
+  if (doc['cat'] == 'proprias' && numD(doc['valor']) > 0) doc['pend'] = true;
   return (salvar: [doc], apagar: [for (final e in ps) if (e.id != base.id) e.id]);
 }

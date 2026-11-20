@@ -15,6 +15,7 @@ import 'contas.dart';
 import 'inicio_site.dart';
 import '../widgets/site.dart';
 import 'emprestimos.dart';
+import 'classificar.dart';
 
 class TelaPlanejar extends StatelessWidget {
   final VoidCallback irLimites;
@@ -184,8 +185,9 @@ class _ItemReceb {
 }
 
 /// Pergunta valor e data e lança a entrada do recebimento. Com [rec], abre o
-/// recebimento já lançado para corrigir (valor, dia ou dividir um depósito).
+/// recebimento já lançado para corrigir.
 Future<void> confirmarRecebido(BuildContext context, Renda r, String data, double valor, {Entrada? rec}) async {
+  if (rec != null && rec.d['div'] is String) return abrirClassificar(context, rec);
   final h = hojeIso();
   final ok = await abrirFolha<String>(context, _FolhaReceber(r: r, data: rec?.data ?? (data.compareTo(h) > 0 ? h : data), valor: rec?.valor ?? valor, rec: rec));
   if (ok != null && context.mounted) avisar(context, ok);
@@ -203,244 +205,137 @@ class _FolhaReceber extends StatefulWidget {
 
 class _FolhaReceberState extends State<_FolhaReceber> {
   late final c = TextEditingController(text: valorCampo(widget.valor));
-  final cTotal = TextEditingController();
-  final cDep = TextEditingController();
   late String data = widget.data;
-  bool junto = false;
-  String? depId; // depósito escolhido; '' = não está na lista (informar o total)
-  String? restoK;
-  bool salvando = false;
 
   Entrada? get rec => widget.rec;
-  String? get grp => rec?.d['div'] is String ? rec!.d['div'] as String : null;
   /// Entrada criada pelo próprio app ao marcar recebido (pode ser apagada).
-  bool get recManual => rec != null && !rec!.doExtrato && rec!.rd == widget.r.id && grp == null;
-
-  @override
-  void initState() {
-    super.initState();
-    c.addListener(() => setState(() {}));
-    cTotal.addListener(() => setState(() {}));
-    cDep.addListener(() => setState(() {}));
-  }
+  bool get recManual => rec != null && !rec!.doExtrato && rec!.rd == widget.r.id;
 
   @override
   void dispose() {
     c.dispose();
-    cTotal.dispose();
-    cDep.dispose();
     super.dispose();
   }
 
-  void _fechar(String msg) {
-    mostrarConfirmacao(context);
-    Navigator.pop(context, msg);
-  }
-
-  Future<void> _confirmar(List<Entrada> deps, List<DestinoResto> destinos) async {
-    final repo = RepoScope.ler(context);
+  Future<void> _salvar() async {
     final r = widget.r;
     final v = lerValor(c.text);
     if (v == null || v <= 0) {
-      avisar(context, 'Informe o valor do ${r.nome}, como 900,00.');
+      avisar(context, 'Informe o valor, como 900,00.');
       return;
     }
-    if (!junto) {
-      if (rec == null) {
-        await repo.salvar(docRecebido(r, v, data));
-        if (mounted) _fechar('${r.nome} lançado nas entradas.');
-      } else {
-        await repo.salvar({...rec!.d, 'valor': (v * 100).round() / 100, 'data': data});
-        if (mounted) _fechar('Recebimento corrigido.');
-      }
-      return;
-    }
-    final dId = depId ?? (deps.isEmpty ? '' : null);
-    final dep = deps.where((e) => e.id == dId).firstOrNull;
-    final resto = destinos.where((d) => d.chave == restoK).firstOrNull ?? destinos.first;
-    List<Doc> docs;
-    double restoV;
-    if (dep != null) {
-      final t = lerValor(cDep.text);
-      if (t == null || t <= v) {
-        avisar(context, 'Informe quanto foi o depósito; ele tem que ser maior que ${brl(v)}.');
-        return;
-      }
-      if (t > dep.valor + .009) {
-        avisar(context, 'O depósito não pode passar de ${brl(dep.valor)}, o valor dessa linha.');
-        return;
-      }
-      restoV = t - v;
-      docs = docsDivisao(r: r, parte: v, resto: resto, dep: dep, total: t);
-    } else if (dId == '') {
-      final t = lerValor(cTotal.text);
-      if (t == null || t <= v) {
-        avisar(context, 'Informe o total do depósito; ele tem que ser maior que ${brl(v)}.');
-        return;
-      }
-      restoV = t - v;
-      docs = docsDivisao(r: r, parte: v, resto: resto, total: t, data: data);
+    final repo = RepoScope.ler(context);
+    if (rec == null) {
+      await repo.salvar(docRecebido(r, v, data));
     } else {
-      avisar(context, 'Escolha em qual depósito o ${r.nome} veio.');
-      return;
+      await repo.salvar({...rec!.d, 'valor': (v * 100).round() / 100, 'data': data});
     }
-    setState(() => salvando = true);
-    await repo.salvarVarios(docs);
-    // a entrada que o app tinha criado sozinha some: agora o valor está dentro do depósito
-    if (recManual && rec!.id != dep?.id) await repo.apagar(rec!.id);
-    if (mounted) _fechar('Dividido: ${brl(v)} de ${r.nome} e ${brl(restoV)} de ${resto.desc}.');
+    if (!mounted) return;
+    mostrarConfirmacao(context);
+    Navigator.pop(context, rec == null ? '${r.nome} lançado nas entradas.' : 'Recebimento corrigido.');
   }
 
-  Future<void> _desfazer() async {
+  /// "Veio junto com outro valor": escolhe o depósito e diz o que foi cada parte.
+  Future<void> _junto() async {
     final repo = RepoScope.ler(context);
-    final x = desfazerDivisao(repo, grp!);
-    if (x.salvar.isNotEmpty) await repo.salvarVarios(x.salvar);
-    if (x.apagar.isNotEmpty) await repo.apagarVarios(x.apagar);
-    if (mounted) _fechar(x.salvar.isEmpty ? 'Divisão desfeita: as duas entradas foram apagadas.' : 'Divisão desfeita: o depósito voltou a ser um só.');
+    final r = widget.r;
+    final deps = depositosPara(repo, r, data, 0).take(8).toList();
+    final dep = await abrirFolha<Entrada>(context, _EscolherDeposito(r: r, deps: deps));
+    if (dep == null || !mounted) return;
+    await abrirClassificar(context, dep, pre: r);
+    if (mounted) Navigator.pop(context);
   }
 
   Future<void> _desmarcar() async {
     await RepoScope.ler(context).apagar(rec!.id);
-    if (mounted) _fechar('${widget.r.nome} voltou para "a receber".');
+    if (!mounted) return;
+    mostrarConfirmacao(context);
+    Navigator.pop(context, '${widget.r.nome} voltou para "a receber".');
   }
 
   @override
   Widget build(BuildContext context) {
-    final repo = RepoScope.of(context);
     final r = widget.r;
-    final v = lerValor(c.text) ?? 0;
-    final deps = !junto
-        ? const <Entrada>[]
-        : [
-            // lançamento do extrato que já contava como este recebimento: pode ser ele o depósito junto
-            if (rec != null && !recManual && rec!.valor > v + .009) rec!,
-            ...depositosPara(repo, r, data, v).take(6),
-          ];
-    // sem depósito parecido no extrato, já vai direto para "informar o total"
-    final dId = depId ?? (deps.isEmpty ? '' : null);
-    final dep = deps.where((e) => e.id == dId).firstOrNull;
-    final destinos = junto ? destinosResto(repo, r, dep?.data ?? data, dep) : const <DestinoResto>[];
-    final resto = destinos.where((d) => d.chave == restoK).firstOrNull ?? destinos.firstOrNull;
-    final double total = dep != null ? (lerValor(cDep.text) ?? 0.0) : (dId == '' ? (lerValor(cTotal.text) ?? 0.0) : 0.0);
-    final corR = catEntrada(r.cat).cor;
-    final partes = grp == null ? const <Entrada>[] : partesDivisao(repo, grp!);
-
     return CorpoFolha([
       TituloFolha(rec == null ? 'Recebi: ${r.nome}' : 'Recebimento: ${r.nome}'),
       const SizedBox(height: 4),
       if (rec == null)
         Text(r.variavel ? 'O valor varia: confira o que entrou de fato.' : 'Confira o valor e o dia; vira uma entrada no extrato.', style: TextStyle(color: G.apagado, fontSize: 12.5))
-      else if (grp != null)
-        _Info(
-          icone: Icons.call_split_rounded,
-          texto: 'Veio dentro de um depósito de ${brl(numD(rec!.d['divT']))} em ${dataCurta(rec!.data)}, dividido em: '
-              '${partes.map((e) => '${e.desc} ${brl(e.valor)}').join(' + ')}.',
-        )
       else
         _Info(
           icone: Icons.check_circle_rounded,
           texto: 'Lançado ${brl(rec!.valor)} em ${dataCurta(rec!.data)}'
               '${rec!.doExtrato ? ', vindo do extrato do banco.' : ', criado quando você marcou como recebido.'}',
         ),
-      if (grp != null) ...[
-        const SizedBox(height: 14),
-        OutlinedButton.icon(
-          icon: const Icon(Icons.undo_rounded),
-          onPressed: _desfazer,
-          label: const Text('Desfazer divisão'),
-        ),
-      ] else ...[
-        const Rotulo('Como esse dinheiro entrou?'),
-        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Expanded(child: _Modo(sel: !junto, icone: Icons.south_west_rounded, titulo: 'Sozinho', sub: 'Caiu um depósito só dele', onTap: () => setState(() => junto = false))),
-          const SizedBox(width: 10),
-          Expanded(child: _Modo(sel: junto, icone: Icons.call_split_rounded, titulo: 'Junto com outro valor', sub: 'Veio no mesmo depósito de outra coisa', onTap: () => setState(() => junto = true))),
-        ]),
-        const SizedBox(height: 14),
-        CampoValor(c, rotulo: junto ? 'Quanto era do ${r.nome}' : 'Valor recebido', grande: true),
-        if (!junto || dId == '') ...[
-          const Rotulo('Quando entrou'),
-          CampoData(data: data, onMudar: (x) => setState(() => data = x)),
-        ],
-        if (junto) ...[
-          const Rotulo('Em qual depósito ele veio?'),
-          if (deps.isEmpty)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: Text('Não achei no extrato uma entrada maior que ${brl(v)} perto de ${dataCurta(data)}. Informe abaixo o total que caiu na conta.',
-                  style: TextStyle(color: G.apagado, fontSize: 12.5)),
-            ),
-          for (final e in deps)
-            _Deposito(
-              e: e,
-              sel: e.id == dId,
-              onTap: () => setState(() {
-                depId = e.id;
-                restoK = null;
-                // na soma das transferências do mês o valor certo do depósito é você que diz
-                cDep.text = linhaSomada(e) ? '' : valorCampo(e.valor);
-              }),
-            ),
-          _Deposito(
-            sel: dId == '',
-            onTap: () => setState(() {
-              depId = '';
-              restoK = null;
-            }),
-          ),
-          if (dId == '') ...[
-            const SizedBox(height: 10),
-            CampoValor(cTotal, rotulo: 'Total que caiu na conta'),
-          ],
-          if (dep != null) ...[
-            if (linhaSomada(dep)) ...[
-              const SizedBox(height: 4),
-              _Info(
-                icone: Icons.info_outline_rounded,
-                texto: 'Essa linha junta todas as transferências entre as suas contas no mês. Informe só o valor da transferência que trouxe o ${r.nome}; o que sobrar continua como transferência entre contas.',
-              ),
-            ],
-            const SizedBox(height: 10),
-            CampoValor(cDep, rotulo: 'Quanto foi esse depósito'),
-          ],
-          if (dId != null && resto != null) ...[
-            const Rotulo('O resto do depósito é'),
-            Wrap(spacing: 8, runSpacing: 8, children: [
-              for (final d in destinos)
-                ChoiceChip(
-                  selected: d.chave == resto.chave,
-                  label: Text(d.rotulo),
-                  labelStyle: TextStyle(fontFamily: 'Manrope', fontWeight: FontWeight.w600, color: d.chave == resto.chave ? G.tinta : G.texto2),
-                  onSelected: (_) => setState(() => restoK = d.chave),
-                ),
-            ]),
-            if (total > 0) ...[
-              const SizedBox(height: 16),
-              _BarraDivisao(
-                total: total,
-                parte: v,
-                nomeParte: r.nome,
-                nomeResto: resto.desc,
-                corParte: corR,
-                sobra: dep != null && total < dep.valor - .009 ? dep.valor - total : 0,
-                nomeSobra: dep != null && linhaSomada(dep) ? 'Continua em transferências entre contas' : 'Continua em ${dep?.desc ?? ''}',
-              ),
-            ],
-          ],
-        ],
-        const SizedBox(height: 18),
-        FilledButton.icon(
-          icon: Icon(junto ? Icons.call_split_rounded : Icons.check_rounded),
-          onPressed: salvando ? null : () => _confirmar(deps, destinos),
-          label: Text(junto ? 'Dividir e confirmar' : (rec == null ? 'Confirmar recebimento' : 'Salvar correção')),
-        ),
-        if (recManual) ...[
-          const SizedBox(height: 6),
-          TextButton(onPressed: _desmarcar, child: Text('Não recebi: desmarcar', style: TextStyle(color: G.negTexto))),
-        ],
+      const SizedBox(height: 12),
+      CampoValor(c, rotulo: 'Valor recebido', grande: true),
+      const Rotulo('Quando entrou'),
+      CampoData(data: data, onMudar: (x) => setState(() => data = x)),
+      const SizedBox(height: 18),
+      FilledButton.icon(
+        icon: const Icon(Icons.check_rounded),
+        onPressed: _salvar,
+        label: Text(rec == null ? 'Confirmar recebimento' : 'Salvar correção'),
+      ),
+      const SizedBox(height: 10),
+      OutlinedButton.icon(
+        icon: const Icon(Icons.call_split_rounded),
+        onPressed: _junto,
+        label: const Text('Veio junto com outro valor'),
+      ),
+      if (recManual) ...[
+        const SizedBox(height: 6),
+        TextButton(onPressed: _desmarcar, child: Text('Não recebi: desmarcar', style: TextStyle(color: G.negTexto))),
       ],
     ]);
   }
+}
+
+/// Lista os depósitos perto da data para escolher em qual o recebimento veio.
+class _EscolherDeposito extends StatelessWidget {
+  final Renda r;
+  final List<Entrada> deps;
+  const _EscolherDeposito({required this.r, required this.deps});
+  @override
+  Widget build(BuildContext context) => CorpoFolha([
+        const TituloFolha('Em qual depósito ele veio?'),
+        const SizedBox(height: 4),
+        Text(
+          deps.isEmpty
+              ? 'Não achei nenhuma entrada perto dessa data. Importe o extrato do banco primeiro; o depósito vai aparecer aqui.'
+              : 'Escolha o depósito; depois você diz quanto era do ${r.nome} e o que era o resto.',
+          style: TextStyle(color: G.apagado, fontSize: 12.5),
+        ),
+        const SizedBox(height: 12),
+        for (final e in deps)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Material(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: BorderSide(color: G.borda)),
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(14),
+                onTap: () => Navigator.pop(context, e),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+                  child: Row(children: [
+                    IconeCategoria(catEntrada(e.cat), tam: 34),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text(e.entreContas ? 'Transferência de outra conta sua' : e.desc, style: TextStyle(fontWeight: FontWeight.w600, color: G.texto, height: 1.3)),
+                        const SizedBox(height: 2),
+                        Text('${dataCurta(e.data)} · ${catEntrada(e.cat).nome}', style: TextStyle(fontSize: 12, color: G.apagado)),
+                      ]),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(brl(e.valor), style: TextStyle(fontWeight: FontWeight.w700, color: G.texto)),
+                  ]),
+                ),
+              ),
+            ),
+          ),
+      ]);
 }
 
 class _Info extends StatelessWidget {
@@ -458,143 +353,6 @@ class _Info extends StatelessWidget {
           Expanded(child: Text(texto, style: TextStyle(fontSize: 13, color: G.texto2, height: 1.4))),
         ]),
       );
-}
-
-/// Cartão de escolha "Sozinho" / "Junto com outro valor".
-class _Modo extends StatelessWidget {
-  final bool sel;
-  final IconData icone;
-  final String titulo, sub;
-  final VoidCallback onTap;
-  const _Modo({required this.sel, required this.icone, required this.titulo, required this.sub, required this.onTap});
-  @override
-  Widget build(BuildContext context) => Material(
-        color: sel ? G.lavandaFundo : G.campo,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: sel ? G.lavanda : G.borda, width: sel ? 1.6 : 1)),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: [
-                Icon(icone, size: 20, color: sel ? G.lavandaIcone : G.apagado),
-                const Spacer(),
-                Icon(sel ? Icons.radio_button_checked_rounded : Icons.radio_button_unchecked_rounded, size: 18, color: sel ? G.lavanda : G.apagado),
-              ]),
-              const SizedBox(height: 8),
-              Text(titulo, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: G.texto, height: 1.25)),
-              const SizedBox(height: 3),
-              Text(sub, style: TextStyle(fontSize: 12, color: G.apagado, height: 1.3)),
-            ]),
-          ),
-        ),
-      );
-}
-
-/// Um depósito da lista (ou, sem [e], a opção "não está na lista").
-class _Deposito extends StatelessWidget {
-  final Entrada? e;
-  final bool sel;
-  final VoidCallback onTap;
-  const _Deposito({this.e, required this.sel, required this.onTap});
-  @override
-  Widget build(BuildContext context) {
-    final x = e;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Material(
-        color: sel ? G.lavandaFundo : Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: BorderSide(color: sel ? G.lavanda : G.borda)),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(14),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-            child: Row(children: [
-              Icon(sel ? Icons.radio_button_checked_rounded : Icons.radio_button_unchecked_rounded, size: 20, color: sel ? G.lavanda : G.apagado),
-              const SizedBox(width: 10),
-              Expanded(
-                child: x == null
-                    ? Text('Não está na lista: informar o total', style: TextStyle(fontWeight: FontWeight.w600, color: G.texto))
-                    : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text(linhaSomada(x) ? 'Soma das transferências entre suas contas no mês' : x.desc, style: TextStyle(fontWeight: FontWeight.w600, color: G.texto, height: 1.3)),
-                        const SizedBox(height: 2),
-                        Text(linhaSomada(x) ? 'Última em ${dataCurta(x.data)} · junta várias transferências' : '${dataCurta(x.data)} · ${catEntrada(x.cat).nome}',
-                            style: TextStyle(fontSize: 12, color: G.apagado)),
-                      ]),
-              ),
-              if (x != null) ...[
-                const SizedBox(width: 10),
-                Text(brl(x.valor), style: TextStyle(fontWeight: FontWeight.w700, color: G.texto)),
-              ],
-            ]),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Barra mostrando como o depósito fica dividido.
-class _BarraDivisao extends StatelessWidget {
-  final double total, parte, sobra;
-  final String nomeParte, nomeResto, nomeSobra;
-  final Color corParte;
-  const _BarraDivisao({required this.total, required this.parte, required this.nomeParte, required this.nomeResto, required this.corParte, this.sobra = 0, this.nomeSobra = ''});
-  @override
-  Widget build(BuildContext context) {
-    final ok = parte > 0 && parte < total;
-    final resto = total - parte;
-    final fp = ok ? (parte / total * 1000).round().clamp(60, 940) : 0;
-    Widget leg(Color c, String n, String v) => Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Container(width: 10, height: 10, margin: const EdgeInsets.only(top: 4), decoration: BoxDecoration(color: c, borderRadius: BorderRadius.circular(3))),
-          const SizedBox(width: 8),
-          Expanded(child: Text(n, style: TextStyle(fontSize: 13, color: G.texto2, height: 1.35))),
-          const SizedBox(width: 8),
-          Text(v, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: G.texto)),
-        ]);
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: G.campo, borderRadius: BorderRadius.circular(14), border: Border.all(color: G.borda)),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Row(children: [
-          Expanded(child: Text('Depósito de ${brl(total)}', style: TextStyle(fontWeight: FontWeight.w700, color: G.texto))),
-        ]),
-        const SizedBox(height: 10),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(99),
-          child: SizedBox(
-            height: 12,
-            child: ok
-                ? Row(children: [
-                    Expanded(flex: fp, child: Container(color: corParte)),
-                    const SizedBox(width: 2),
-                    Expanded(flex: 1000 - fp, child: Container(color: G.lavanda)),
-                    if (sobra > .004) ...[
-                      const SizedBox(width: 2),
-                      Expanded(flex: ((sobra / total * 1000).round()).clamp(30, 600).toInt(), child: Container(color: G.apagado)),
-                    ],
-                  ])
-                : Container(color: G.borda),
-          ),
-        ),
-        const SizedBox(height: 10),
-        if (ok) ...[
-          leg(corParte, nomeParte, brl(parte)),
-          const SizedBox(height: 6),
-          leg(G.lavanda, nomeResto, brl(resto)),
-          if (sobra > .004) ...[
-            const SizedBox(height: 6),
-            leg(G.apagado, nomeSobra, brl(sobra)),
-          ],
-          const SizedBox(height: 8),
-          Text('O total no extrato continua ${brl(total + sobra)}: nada fica duplicado.', style: TextStyle(fontSize: 12, color: G.apagado)),
-        ] else
-          Text('A parte do $nomeParte precisa ser menor que o depósito.', style: TextStyle(fontSize: 12.5, color: G.alerta)),
-      ]),
-    );
-  }
 }
 
 class _LinhaReceb extends StatelessWidget {

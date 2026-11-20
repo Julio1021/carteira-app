@@ -21,6 +21,7 @@ import '../util/fmt.dart';
 import '../widgets/comum.dart';
 import '../widgets/animado.dart';
 import '../widgets/site.dart';
+import 'classificar.dart';
 import 'lancar.dart';
 import 'planejar.dart';
 
@@ -115,6 +116,8 @@ class InicioSite extends StatelessWidget {
                   child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                     HeroSite(r: r, ym: ym, onMes: onMes, prev: prev, irEntradas: () => irExtratoFiltro('entradas'), irSaidas: () => irExtratoFiltro('saidas')),
                     FaixaAvisosSite(verCategoria: verCategoria ?? (_) => irExtratoFiltro('saidas')),
+        const ConferirTransfSite(),
+                    const ConferirTransfSite(),
                     const ComemoracaoSite(),
                     e,
                     _atalhos(context),
@@ -152,6 +155,7 @@ class InicioSite extends StatelessWidget {
       children: [
         HeroSite(r: r, ym: ym, onMes: onMes, prev: prev, irEntradas: () => irExtratoFiltro('entradas'), irSaidas: () => irExtratoFiltro('saidas')),
         FaixaAvisosSite(verCategoria: verCategoria ?? (_) => irExtratoFiltro('saidas')),
+        const ConferirTransfSite(),
         const ComemoracaoSite(),
         e,
         _atalhos(context),
@@ -634,17 +638,36 @@ String subLancSite(Repo repo, Lanc l) {
 }
 
 /// Valor com sinal, como no site: "− R$ 48,90" / "+ R$ 150,00".
-String valorLancSite(Lanc l) => l.ehEntrada ? '+ ${brl(l.valor)}' : (l.ehGasto ? '− ${brl(l.valor)}' : brl(l.valor));
+String valorLancSite(Lanc l) => l.ehEntrada
+    ? '${l.valor < 0 ? '−' : '+'} ${brl(l.valor.abs())}'
+    : (l.ehGasto ? '− ${brl(l.valor)}' : brl(l.valor));
 
-Widget linhaLancSite(BuildContext context, Repo repo, Lanc l, {VoidCallback? onTap}) => LinhaTxSite(
-      cat: l.ehEntrada ? catEntrada(l.e!.cat) : (l.ehGasto ? catGasto(l.g!.cat) : catGasto('outros')),
-      entrada: l.ehEntrada,
-      titulo: l.desc,
-      sub: subLancSite(repo, l),
-      valor: valorLancSite(l),
-      corValor: l.ehEntrada ? S.pos : null,
-      onTap: onTap ?? () => abrirFormLanc(context, doc: l.doc),
-    );
+/// Lançamento que abre "o que foi esse dinheiro?" em vez do formulário:
+/// transferência entre suas contas (que chegou) ou parte de um depósito dividido.
+bool abreClassificar(Lanc l) => l.ehEntrada && ((l.e!.entreContas && l.e!.valor > 0) || l.e!.d['div'] is String);
+
+/// Abre o lançamento: formulário ou, para transferências e divisões, a folha
+/// "o que foi esse dinheiro?".
+void abrirLancamento(BuildContext context, Lanc l) => abreClassificar(l) ? abrirClassificar(context, l.e!) : abrirFormLanc(context, doc: l.doc);
+
+Widget linhaLancSite(BuildContext context, Repo repo, Lanc l, {VoidCallback? onTap}) {
+  final e = l.e;
+  final transf = e != null && e.entreContas;
+  final pend = e != null && transfPendente(e);
+  return LinhaTxSite(
+    cat: l.ehEntrada ? catEntrada(l.e!.cat) : (l.ehGasto ? catGasto(l.g!.cat) : catGasto('outros')),
+    entrada: l.ehEntrada,
+    titulo: transf ? (e!.valor >= 0 ? 'Transferência de outra conta sua' : 'Transferência para outra conta sua') : l.desc,
+    sub: pend
+        ? 'Toque para conferir: foi salário, vale, 13º ou só troca de conta?'
+        : (transf ? 'Entre suas contas · não conta como ${e!.valor >= 0 ? 'entrada' : 'gasto'}' : subLancSite(repo, l)),
+    corSub: pend ? S.neg : null,
+    valor: valorLancSite(l),
+    corValor: transf ? S.muted : (l.ehEntrada ? S.pos : null),
+    conferir: pend,
+    onTap: onTap ?? () => abrirLancamento(context, l),
+  );
+}
 
 class UltimosSite extends StatelessWidget {
   final ResumoMes r;
@@ -768,6 +791,61 @@ class _CheckEstoura extends StatelessWidget {
 
 /// Comemoração: mês anterior fechado dentro do limite e objetivos alcançados.
 /// O confete sai uma vez só; o cartão fica até a pessoa fechar.
+/// Transferências de outras contas suas que chegaram e ainda não foram
+/// conferidas: o cartão balança (e o celular vibra uma vez ao aparecer) até
+/// você dizer se foi salário, vale, 13º ou só troca de conta.
+class ConferirTransfSite extends StatefulWidget {
+  const ConferirTransfSite({super.key});
+  @override
+  State<ConferirTransfSite> createState() => _ConferirTransfSiteState();
+}
+
+class _ConferirTransfSiteState extends State<ConferirTransfSite> {
+  static bool _vibrou = false;
+  @override
+  Widget build(BuildContext context) {
+    final ps = transfPendentes(RepoScope.of(context));
+    if (ps.isEmpty) return const SizedBox.shrink();
+    if (!_vibrou && animacoesLigadas(context)) {
+      _vibrou = true;
+      HapticFeedback.heavyImpact();
+    }
+    final x = ps.first;
+    final n = ps.length;
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: CartaoSite(
+        cor: S.negSoft,
+        onTap: () => abrirClassificar(context, x),
+        padding: const EdgeInsets.all(14),
+        child: Row(children: [
+          Balanca(
+            child: Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(color: S.neg, borderRadius: BorderRadius.circular(13)),
+              alignment: Alignment.center,
+              child: const Icon(Icons.sync_alt_rounded, color: Colors.white, size: 22),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(n == 1 ? 'Chegou ${brl(x.valor)} de outra conta sua' : '$n transferências das suas contas para conferir',
+                  style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700, color: S.ink, height: 1.35)),
+              const SizedBox(height: 2),
+              Text(n == 1 ? 'Em ${dataCurta(x.data)}. Toque e diga se foi salário, vale, 13º ou só troca de conta.' : 'A mais recente: ${brl(x.valor)} em ${dataCurta(x.data)}. Toque para conferir uma por uma.',
+                  style: TextStyle(fontSize: 12.5, color: S.ink2, height: 1.4)),
+            ]),
+          ),
+          const SizedBox(width: 6),
+          IconeSite(Ico.dir, tam: 16, cor: S.neg),
+        ]),
+      ),
+    );
+  }
+}
+
 class ComemoracaoSite extends StatefulWidget {
   const ComemoracaoSite({super.key});
   @override
