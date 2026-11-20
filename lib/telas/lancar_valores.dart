@@ -32,7 +32,7 @@ class _TelaLancarValoresState extends State<TelaLancarValores> {
   final saldoC = <String, TextEditingController>{};
   final aporteC = <String, TextEditingController>{}; // sempre positivo
   final tirou = <String, bool>{}; // true = resgate (tirou dinheiro)
-  final aporteAberto = <String>{};
+  final aporteAberto = <String>{}; // campo de colocar/tirar aberto para editar
   final foco = <String, FocusNode>{};
   // Saldo digitado à mão? Enquanto não, o saldo acompanha o aporte (saldo sem o
   // aporte do dia + aporte), para o aporte não virar "perda".
@@ -76,7 +76,6 @@ class _TelaLancarValoresState extends State<TelaLancarValores> {
   void _setAp(String id, double v) {
     tirou[id] = v < 0;
     _ac(id).text = v.abs() < .005 ? '' : valorCampo(v.abs());
-    if (v.abs() >= .005) aporteAberto.add(id);
   }
 
   /// Preenche com o que já foi lançado na data (ou vazio). Com [todos] falso,
@@ -451,7 +450,6 @@ class _TelaLancarValoresState extends State<TelaLancarValores> {
           saldoMexido[id] = true;
           tocado.add(id);
           _setAp(id, ap + rend);
-          aporteAberto.add(id);
         }),
       );
     }
@@ -507,7 +505,9 @@ class _TelaLancarValoresState extends State<TelaLancarValores> {
           },
         ),
         const SizedBox(height: 8),
-        if (!abertoAp)
+        if (!abertoAp && ap != 0)
+          _ResumoAporte(valor: ap, desde: dAnt, aoAlterar: () => setState(() => aporteAberto.add(id)))
+        else if (!abertoAp)
           Align(
             alignment: Alignment.centerLeft,
             child: TextButton.icon(
@@ -532,6 +532,7 @@ class _TelaLancarValoresState extends State<TelaLancarValores> {
               aporteAberto.remove(id);
               _aporteMudou(id);
             }),
+            aoPronto: () => setState(() => aporteAberto.remove(id)),
           ),
         if (res != null) _LinhaRend(rend: res.rend, pc: res.pc, ant: res.ant, dAnt: res.dAnt, aporte: res.aporte, saldo: res.saldo, data: data, periodo: periodo),
         if (aviso != null) aviso,
@@ -744,8 +745,8 @@ class _CampoAporte extends StatelessWidget {
   final bool tirou;
   final String? desde;
   final ValueChanged<bool> aoMudarTipo;
-  final VoidCallback aoMudar, aoFechar;
-  const _CampoAporte({required this.c, required this.tirou, required this.desde, required this.aoMudarTipo, required this.aoMudar, required this.aoFechar});
+  final VoidCallback aoMudar, aoFechar, aoPronto;
+  const _CampoAporte({required this.c, required this.tirou, required this.desde, required this.aoMudarTipo, required this.aoMudar, required this.aoFechar, required this.aoPronto});
   @override
   Widget build(BuildContext context) {
     Widget tipo(bool t, IconData ic, String txt) {
@@ -798,15 +799,62 @@ class _CampoAporte extends StatelessWidget {
           tipo(true, Icons.remove_circle_outline_rounded, 'Tirei'),
         ]),
         const SizedBox(height: 10),
-        TextField(
-          controller: c,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))],
-          scrollPadding: const EdgeInsets.only(bottom: 160),
-          decoration: InputDecoration(labelText: tirou ? 'Quanto tirou' : 'Quanto colocou', prefixText: 'R\$ ', hintText: '0,00', isDense: true),
-          onChanged: (_) => aoMudar(),
-        ),
+        Row(children: [
+          Expanded(
+            child: TextField(
+              controller: c,
+              autofocus: c.text.isEmpty,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              textInputAction: TextInputAction.done,
+              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))],
+              scrollPadding: const EdgeInsets.only(bottom: 160),
+              decoration: InputDecoration(labelText: tirou ? 'Quanto tirou' : 'Quanto colocou', prefixText: 'R\$ ', hintText: '0,00', isDense: true),
+              onChanged: (_) => aoMudar(),
+              onSubmitted: (_) => aoPronto(),
+            ),
+          ),
+          const SizedBox(width: 8),
+          FilledButton.tonal(onPressed: aoPronto, child: const Text('Pronto')),
+        ]),
       ]),
+    );
+  }
+}
+
+/// "Colocou R$ 600,00 desde 13/11 · Alterar" (o campo fica fechado).
+class _ResumoAporte extends StatelessWidget {
+  final double valor;
+  final String? desde;
+  final VoidCallback aoAlterar;
+  const _ResumoAporte({required this.valor, required this.desde, required this.aoAlterar});
+  @override
+  Widget build(BuildContext context) {
+    final cor = valor > 0 ? S.pos : S.neg;
+    return Material(
+      color: S.surface2,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: aoAlterar,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(10, 9, 10, 9),
+          child: Row(children: [
+            Icon(valor > 0 ? Icons.add_circle_outline_rounded : Icons.remove_circle_outline_rounded, size: 18, color: cor),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text.rich(
+                TextSpan(children: [
+                  TextSpan(text: valor > 0 ? 'Colocou ' : 'Tirou '),
+                  TextSpan(text: brl(valor.abs()), style: TextStyle(fontWeight: FontWeight.w800, color: cor)),
+                  if (desde != null) TextSpan(text: ' desde ${dataCurta(desde!)}'),
+                ]),
+                style: TextStyle(fontSize: 13.5, color: S.ink2, height: 1.3),
+              ),
+            ),
+            Text('Alterar', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: S.accent)),
+          ]),
+        ),
+      ),
     );
   }
 }
