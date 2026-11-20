@@ -22,6 +22,7 @@ import '../widgets/comum.dart';
 import '../widgets/animado.dart';
 import '../widgets/site.dart';
 import 'lancar.dart';
+import 'planejar.dart';
 
 const _branco = Colors.white;
 
@@ -486,6 +487,24 @@ class PrevisaoSite extends StatelessWidget {
   }
 }
 
+/// Toque num ponto da linha do tempo: recebimento já lançado abre para
+/// corrigir (valor, dia, dividir); o que ainda não entrou abre para marcar.
+/// Parcelas de empréstimo vão para a lista completa.
+void _tocarRecebimento(BuildContext context, ItemAgenda x, VoidCallback irLista) {
+  final r = x.renda;
+  if (r == null) return irLista();
+  final repo = RepoScope.ler(context);
+  StatusRenda? st;
+  for (final ym in [ymDe(x.data), ymAdd(ymDe(x.data), -1), ymAdd(ymDe(x.data), 1)]) {
+    final s = statusRenda(repo, r, ym);
+    if (s != null && (s.rec?.data == x.data || s.data == x.data)) {
+      st = s;
+      break;
+    }
+  }
+  confirmarRecebido(context, r, st?.data ?? x.data, x.valor, rec: x.recebido ? st?.rec : null);
+}
+
 /// "Próximos recebimentos": linha do tempo com até 3 datas.
 class RecebimentosSite extends StatelessWidget {
   final VoidCallback irPlanejar;
@@ -556,7 +575,9 @@ class RecebimentosSite extends StatelessWidget {
                 Expanded(
                   child: Builder(builder: (_) {
                     final x = ag[k];
-                    return Padding(
+                    return _Toque(
+                    onTap: () => _tocarRecebimento(context, x, irPlanejar),
+                    child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
                     child: Column(children: [
                       Text('${x.data.substring(8, 10)}/${x.data.substring(5, 7)}', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: S.ink, height: 1.5)),
@@ -583,12 +604,17 @@ class RecebimentosSite extends StatelessWidget {
                         ),
                       ),
                     ]),
-                  );
+                  ));
                   }),
                 ),
             ]),
           ]);
           }),
+        if (ag.any((x) => x.renda != null && !x.recebido && x.data.compareTo(hojeIso()) <= 0)) ...[
+          const SizedBox(height: 12),
+          Text('Toque num recebimento para marcar que entrou, ou para corrigir se veio junto com outro valor.',
+              textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: S.muted, height: 1.4)),
+        ],
       ]),
     );
   }
