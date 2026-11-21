@@ -7,7 +7,8 @@ import '../tema.dart';
 import '../tema_site.dart';
 import '../widgets/comum.dart';
 import '../widgets/site.dart';
-import 'avisos.dart';
+import '../dados/conferir.dart';
+import 'conferir.dart';
 import 'busca.dart';
 import 'cartoes.dart';
 import 'emprestimos.dart';
@@ -29,10 +30,18 @@ Future<void> abrirMenuSite(BuildContext context, String ym) => showModalBottomSh
       ),
     );
 
-class _Menu extends StatelessWidget {
+class _Menu extends StatefulWidget {
   final String ym;
   final ScrollController sc;
   const _Menu({required this.ym, required this.sc});
+  @override
+  State<_Menu> createState() => _MenuState();
+}
+
+class _MenuState extends State<_Menu> {
+  bool temas = false;
+  String get ym => widget.ym;
+  ScrollController get sc => widget.sc;
 
   @override
   Widget build(BuildContext context) {
@@ -82,15 +91,23 @@ class _Menu extends StatelessWidget {
             subtitle: Text(o ? 'Os valores aparecem como •••' : 'Para usar o app em público', style: TextStyle(fontSize: 13, color: S.muted)),
           )),
         ),
-        link(Ico.lampada, 'Avisos', 'Limites, contas e recebimentos que pedem atenção', () {
-          Navigator.pop(context);
-          abrirAvisos(context, (_) {});
+        Builder(builder: (context) {
+          final n = nPendencias(RepoScope.of(context));
+          return link(Ico.lampada, 'Para conferir', n == 0 ? 'Nada pendente agora' : '$n coisa${n == 1 ? '' : 's'} pedindo sua atenção', () {
+            Navigator.pop(context);
+            abrirConferir(context);
+          });
         }),
-        link(Ico.cartao, 'Cartões de crédito', 'Faturas, limites e compras parceladas', () => ir(const TelaCartoes())),
-        link('<path d="M7 12l3 3 7-7"/><circle cx="12" cy="12" r="9"/>', 'Empréstimos', 'Dinheiro que você emprestou e vai receber', () => ir(const TelaEmprestimos())),
-        link(Ico.ajustes, 'Limites de gastos', 'Limite geral e por categoria', () => ir(TelaLimites(ym: ym))),
         link(Ico.importar, 'Importar extrato do banco', 'Arquivo OFX ou CSV', () => ir(const TelaImportarExtrato())),
+        link(Ico.cartao, 'Cartões de crédito', 'Faturas, limites e compras parceladas', () => ir(const TelaCartoes())),
         link(Ico.buscar, 'Buscar lançamentos', 'Em todos os meses', () => ir(const TelaBusca())),
+        const SizedBox(height: 6),
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 8),
+          child: Text('Mais', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: S.muted)),
+        ),
+        link(Ico.ajustes, 'Limites de gastos', 'Limite geral e por categoria', () => ir(TelaLimites(ym: ym))),
+        link('<path d="M7 12l3 3 7-7"/><circle cx="12" cy="12" r="9"/>', 'Empréstimos', 'Dinheiro que você emprestou e vai receber', () => ir(const TelaEmprestimos())),
         link('<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/>', 'Retrospectiva', 'Como foi o mês passado', () {
           Navigator.pop(context);
           abrirRetro(context, mesDaRetro(RepoScope.ler(context), ym));
@@ -99,12 +116,16 @@ class _Menu extends StatelessWidget {
           Navigator.pop(context);
           Navigator.of(context).pushNamed('/ajustes');
         }),
-        const SizedBox(height: 8),
-        Text('Escolha um tema', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w700, color: S.ink)),
-        const SizedBox(height: 4),
-        Text('${temasSite.length} temas. A mudança vale na hora e fica salva.', style: TextStyle(fontSize: 14, color: S.muted)),
-        const SizedBox(height: 12),
         ValueListenableBuilder<String>(
+          valueListenable: aparencia,
+          builder: (_, atual, __) => link(
+            '<circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z"/>',
+            'Tema: ${temasSite.where((t) => t.id == atual).firstOrNull?.nome ?? 'padrão'}',
+            temas ? 'Escolha abaixo' : '${temasSite.length} temas para escolher',
+            () => setState(() => temas = !temas),
+          ),
+        ),
+        if (temas) ValueListenableBuilder<String>(
           valueListenable: aparencia,
           builder: (_, atual, __) => GridView.count(
             crossAxisCount: 2,

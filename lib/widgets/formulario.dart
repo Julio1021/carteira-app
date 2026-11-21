@@ -33,7 +33,7 @@ class Rotulo extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.only(top: 16, bottom: 8),
-        child: Text(t, style: TextStyle(fontWeight: FontWeight.w600, color: G.texto2)),
+        child: Text(t, style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: G.texto2, height: 1.35)),
       );
 }
 
@@ -138,7 +138,7 @@ class TituloFolha extends StatelessWidget {
   const TituloFolha(this.t, {super.key, this.onExcluir});
   @override
   Widget build(BuildContext context) => Row(children: [
-        Expanded(child: Text(t, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700))),
+        Expanded(child: Text(t, style: TextStyle(fontFamily: 'Bricolage', fontSize: 22, fontWeight: FontWeight.w700, letterSpacing: -.3, height: 1.25, color: G.texto))),
         if (onExcluir != null) IconButton(tooltip: 'Excluir', onPressed: onExcluir, icon: Icon(Icons.delete_outline_rounded, color: G.neg)),
       ]);
 }

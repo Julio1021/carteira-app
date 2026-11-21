@@ -45,7 +45,10 @@ class _AnaliseExtratoState extends State<AnaliseExtrato> {
     final meses = [for (var i = 5; i >= 0; i--) i == 0 ? r : ResumoMes.de(repo, ymAdd(widget.ym, -i))];
     final hist12 = historicoMeses(repo, widget.ym, 12);
     final limites = widget.irLimites ?? () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => TelaLimites(ym: widget.ym)));
+    // o principal fica à vista; o resto, a um toque em "Mais detalhes"
     final extras = <(String, Widget)>[
+      ('Onde mais gastou', OndeMaisGastouSite(r: r, buscar: widget.buscar ?? (_) {})),
+      ('Forma de pagamento', FormaPagamentoSite(r: r)),
       ('Destaques', Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         DestaquesMes(ym: widget.ym),
         _RitmoCard(rit: rit, mesNome: mesNome),
@@ -56,14 +59,8 @@ class _AnaliseExtratoState extends State<AnaliseExtrato> {
     ];
     final per = mesLongo(widget.ym);
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      SecaoSite(atual ? 'Como o mês está indo' : 'Como foi o mês', per, primeira: true),
-      PrevisaoSite(r: r, prev: previsaoMes(repo, widget.ym), irExtrato: widget.irLista ?? () {}, irLimites: limites),
-      SecaoSite('Para onde foi o dinheiro', per),
+      SecaoSite('Para onde foi o dinheiro', per, primeira: true),
       DistribuicaoSite(r: r, meses: meses),
-      const SizedBox(height: 14),
-      OndeMaisGastouSite(r: r, buscar: widget.buscar ?? (_) {}),
-      const SizedBox(height: 14),
-      FormaPagamentoSite(r: r),
       const SizedBox(height: 14),
       GastosCategoriaSite(r: r, verCategoria: widget.verCategoria, ajustarLimites: limites),
       SecaoSite('Ao longo do tempo', 'Últimos 12 meses'),
