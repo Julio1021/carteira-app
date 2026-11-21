@@ -325,7 +325,7 @@ class _LinhaPos extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(p.a.nome, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w600, color: S.ink, height: 1.4)),
+              Text(p.a.nome, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w600, color: S.ink, height: 1.4)),
               Text('${pct(frac, casas: 1)} da carteira', style: TextStyle(fontSize: 12, color: S.muted, height: 1.4)),
             ]),
           ),
@@ -404,7 +404,7 @@ class _Ativos extends StatelessWidget {
                   padding: const EdgeInsets.only(top: 4),
                   child: Row(children: [
                     const SizedBox(width: 22),
-                    Expanded(child: Text(f.a.nome, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: G.texto2, fontSize: 12.5))),
+                    Expanded(child: Text(f.a.nome, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: G.texto2, fontSize: 12.5))),
                     Text(brl(f.valor), style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600)),
                   ]),
                 ),
@@ -1053,7 +1053,7 @@ class _Pendencias extends StatelessWidget {
             child: Row(children: [
               Icon(ic, size: 19, color: G.alerta),
               const SizedBox(width: 10),
-              Expanded(child: Text(t, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600))),
+              Expanded(child: Text(t, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600))),
               Text(v, style: TextStyle(fontWeight: FontWeight.w700, color: G.texto2)),
               Icon(Icons.chevron_right_rounded, color: G.apagado),
             ]),
@@ -1139,7 +1139,7 @@ class _FolhaSemAtivo extends StatelessWidget {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(i.desc, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700)),
+                    Text(i.desc, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700)),
                     Text('${dataCurta(i.data)} · ${i.resgate ? 'resgate' : 'aplicação'}', style: TextStyle(color: G.apagado, fontSize: 12.5)),
                   ]),
                 ),

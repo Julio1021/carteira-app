@@ -579,9 +579,6 @@ class _MenuBaixo extends StatelessWidget {
   /// botão de tema/menu no meio. A aba escolhida fica na cor de destaque com um
   /// tracinho em cima.
   Widget _nuvem(BuildContext context) {
-    final repo = RepoScope.of(context);
-    var atrasadas = 0;
-    if (repo.doTipo('pagar').isNotEmpty) atrasadas = mesContas(repo, ymDe(hojeIso())).nAtrasadas;
     Widget item(int i, String d, String t, {int badge = 0}) {
       final on = aba == i;
       final cor = on ? S.accent : S.muted;
@@ -665,7 +662,7 @@ class _MenuBaixo extends StatelessWidget {
               ),
             ),
           ),
-          item(2, Ico.calendario, 'Planejar', badge: atrasadas),
+          item(2, Ico.calendario, 'Planejar'),
           item(3, Ico.patrimonio, 'Patrimônio'),
           ]),
         ),

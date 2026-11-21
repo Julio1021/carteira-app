@@ -1,61 +1,49 @@
 import 'package:flutter/material.dart';
 
 import '../dados/avisos.dart';
+import '../dados/conferir.dart';
 import '../tema.dart';
 import '../util/fmt.dart';
 import '../widgets/comum.dart';
 import '../widgets/formulario.dart';
 import '../widgets/site.dart';
 import 'busca.dart';
+import 'conferir.dart';
 import 'limites.dart';
 
-/// Botão do sininho com o número de avisos novos.
+/// Botão do sininho: abre "Para conferir", com o número de pendências.
 class BotaoAvisos extends StatelessWidget {
   final void Function(String cat) verCategoria;
   const BotaoAvisos({super.key, required this.verCategoria});
   @override
   Widget build(BuildContext context) {
     final repo = RepoScope.of(context);
-    final l = avisosDoMes(repo);
-    if (l.isEmpty) return const SizedBox(width: 42);
-    final vistos = repo.lista('av.vistos').toSet();
-    final novos = l.where((a) => !vistos.contains(a.k)).toList();
-    final grave = novos.any((a) => a.sev >= 3);
+    final ps = pendencias(repo).where((p) => p.tipo != 'aviso').toList();
+    final grave = ps.any((p) => p.sev >= 3);
     return Stack(clipBehavior: Clip.none, children: [
       IconButton(
-        tooltip: 'Avisos do mês',
-        onPressed: () async {
-          await repo.guardarLista('av.vistos', {...vistos, ...l.map((a) => a.k)}.toList().reversed.take(300).toList());
-          if (context.mounted) abrirAvisos(context, verCategoria);
-        },
-        style: true
-            ? IconButton.styleFrom(
-                foregroundColor: G.texto2,
-                shape: const CircleBorder(),
-                fixedSize: const Size(42, 42),
-                minimumSize: const Size(42, 42),
-                padding: EdgeInsets.zero,
-                elevation: 0,
-                shadowColor: Colors.transparent,
-              )
-            : IconButton.styleFrom(
-                backgroundColor: G.v(0x10),
-                side: BorderSide(color: G.borda),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                fixedSize: const Size(38, 38),
-                minimumSize: const Size(38, 38),
-                padding: EdgeInsets.zero,
-              ),
-        icon: Icon(Icons.notifications_none_rounded, color: grave ? G.negTexto : G.texto),
+        tooltip: 'Para conferir',
+        onPressed: () => abrirConferir(context, verCategoria: verCategoria),
+        style: IconButton.styleFrom(
+          foregroundColor: G.texto2,
+          shape: const CircleBorder(),
+          fixedSize: const Size(42, 42),
+          minimumSize: const Size(42, 42),
+          padding: EdgeInsets.zero,
+          elevation: 0,
+          shadowColor: Colors.transparent,
+        ),
+        icon: Icon(ps.isEmpty ? Icons.notifications_none_rounded : Icons.notifications_active_outlined, color: grave ? G.negTexto : G.texto),
       ),
-      if (novos.isNotEmpty)
+      if (ps.isNotEmpty)
         Positioned(
-          right: -4,
-          top: -4,
+          right: -2,
+          top: -2,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(color: grave ? G.neg : G.branco, borderRadius: BorderRadius.circular(99), border: Border.all(color: G.fundo, width: 2)),
-            child: Text('${novos.length}', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: grave ? Colors.white : G.tinta)),
+            constraints: const BoxConstraints(minWidth: 20),
+            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+            decoration: BoxDecoration(color: grave ? G.neg : G.lavanda, borderRadius: BorderRadius.circular(99), border: Border.all(color: G.fundo, width: 2)),
+            child: Text('${ps.length}', textAlign: TextAlign.center, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white)),
           ),
         ),
     ]);

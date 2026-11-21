@@ -22,6 +22,7 @@ import '../widgets/comum.dart';
 import '../widgets/animado.dart';
 import '../widgets/site.dart';
 import 'classificar.dart';
+import 'conferir.dart';
 import 'lancar.dart';
 import 'planejar.dart';
 
@@ -115,23 +116,14 @@ class InicioSite extends StatelessWidget {
                   width: 440,
                   child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                     HeroSite(r: r, ym: ym, onMes: onMes, prev: prev, irEntradas: () => irExtratoFiltro('entradas'), irSaidas: () => irExtratoFiltro('saidas')),
-                    FaixaAvisosSite(verCategoria: verCategoria ?? (_) => irExtratoFiltro('saidas')),
-        const ConferirTransfSite(),
-                    const ConferirTransfSite(),
+                    ConferirSite(verCategoria: verCategoria),
                     const ComemoracaoSite(),
                     e,
                     _atalhos(context),
-                    if (temReceb) ...[e, RecebimentosSite(irPlanejar: irPlanejar)],
                   ]),
                 ),
                 const SizedBox(width: 20),
-                Expanded(
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                    PrevisaoSite(r: r, prev: prev, irExtrato: irExtrato, irLimites: irLimites),
-                    e,
-                    UltimosSite(r: r, irExtrato: irExtrato),
-                  ]),
-                ),
+                Expanded(child: PrevisaoSite(r: r, prev: prev, irExtrato: irExtrato, irLimites: irLimites)),
               ]),
             ),
           ),
@@ -148,22 +140,21 @@ class InicioSite extends StatelessWidget {
         (Ico.buscar, 'Buscar', irBuscar),
       ]);
 
+  /// Celular: só o essencial. Quanto tem e quanto vai sobrar, o que pede
+  /// sua atenção, atalhos e o ritmo dos gastos. Recebimentos ficam em
+  /// Planejar e os lançamentos no Extrato.
   Widget _lista(BuildContext context, ResumoMes r, ({double aReceber, double faltaPagar}) prev, bool temReceb) {
     const e = SizedBox(height: 18);
     return ListView(
       padding: const EdgeInsets.fromLTRB(12, 14, 12, 104),
       children: [
         HeroSite(r: r, ym: ym, onMes: onMes, prev: prev, irEntradas: () => irExtratoFiltro('entradas'), irSaidas: () => irExtratoFiltro('saidas')),
-        FaixaAvisosSite(verCategoria: verCategoria ?? (_) => irExtratoFiltro('saidas')),
-        const ConferirTransfSite(),
+        ConferirSite(verCategoria: verCategoria),
         const ComemoracaoSite(),
         e,
         _atalhos(context),
         e,
         PrevisaoSite(r: r, prev: prev, irExtrato: irExtrato, irLimites: irLimites),
-        if (temReceb) ...[e, RecebimentosSite(irPlanejar: irPlanejar)],
-        e,
-        UltimosSite(r: r, irExtrato: irExtrato),
       ],
     );
   }
@@ -791,61 +782,6 @@ class _CheckEstoura extends StatelessWidget {
 
 /// Comemoração: mês anterior fechado dentro do limite e objetivos alcançados.
 /// O confete sai uma vez só; o cartão fica até a pessoa fechar.
-/// Transferências de outras contas suas que chegaram e ainda não foram
-/// conferidas: o cartão balança (e o celular vibra uma vez ao aparecer) até
-/// você dizer se foi salário, vale, 13º ou só troca de conta.
-class ConferirTransfSite extends StatefulWidget {
-  const ConferirTransfSite({super.key});
-  @override
-  State<ConferirTransfSite> createState() => _ConferirTransfSiteState();
-}
-
-class _ConferirTransfSiteState extends State<ConferirTransfSite> {
-  static bool _vibrou = false;
-  @override
-  Widget build(BuildContext context) {
-    final ps = transfPendentes(RepoScope.of(context));
-    if (ps.isEmpty) return const SizedBox.shrink();
-    if (!_vibrou && animacoesLigadas(context)) {
-      _vibrou = true;
-      HapticFeedback.heavyImpact();
-    }
-    final x = ps.first;
-    final n = ps.length;
-    return Padding(
-      padding: const EdgeInsets.only(top: 12),
-      child: CartaoSite(
-        cor: S.negSoft,
-        onTap: () => abrirClassificar(context, x),
-        padding: const EdgeInsets.all(14),
-        child: Row(children: [
-          Balanca(
-            child: Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(color: S.neg, borderRadius: BorderRadius.circular(13)),
-              alignment: Alignment.center,
-              child: const Icon(Icons.sync_alt_rounded, color: Colors.white, size: 22),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(n == 1 ? 'Chegou ${brl(x.valor)} de outra conta sua' : '$n transferências das suas contas para conferir',
-                  style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700, color: S.ink, height: 1.35)),
-              const SizedBox(height: 2),
-              Text(n == 1 ? 'Em ${dataCurta(x.data)}. Toque e diga se foi salário, vale, 13º ou só troca de conta.' : 'A mais recente: ${brl(x.valor)} em ${dataCurta(x.data)}. Toque para conferir uma por uma.',
-                  style: TextStyle(fontSize: 12.5, color: S.ink2, height: 1.4)),
-            ]),
-          ),
-          const SizedBox(width: 6),
-          IconeSite(Ico.dir, tam: 16, cor: S.neg),
-        ]),
-      ),
-    );
-  }
-}
-
 class ComemoracaoSite extends StatefulWidget {
   const ComemoracaoSite({super.key});
   @override

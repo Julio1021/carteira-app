@@ -221,7 +221,7 @@ class _TelaImportarExtratoState extends State<TelaImportarExtrato> {
               ListTile(
                 onTap: () => _trocarCat(x, false),
                 leading: IconeCategoria(catGasto(x.cat), tam: 36),
-                title: Text(x.desc, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w600, color: x.dup && pularDup ? G.apagado : G.texto)),
+                title: Text(x.desc, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w600, color: x.dup && pularDup ? G.apagado : G.texto)),
                 subtitle: Text('${dataCurta(x.t.data)} · ${catGasto(x.cat).nome}${x.dup ? ' · já lançado?' : ''}', style: TextStyle(color: x.dup ? G.alerta : G.apagado, fontSize: 12.5)),
                 trailing: Text(brl(-x.valor), style: TextStyle(fontWeight: FontWeight.w700, decoration: x.dup && pularDup ? TextDecoration.lineThrough : null)),
               ),
@@ -234,7 +234,7 @@ class _TelaImportarExtratoState extends State<TelaImportarExtrato> {
               ListTile(
                 onTap: x.ch.startsWith('__') ? null : () => _trocarCat(x, true),
                 leading: IconeCategoria(catEntrada(x.cat), tam: 36),
-                title: Text(x.desc, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600)),
+                title: Text(x.desc, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600)),
                 subtitle: Text('${dataCurta(x.t.data)} · ${catEntrada(x.cat).nome}', style: TextStyle(color: G.apagado, fontSize: 12.5)),
                 trailing: Text(brl(x.valor, sinal: true), style: TextStyle(fontWeight: FontWeight.w700, color: G.pos)),
               ),
@@ -267,7 +267,7 @@ class _TelaImportarExtratoState extends State<TelaImportarExtrato> {
             for (final x in p.invest)
               ListTile(
                 leading: IconeCategoria(x.cat == 'resgate' ? catResgate : catInvestido, tam: 36),
-                title: Text(x.desc, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600)),
+                title: Text(x.desc, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600)),
                 subtitle: Text('${dataCurta(x.t.data)} · ${x.cat == 'resgate' ? 'Resgate' : 'Aplicação'}', style: TextStyle(color: G.apagado, fontSize: 12.5)),
                 trailing: Text('${x.cat == 'resgate' ? '←' : '→'} ${brl(x.valor)}', style: TextStyle(fontWeight: FontWeight.w700, color: G.lavanda)),
               ),

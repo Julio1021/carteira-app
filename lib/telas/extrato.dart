@@ -499,7 +499,7 @@ class _PainelMes extends StatelessWidget {
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Row(children: [
-                      Expanded(child: Text(catGasto(e.key).nome, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14))),
+                      Expanded(child: Text(catGasto(e.key).nome, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14))),
                       Text(brl(e.value), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
                     ]),
                     const SizedBox(height: 5),

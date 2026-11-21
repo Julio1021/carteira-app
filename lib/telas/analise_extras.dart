@@ -328,7 +328,7 @@ class _CalendarioCalorState extends State<CalendarioCalor> {
                           child: Row(children: [
                             Icon(catGasto(g.cat).icone, size: 16, color: catGasto(g.cat).cor),
                             const SizedBox(width: 8),
-                            Expanded(child: Text(g.desc, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: G.texto2, fontSize: 12.5))),
+                            Expanded(child: Text(g.desc, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: G.texto2, fontSize: 12.5))),
                             Text(brl(g.valor), style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12.5)),
                           ]),
                         ),

@@ -160,7 +160,7 @@ class _Comparativo extends StatelessWidget {
                 Row(children: [
                   Icon(catGasto(c.cat).icone, size: 16, color: catGasto(c.cat).cor),
                   const SizedBox(width: 8),
-                  Expanded(child: Text(catGasto(c.cat).nome, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600))),
+                  Expanded(child: Text(catGasto(c.cat).nome, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600))),
                   _Seta(c),
                 ]),
                 const SizedBox(height: 6),

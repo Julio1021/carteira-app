@@ -21,7 +21,7 @@ const categoriasGasto = <Categoria>[
   Categoria('lazer', 'Lazer', Color(0xFFE8467C), Icons.celebration_rounded),
   Categoria('compras', 'Compras', Color(0xFFC9A227), Icons.shopping_bag_rounded),
   Categoria('internet', 'Internet e TV', Color(0xFF3F6FD8), Icons.wifi_rounded),
-  Categoria('recarga', 'Recarga de celular', Color(0xFFD4467F), Icons.smartphone_rounded),
+  Categoria('recarga', 'Recarga celular', Color(0xFFD4467F), Icons.smartphone_rounded),
   Categoria('assinaturas', 'Assinaturas', Color(0xFF00B5D8), Icons.smart_display_rounded),
   Categoria('pets', 'Pets', Color(0xFF7CC242), Icons.pets_rounded),
   Categoria('cuidados', 'Cuidados pessoais', Color(0xFFB57BFF), Icons.content_cut_rounded),
@@ -33,13 +33,13 @@ const categoriasGasto = <Categoria>[
 
 const categoriasEntrada = <Categoria>[
   Categoria('salario', 'Salário', Color(0xFF1F9D6B), Icons.work_rounded),
-  Categoria('beneficios', 'Vale-alimentação e benefícios', Color(0xFFE8A33A), Icons.lunch_dining_rounded),
-  Categoria('emprestimo', 'Devolução de empréstimo', Color(0xFF6D8FD6), Icons.handshake_rounded),
-  Categoria('proprias', 'Transferências das suas contas', Color(0xFF4F8FD6), Icons.sync_alt_rounded),
-  Categoria('pix', 'Pix e transferências recebidas', Color(0xFF2BB3A3), Icons.south_west_rounded),
-  Categoria('reembolso', 'Reembolsos e estornos', Color(0xFF8A7BD6), Icons.undo_rounded),
-  Categoria('rendimentos', 'Rendimentos e cashback', Color(0xFFC9A227), Icons.trending_up_rounded),
-  Categoria('vendas', 'Vendas e serviços', Color(0xFFE0883A), Icons.storefront_rounded),
+  Categoria('beneficios', 'Vale e benefícios', Color(0xFFE8A33A), Icons.lunch_dining_rounded),
+  Categoria('emprestimo', 'Empréstimo devolvido', Color(0xFF6D8FD6), Icons.handshake_rounded),
+  Categoria('proprias', 'Entre suas contas', Color(0xFF4F8FD6), Icons.sync_alt_rounded),
+  Categoria('pix', 'Pix recebido', Color(0xFF2BB3A3), Icons.south_west_rounded),
+  Categoria('reembolso', 'Reembolsos', Color(0xFF8A7BD6), Icons.undo_rounded),
+  Categoria('rendimentos', 'Rendimentos', Color(0xFFC9A227), Icons.trending_up_rounded),
+  Categoria('vendas', 'Vendas', Color(0xFFE0883A), Icons.storefront_rounded),
   Categoria('outros_e', 'Outras entradas', Color(0xFF8F9A92), Icons.payments_rounded),
 ];
 
@@ -53,4 +53,4 @@ Categoria catEntrada(String? id) => _e[id] ?? _e['outros_e']!;
 
 /// Visual dos lançamentos "Investido" (não é categoria de gasto nem de entrada).
 const catInvestido = Categoria('investido', 'Investido', Color(0xFF6C72E6), Icons.savings_rounded);
-const catResgate = Categoria('resgate', 'Resgate de investimento', Color(0xFF6C72E6), Icons.account_balance_wallet_rounded);
+const catResgate = Categoria('resgate', 'Resgate', Color(0xFF6C72E6), Icons.account_balance_wallet_rounded);

@@ -321,3 +321,22 @@ String pct(double v, {int casas = 2, bool sinal = false}) {
   final s = (v * 100).abs().toStringAsFixed(casas).replaceAll('.', ',');
   return '${v < 0 ? '−' : (sinal ? '+' : '')}$s%';
 }
+
+/// Rendimentos de lançamentos já salvos que fogem do normal (variação acima de
+/// 2% e de R$ 20 num lançamento): quase sempre um aporte ou resgate que não
+/// foi informado.
+List<({Lancamento l, Ativo a, double rend, double pc})> rendimentosSuspeitos(Carteira c) {
+  final out = <({Lancamento l, Ativo a, double rend, double pc})>[];
+  for (final a in c.ativos) {
+    final ls = c.porAtivo[a.id] ?? const <Lancamento>[];
+    for (var i = 1; i < ls.length; i++) {
+      final prev = ls[i - 1], l = ls[i];
+      if (prev.saldo <= 0 || l.d['okRend'] == true) continue;
+      final rend = l.saldo - prev.saldo - l.aporte;
+      final pc = rend / prev.saldo;
+      if (pc.abs() > .02 && rend.abs() >= 20) out.add((l: l, a: a, rend: rend, pc: pc));
+    }
+  }
+  out.sort((x, y) => y.l.data.compareTo(x.l.data));
+  return out;
+}

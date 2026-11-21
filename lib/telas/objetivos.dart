@@ -177,7 +177,7 @@ class _LinhaObjetivo extends StatelessWidget {
             Row(children: [
               Icon(iconeObjetivo(o.icone), size: 15, color: cor),
               const SizedBox(width: 6),
-              Expanded(child: Text(o.nome, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14))),
+              Expanded(child: Text(o.nome, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14))),
             ]),
             const SizedBox(height: 3),
             Text.rich(
@@ -192,7 +192,7 @@ class _LinhaObjetivo extends StatelessWidget {
             const SizedBox(height: 3),
             Row(children: [
               if (atrasado) ...[Icon(Icons.schedule_rounded, size: 13, color: G.alerta), const SizedBox(width: 4)],
-              Expanded(child: Text(linha, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12.5, color: p.concluido ? ouro : (atrasado ? G.alerta : G.apagado), fontWeight: p.concluido ? FontWeight.w700 : FontWeight.w500))),
+              Expanded(child: Text(linha, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12.5, color: p.concluido ? ouro : (atrasado ? G.alerta : G.apagado), fontWeight: p.concluido ? FontWeight.w700 : FontWeight.w500))),
             ]),
           ]),
         ),

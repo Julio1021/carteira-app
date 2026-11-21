@@ -99,10 +99,10 @@ class _CampoRapidoState extends State<CampoRapido> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text(r.desc.isEmpty ? cat.nome : r.desc, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700)),
+                        Text(r.desc.isEmpty ? cat.nome : r.desc, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700)),
                         Text(
                           [cat.nome, if (!r.entrada) r.pag, rotuloDia(r.data)].join(' · '),
-                          maxLines: 1,
+                          maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(color: G.apagado, fontSize: 12.5),
                         ),

@@ -410,8 +410,8 @@ class OndeMaisGastouSite extends StatelessWidget {
                       Row(children: [
                         Expanded(
                           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            Text(top[k].desc, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: S.ink)),
-                            Text('${top[k].n}× · ${catGasto(top[k].cat).nome}', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 11.5, color: S.muted)),
+                            Text(top[k].desc, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: S.ink)),
+                            Text('${top[k].n}× · ${catGasto(top[k].cat).nome}', maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 11.5, color: S.muted)),
                           ]),
                         ),
                         const SizedBox(width: 8),
@@ -517,7 +517,7 @@ class GastosCategoriaSite extends StatelessWidget {
               Row(children: [
                 Container(width: 10, height: 10, decoration: BoxDecoration(color: cat.cor, borderRadius: BorderRadius.circular(3))),
                 const SizedBox(width: 10),
-                Expanded(child: Text(cat.nome, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: S.ink))),
+                Expanded(child: Text(cat.nome, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: S.ink))),
                 Text.rich(TextSpan(children: [
                   TextSpan(text: brl(v), style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: S.ink)),
                   TextSpan(text: temL ? ' de ${brl(l)}' : ' · ${_pct(part)}', style: TextStyle(fontSize: 11.7, fontWeight: FontWeight.w500, color: S.muted)),

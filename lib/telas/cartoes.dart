@@ -206,10 +206,10 @@ class _TelaCartoesState extends State<TelaCartoes> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(it.desc, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: S.ink)),
+                      Text(it.desc, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: S.ink)),
                       Text(
                         [if (it.g != null) dataCurta(it.g!.data), catGasto(it.cat).nome, if (it.parcN != null && it.parcN! > 1) 'parcela ${it.parcI}/${it.parcN}', if (it.prevista) 'prevista'].join(' · '),
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(color: it.prevista ? S.accent : S.muted, fontSize: 12),
                       ),
