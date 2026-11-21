@@ -231,6 +231,38 @@ String contaIdOfx(Ofx o) => 'ct_${'${o.bancoId.isEmpty ? 'x' : o.bancoId}_${o.co
 
 String _idRegra(String ch) => ch.replaceAll(RegExp(r'[^A-Z0-9]+'), '_');
 
+/// Chave de um lançamento importado a partir da descrição (as duas primeiras
+/// palavras do nome, como na importação).
+String chaveDesc(String desc) {
+  final n = norm(desc).replaceFirst(RegExp(r'^IFD\*'), 'IFD ').replaceAll(RegExp(r'[^A-Z0-9 ]'), ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
+  return n.split(' ').take(2).join(' ');
+}
+
+/// Você trocou a categoria de um lançamento que veio do extrato: o app grava
+/// a regra (os próximos com esse nome já entram na categoria nova) e corrige os
+/// outros iguais que ainda estão em "Outros". Devolve os registros e quantos
+/// outros mudaram.
+({List<Doc> docs, int outros, String chave}) aprenderCategoria(Repo repo, Doc antigo, Doc novo) {
+  final kind = novo['kind'];
+  if (antigo['ext'] is! String || antigo['kind'] != kind || antigo['cat'] == novo['cat']) return (docs: const [], outros: 0, chave: '');
+  final ch = chaveDesc(str(antigo['desc']));
+  if (ch.length < 3) return (docs: const [], outros: 0, chave: '');
+  final cat = str(novo['cat']);
+  final entrada = kind == 'entrada';
+  final docs = <Doc>[
+    entrada ? {'kind': 'regra', 'id': 'rge_${_idRegra(ch)}', 'chave': ch, 'cat': cat, 'alvo': 'entrada'} : {'kind': 'regra', 'id': 'rg_${_idRegra(ch)}', 'chave': ch, 'cat': cat},
+  ];
+  final semCat = entrada ? 'outros_e' : 'outros';
+  var n = 0;
+  for (final d in repo.doTipo(kind as String)) {
+    if (d['id'] == novo['id'] || d['cat'] != semCat || d['ext'] is! String) continue;
+    if (chaveDesc(str(d['desc'])) != ch) continue;
+    docs.add({...d, 'cat': cat});
+    n++;
+  }
+  return (docs: docs, outros: n, chave: ch);
+}
+
 // ---------------------------------------------------------------------
 // Plano de importação
 // ---------------------------------------------------------------------

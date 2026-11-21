@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../dados/categorias.dart';
+import '../dados/importar.dart' show aprenderCategoria;
 import '../dados/modelos.dart';
 import '../dados/patrimonio.dart';
 import '../dados/invest_pat.dart';
@@ -307,12 +308,22 @@ class _FormLancState extends State<FormLanc> {
     }
     if (base['kind'] == 'gasto' && antigo != null && antigo['kind'] == 'gasto') sincronizarPagto(m, base);
     m.poe(base);
+    // trocou a categoria de algo do extrato: lembra para as próximas importações
+    final apr = antigo == null ? null : aprenderCategoria(repo, antigo, base);
+    if (apr != null) {
+      for (final d in apr.docs) {
+        m.poe(d);
+      }
+    }
     await m.gravar();
     HapticFeedback.lightImpact();
     if (!mounted) return;
     if (!editando) mostrarConfirmacao(context, cor: invest ? G.lavanda : G.pos, icone: invest ? Icons.savings_rounded : Icons.check_rounded);
     _fechar();
-    avisar(context, '${editando ? 'Lançamento atualizado.' : (invest ? (resgate ? 'Resgate registrado.' : 'Investimento registrado.') : (entrada ? 'Entrada lançada.' : 'Gasto lançado.'))}${msgPat != null ? ' $msgPat' : ''}');
+    final lembrou = apr != null && apr.docs.isNotEmpty
+        ? ' Vou lembrar: o que vier como "${apr.chave.toLowerCase()}" entra em ${entrada ? catEntrada(catE).nome : catGasto(cat).nome}${apr.outros > 0 ? ', e mudei mais ${apr.outros} igua${apr.outros == 1 ? 'l' : 'is'}' : ''}.'
+        : '';
+    avisar(context, '${editando ? 'Lançamento atualizado.' : (invest ? (resgate ? 'Resgate registrado.' : 'Investimento registrado.') : (entrada ? 'Entrada lançada.' : 'Gasto lançado.'))}${msgPat != null ? ' $msgPat' : ''}$lembrou');
   }
 
   Future<void> _excluir() async {

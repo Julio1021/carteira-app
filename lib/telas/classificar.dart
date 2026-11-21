@@ -41,10 +41,49 @@ class _FolhaClassificarState extends State<FolhaClassificar> {
   late bool? entrada = transf ? (widget.pre != null ? true : null) : true;
   final partes = <_Parte>[];
   bool salvando = false;
+  /// O que foi feito da última vez com uma transferência parecida.
+  ({String data, bool so, List<(Natureza, double)> partes})? sug;
+  bool sugUsada = false;
+  /// Tipos que vieram da sugestão e não estão na lista de hoje.
+  final extras = <Natureza>[];
+
+  List<Natureza> _ns(Repo repo) {
+    final ns = naturezas(repo, e.data);
+    return [...ns, ...extras.where((x) => !ns.any((n) => n.chave == x.chave))];
+  }
+
+  void _usarSugestao() {
+    final s = sug!;
+    setState(() {
+      sugUsada = true;
+      if (s.so) {
+        entrada = false;
+        return;
+      }
+      entrada = true;
+      for (final p in partes) {
+        p.c.dispose();
+      }
+      partes.clear();
+      final ns = naturezas(RepoScope.ler(context), e.data);
+      for (final (n, v) in s.partes) {
+        final igual = ns.where((x) => x.desc.toLowerCase() == n.desc.toLowerCase() && x.cat == n.cat).firstOrNull;
+        final nat = igual ?? n;
+        if (igual == null && !extras.any((x) => x.chave == n.chave)) extras.add(n);
+        final p = _Parte()
+          ..chave = nat.chave
+          ..auto = false
+          ..c.text = valorCampo(v);
+        _ouvir(p);
+        partes.add(p);
+      }
+    });
+  }
 
   @override
   void initState() {
     super.initState();
+    if (transf && widget.pre == null) sug = sugestaoTransf(RepoScope.ler(context), e);
     final ns = naturezas(RepoScope.ler(context), e.data);
     final p = _Parte();
     final pre = widget.pre == null ? null : ns.where((n) => n.rd == widget.pre!.id).firstOrNull;
@@ -78,7 +117,7 @@ class _FolhaClassificarState extends State<FolhaClassificar> {
   }
 
   Future<void> _soTransferencia() async {
-    await RepoScope.ler(context).salvar(Map<String, dynamic>.from(e.d)..remove('pend'));
+    await RepoScope.ler(context).salvarVarios([Map<String, dynamic>.from(e.d)..remove('pend'), docAprendeTransf(e, null)]);
     if (mounted) _fechar('Certo: foi só troca entre suas contas.');
   }
 
@@ -105,7 +144,7 @@ class _FolhaClassificarState extends State<FolhaClassificar> {
     }
     setState(() => salvando = true);
     final apagar = manuaisSubstituidos(repo, e, ps);
-    await repo.salvarVarios(docsPartes(e, ps));
+    await repo.salvarVarios([...docsPartes(e, ps), if (transf) docAprendeTransf(e, ps)]);
     if (apagar.isNotEmpty) await repo.apagarVarios(apagar);
     if (!mounted) return;
     _fechar(ps.length == 1 && sobra <= .009 ? 'Salvo como ${ps.first.$1.desc}.' : 'Dividido: ${ps.map((p) => '${p.$1.desc} ${brl(p.$2)}').join(' + ')}.');
@@ -123,12 +162,13 @@ class _FolhaClassificarState extends State<FolhaClassificar> {
   Widget build(BuildContext context) {
     final repo = RepoScope.of(context);
     if (e.d['div'] is String) return _dividido(repo);
-    final ns = naturezas(repo, e.data);
+    final ns = _ns(repo);
     final titulo = transf ? 'Transferência de outra conta sua' : e.desc;
     return CorpoFolha([
       TituloFolha(titulo),
       const SizedBox(height: 2),
       Text('${brl(e.valor)} em ${dataCurta(e.data)}${transf ? ' · ainda não conta como entrada' : ''}', style: TextStyle(color: G.apagado, fontSize: 13)),
+      if (sug != null && !sugUsada) _Sugestao(s: sug!, aoUsar: _usarSugestao),
       if (transf) ...[
         const Rotulo('O que foi esse dinheiro?'),
         Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -164,7 +204,7 @@ class _FolhaClassificarState extends State<FolhaClassificar> {
       if (entrada == false)
         FilledButton.icon(icon: const Icon(Icons.check_rounded), onPressed: _soTransferencia, label: const Text('Confirmar'))
       else if (entrada == true)
-        FilledButton.icon(icon: const Icon(Icons.check_rounded), onPressed: salvando ? null : () => _confirmar(ns), label: const Text('Confirmar')),
+        FilledButton.icon(icon: const Icon(Icons.check_rounded), onPressed: salvando ? null : () => _confirmar(_ns(RepoScope.ler(context))), label: const Text('Confirmar')),
     ]);
   }
 
@@ -232,6 +272,33 @@ class _FolhaClassificarState extends State<FolhaClassificar> {
       const SizedBox(height: 16),
       OutlinedButton.icon(icon: const Icon(Icons.undo_rounded), onPressed: _desfazer, label: const Text('Desfazer divisão')),
     ]);
+  }
+}
+
+/// "Da última vez...": repete a classificação de uma transferência parecida.
+class _Sugestao extends StatelessWidget {
+  final ({String data, bool so, List<(Natureza, double)> partes}) s;
+  final VoidCallback aoUsar;
+  const _Sugestao({required this.s, required this.aoUsar});
+  @override
+  Widget build(BuildContext context) {
+    final txt = s.so ? 'foi só troca entre suas contas' : 'foi ${s.partes.map((p) => '${p.$1.desc} ${brl(p.$2)}').join(' + ')}';
+    return Container(
+      margin: const EdgeInsets.only(top: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(color: G.lavandaFundo, borderRadius: BorderRadius.circular(14), border: Border.all(color: G.lavanda.withValues(alpha: .4))),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Icon(Icons.auto_awesome_rounded, size: 18, color: G.lavandaIcone),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text('Parecida com a de ${dataCurta(s.data)}, que $txt.', style: TextStyle(fontSize: 13, color: G.texto, height: 1.4)),
+          ),
+        ]),
+        const SizedBox(height: 10),
+        FilledButton.icon(onPressed: aoUsar, icon: const Icon(Icons.replay_rounded), label: Text(s.so ? 'Foi igual: só troca de conta' : 'Usar igual')),
+      ]),
+    );
   }
 }
 

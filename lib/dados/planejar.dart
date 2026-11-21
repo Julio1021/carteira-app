@@ -824,3 +824,65 @@ List<Entrada> partesDivisao(Repo repo, String grp) => repo.entradas.where((e) =>
   if (doc['cat'] == 'proprias' && numD(doc['valor']) > 0) doc['pend'] = true;
   return (salvar: [doc], apagar: [for (final e in ps) if (e.id != base.id) e.id]);
 }
+
+// ---------- o app lembra como você classificou as transferências ----------
+
+/// Grava como uma transferência entre suas contas foi classificada (ou que
+/// foi só troca de conta), para sugerir igual da próxima vez.
+Doc docAprendeTransf(Entrada e, List<(Natureza, double)>? partes) => {
+      'kind': 'aprTransf',
+      'id': 'apr_${(e.valor * 100).round()}',
+      'valor': e.valor,
+      'dia': int.parse(e.data.substring(8, 10)),
+      'data': e.data,
+      'so': partes == null,
+      'partes': [
+        for (final (n, v) in partes ?? const <(Natureza, double)>[]) {'desc': n.desc, 'cat': n.cat, if (n.rd != null) 'rd': n.rd, 'valor': v},
+      ],
+    };
+
+/// O que foi feito da última vez com uma transferência parecida: mesmo valor
+/// (até 1% de diferença) ou mesma época do mês com valor parecido (até 20%).
+({String data, bool so, List<(Natureza, double)> partes})? sugestaoTransf(Repo repo, Entrada e) {
+  final dia = int.parse(e.data.substring(8, 10));
+  Doc? melhor;
+  var nota = 99.0;
+  for (final d in repo.doTipo('aprTransf')) {
+    final v = numD(d['valor']);
+    if (v <= 0 || str(d['data']) == e.data && v == e.valor) continue;
+    final dv = (v - e.valor).abs() / e.valor;
+    final dd = ((d['dia'] is num ? (d['dia'] as num).toInt() : 0) - dia).abs();
+    double n;
+    if (dv <= .01) {
+      n = dv;
+    } else if (dv <= .2 && dd <= 4) {
+      n = 1 + dv + dd / 10;
+    } else {
+      continue;
+    }
+    if (n < nota) {
+      nota = n;
+      melhor = d;
+    }
+  }
+  if (melhor == null) return null;
+  final ps = <(Natureza, double)>[];
+  for (final x in (melhor['partes'] as List? ?? const []).whereType<Map>()) {
+    final desc = str(x['desc']);
+    ps.add((Natureza(desc, desc, str(x['cat'], 'outros_e'), x['rd'] is String ? x['rd'] as String : null), numD(x['valor'])));
+  }
+  // valor diferente: a diferença vai para a maior parte
+  if (ps.isNotEmpty) {
+    final soma = ps.fold<double>(0, (a, p) => a + p.$2);
+    final dif = e.valor - soma;
+    if (dif.abs() > .009) {
+      var k = 0;
+      for (var i = 1; i < ps.length; i++) {
+        if (ps[i].$2 > ps[k].$2) k = i;
+      }
+      final nv = ps[k].$2 + dif;
+      if (nv > 0) ps[k] = (ps[k].$1, (nv * 100).round() / 100);
+    }
+  }
+  return (data: str(melhor['data']), so: melhor['so'] == true, partes: ps);
+}

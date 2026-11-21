@@ -15,8 +15,8 @@ void main() {
 
     expect(find.text('Início'), findsWidgets);
     expect(find.text('Entrou'), findsOneWidget);
-    await t.dragUntilVisible(find.text('Últimos lançamentos'), find.byType(ListView).first, const Offset(0, -300));
-    expect(find.text('Últimos lançamentos'), findsOneWidget);
+    await t.dragUntilVisible(find.text('Previsão do mês'), find.byType(ListView).first, const Offset(0, -300));
+    expect(find.text('Previsão do mês'), findsOneWidget);
 
     // ao rolar para baixo o menu se recolhe; rolar um pouco para cima traz de volta
     await t.drag(find.byType(ListView).first, const Offset(0, 160));
