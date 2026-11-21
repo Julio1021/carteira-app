@@ -176,7 +176,7 @@ class _Item extends StatelessWidget {
         Row(children: [
           Expanded(
             child: FilledButton(
-              style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 11)),
+              style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 8), minimumSize: const Size(40, 40)),
               onPressed: () {
                 HapticFeedback.selectionClick();
                 fazer();
@@ -188,7 +188,7 @@ class _Item extends StatelessWidget {
             const SizedBox(width: 8),
             Expanded(
               child: OutlinedButton(
-                style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 11)),
+                style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 8), minimumSize: const Size(40, 40)),
                 onPressed: () => ignorarPendencia(repo, p),
                 child: Text(_ignorar, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w700)),
               ),

@@ -38,22 +38,22 @@ List<Pendencia> pendencias(Repo repo, {String? hoje}) {
   final out = <Pendencia>[];
 
   for (final e in transfPendentes(repo)) {
-    out.add(Pendencia('transf+${e.id}', 'transf', 'Chegou ${brl(e.valor)} de outra conta sua', 'Em ${dataCurta(e.data)}. Foi salário, vale, 13º ou só troca de conta?', valor: e.valor, sev: 3, obj: e));
+    out.add(Pendencia('transf+${e.id}', 'transf', 'Chegou ${brl(e.valor)} de outra conta sua', 'Em ${dataCurta(e.data)}. Foi salário, vale, 13º ou só troca de conta?', sev: 3, obj: e));
   }
 
   for (final r in repo.rendas.where((r) => r.valor > 0)) {
     for (final m in [ymAdd(ym, -1), ym]) {
       final st = statusRenda(repo, r, m, hoje: h);
       if (st == null || st.rec != null || st.data.compareTo(h) > 0) continue;
-      // só os últimos 40 dias (mais antigo que isso já virou passado)
-      if (diasEntre(st.data, h).abs() > 40) continue;
+      // do mês passado, só se foi há pouco (mais antigo que isso já virou passado)
+      if (diasEntre(st.data, h).abs() > 20) continue;
       final k = 'rec+${r.id}+$m';
       if (ocultos.contains(k)) continue;
       final atraso = diasEntre(st.data, h) - 1;
       out.add(Pendencia(
         k,
         'receber',
-        '${r.nome} ainda não apareceu',
+        m == ym ? '${r.nome} ainda não apareceu' : '${r.nome} de ${mesLongo(m).split(' ').first.toLowerCase()} ainda não apareceu',
         atraso <= 0 ? 'Era para hoje (${dataCurta(st.data)}). Já entrou?' : 'Era para ${dataCurta(st.data)}, há $atraso dia${atraso == 1 ? '' : 's'}. Já entrou?',
         valor: valorEsperado(repo, r, hoje: h),
         sev: atraso > 3 ? 3 : 2,
