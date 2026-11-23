@@ -30,8 +30,10 @@ class _TelaLancarValoresState extends State<TelaLancarValores> {
   late String data = widget.dataInicial ?? hojeIso();
   late Carteira c;
   final saldoC = <String, TextEditingController>{};
-  final aporteC = <String, TextEditingController>{}; // sempre positivo
-  final tirou = <String, bool>{}; // true = resgate (tirou dinheiro)
+  /// Movimentações de cada ativo (colocou/tirou), uma por linha.
+  final movs = <String, List<_MovEd>>{};
+  /// Investidos do Extrato que já estavam ligados quando a data foi aberta.
+  final invCarregados = <String, Set<String>>{};
   final aporteAberto = <String>{}; // campo de colocar/tirar aberto para editar
   final foco = <String, FocusNode>{};
   // Saldo digitado à mão? Enquanto não, o saldo acompanha o aporte (saldo sem o
@@ -56,8 +58,13 @@ class _TelaLancarValoresState extends State<TelaLancarValores> {
 
   @override
   void dispose() {
-    for (final x in [...saldoC.values, ...aporteC.values]) {
+    for (final x in saldoC.values) {
       x.dispose();
+    }
+    for (final l in movs.values) {
+      for (final m in l) {
+        m.dispose();
+      }
     }
     for (final f in foco.values) {
       f.dispose();
@@ -67,16 +74,29 @@ class _TelaLancarValoresState extends State<TelaLancarValores> {
   }
 
   TextEditingController _sc(String id) => saldoC.putIfAbsent(id, () => TextEditingController());
-  TextEditingController _ac(String id) => aporteC.putIfAbsent(id, () => TextEditingController());
+  List<_MovEd> _ms(String id) => movs.putIfAbsent(id, () => []);
   FocusNode _fo(String id) => foco.putIfAbsent(id, () => FocusNode());
 
-  /// Aporte com sinal: positivo colocou, negativo tirou.
-  double _ap(String id) => (lerValor(_ac(id).text) ?? 0) * (tirou[id] == true ? -1 : 1);
+  /// Aporte com sinal: soma do que colocou menos o que tirou.
+  double _ap(String id) => _ms(id).fold<double>(0, (t, m) => t + m.comSinal);
 
-  void _setAp(String id, double v) {
-    tirou[id] = v < 0;
-    _ac(id).text = v.abs() < .005 ? '' : valorCampo(v.abs());
+  void _carregarMovs(String id, List<Mov> ms) {
+    for (final m in _ms(id)) {
+      m.dispose();
+    }
+    movs[id] = [for (final m in ms) _MovEd.de(m)];
+    invCarregados[id] = {for (final m in ms) if (m.inv != null) m.inv!};
   }
+
+  void _addMov(String id, {required bool tirou, double? valor, String nome = '', String? inv}) {
+    _ms(id).add(_MovEd(tirou, valor: valor, nome: nome, inv: inv));
+  }
+
+  /// Movimentações válidas (com valor) para salvar.
+  List<Mov> _movsFinais(String id) => [
+        for (final m in _ms(id))
+          if ((lerValor(m.v.text) ?? 0) > 0) Mov(m.tirou, lerValor(m.v.text)!, nome: m.n.text, inv: m.inv),
+      ];
 
   /// Preenche com o que já foi lançado na data (ou vazio). Com [todos] falso,
   /// mantém o que você já digitou.
@@ -85,28 +105,32 @@ class _TelaLancarValoresState extends State<TelaLancarValores> {
     for (final p in c.posicoes) {
       final id = p.a.id;
       String s = '';
-      double ap = 0;
+      var ms = const <Mov>[];
       double? base;
       if (c.pais.contains(id)) {
         final g = estadoGrupo(repo, c, id, data);
         if (g.totalDoDia != null) {
           s = valorCampo(g.totalDoDia!);
-          ap = g.aporteDoDia ?? 0;
+          final ap = g.aporteDoDia ?? 0;
+          // a lista do grupo fica num dos filhos; nos antigos, só o líquido
+          final comLista = g.doDia.whereType<Lancamento>().where((l) => l.d['movsG'] is List).firstOrNull;
+          ms = comLista?.movsSalvas ?? (ap.abs() >= .005 ? [Mov(ap < 0, ap.abs(), liquido: true)] : const []);
           base = g.totalDoDia! - ap;
         }
       } else {
         final ex = repo.porId('l_${id}_$data');
         if (ex != null) {
-          s = valorCampo(numD(ex['saldo']));
-          ap = numD(ex['aporte']);
-          base = numD(ex['saldo']) - ap;
+          final l = Lancamento(ex);
+          s = valorCampo(l.saldo);
+          ms = l.movs;
+          base = l.saldo - l.aporte;
         }
       }
       saldoBase[id] = base ?? _anterior(repo, p);
       if (!todos && tocado.contains(id)) continue;
       _sc(id).text = s;
       aporteAberto.remove(id);
-      _setAp(id, ap);
+      _carregarMovs(id, ms);
       saldoMexido[id] = false;
       saldoOrig[id] = s;
     }
@@ -121,6 +145,16 @@ class _TelaLancarValoresState extends State<TelaLancarValores> {
       for (final e in [...usarInvest.entries]) {
         final inv = repo.porId(e.key);
         if (inv != null && Investido(inv).data.compareTo(data) > 0) _usarInvestido(Investido(inv), e.value);
+      }
+      // movimentações do Extrato que pertencem ao lançamento da data anterior ficam lá
+      for (final id in tocado) {
+        final antigos = invCarregados[id] ?? const <String>{};
+        _ms(id).removeWhere((m) {
+          final sai = m.inv != null && antigos.contains(m.inv);
+          if (sai) m.dispose();
+          return sai;
+        });
+        invCarregados[id] = {};
       }
       _preencher();
     });
@@ -165,14 +199,17 @@ class _TelaLancarValoresState extends State<TelaLancarValores> {
       final id = p.a.id;
       final ts = _sc(id).text.trim();
       final s = lerValor(ts);
-      final ap = _ap(id);
+      final primeiro = _anterior(repo, p) == null;
+      // no primeiro lançamento o saldo já é o valor aplicado: não há o que colocar/tirar
+      final ms = primeiro ? <Mov>[] : _movsFinais(id);
+      final ap = liquidoMovs(ms);
       if (c.pais.contains(id)) {
         if (ts.isEmpty) continue;
         if (s == null || s < 0) {
           erros.add(p.a.nome);
           continue;
         }
-        ops.addAll(docsGrupo(estadoGrupo(repo, c, id, data), data, s, ap));
+        ops.addAll(docsGrupo(estadoGrupo(repo, c, id, data), data, s, ap, movs: ms));
       } else {
         final ex = repo.porId('l_${id}_$data');
         if (ts.isEmpty) {
@@ -183,13 +220,24 @@ class _TelaLancarValoresState extends State<TelaLancarValores> {
           erros.add(p.a.nome);
           continue;
         }
-        ops.add(docLanc(id, data, s, ap));
+        ops.add(docLanc(id, data, s, ap, movs: ms));
       }
     }
     if (erros.isNotEmpty) return avisar(context, 'Confira o saldo de ${erros.join(', ')}: use números como 1.234,56.');
     if (ops.isEmpty && apagar.isEmpty) return avisar(context, 'Preencha o saldo de pelo menos um investimento.');
     if (apagar.isNotEmpty) await repo.apagarVarios(apagar);
     if (ops.isNotEmpty) await repo.salvarVarios(ops);
+    // movimentação do Extrato apagada da lista: o investido volta a ficar solto
+    final soltar = <Doc>[];
+    for (final p in c.posicoes) {
+      final ficaram = {for (final m in _ms(p.a.id)) if (m.inv != null && (lerValor(m.v.text) ?? 0) > 0) m.inv!};
+      for (final inv in invCarregados[p.a.id] ?? const <String>{}) {
+        if (ficaram.contains(inv)) continue;
+        final d = repo.porId(inv);
+        if (d != null) soltar.add(Map<String, dynamic>.from(d)..remove('pat')..remove('patV')..remove('patNovo')..remove('ativo'));
+      }
+    }
+    if (soltar.isNotEmpty) await repo.salvarVarios(soltar);
     if (usarInvest.isNotEmpty) {
       final ligar = <Doc>[];
       usarInvest.forEach((invId, ativoId) {
@@ -269,18 +317,21 @@ class _TelaLancarValoresState extends State<TelaLancarValores> {
 
   void _usarInvestido(Investido i, String ativoId) {
     final ant = usarInvest[i.id];
-    if (ant != null) _somarAporte(ant, -i.liquido);
+    if (ant != null) {
+      _ms(ant).removeWhere((m) {
+        if (m.inv != i.id) return false;
+        m.dispose();
+        return true;
+      });
+      _aporteMudou(ant);
+    }
     if (ant == ativoId) {
       usarInvest.remove(i.id);
     } else {
       usarInvest[i.id] = ativoId;
-      _somarAporte(ativoId, i.liquido);
+      _addMov(ativoId, tirou: i.liquido < 0, valor: i.liquido.abs(), nome: i.desc, inv: i.id);
+      _aporteMudou(ativoId);
     }
-  }
-
-  void _somarAporte(String id, double v) {
-    _setAp(id, _ap(id) + v);
-    _aporteMudou(id);
   }
 
   /// Resultado de um ativo (null sem base ou sem saldo digitado).
@@ -434,7 +485,7 @@ class _TelaLancarValoresState extends State<TelaLancarValores> {
         aoTocar: () => setState(() {
           saldoMexido[id] = true;
           tocado.add(id);
-          _setAp(id, ap + rend);
+          _addMov(id, tirou: rend < 0, valor: rend.abs());
         }),
       );
     }
@@ -490,34 +541,48 @@ class _TelaLancarValoresState extends State<TelaLancarValores> {
           },
         ),
         const SizedBox(height: 8),
-        if (!abertoAp && ap != 0)
-          _ResumoAporte(valor: ap, desde: dAnt, aoAlterar: () => setState(() => aporteAberto.add(id)))
+        // primeiro lançamento: o saldo já é o valor aplicado
+        if (ant == null)
+          const SizedBox.shrink()
+        else if (!abertoAp && _movsFinais(id).isNotEmpty)
+          _ResumoAporte(ms: _movsFinais(id), desde: dAnt, aoAlterar: () => setState(() => aporteAberto.add(id)))
         else if (!abertoAp)
           Align(
             alignment: Alignment.centerLeft,
             child: TextButton.icon(
               style: TextButton.styleFrom(foregroundColor: S.accent, padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6), visualDensity: VisualDensity.compact),
-              onPressed: () => setState(() => aporteAberto.add(id)),
+              onPressed: () => setState(() {
+                if (_ms(id).isEmpty) _addMov(id, tirou: false);
+                aporteAberto.add(id);
+              }),
               icon: const Icon(Icons.swap_vert_rounded, size: 18),
-              label: Text(ant == null ? 'Coloquei ou tirei dinheiro hoje' : 'Coloquei ou tirei dinheiro desde ${dataCurta(dAnt!)}', style: const TextStyle(fontWeight: FontWeight.w700)),
+              label: Text('Coloquei ou tirei dinheiro desde ${dataCurta(dAnt!)}', style: const TextStyle(fontWeight: FontWeight.w700)),
             ),
           )
         else
-          _CampoAporte(
-            c: _ac(id),
-            tirou: tirou[id] == true,
+          _EditorMovs(
+            ms: _ms(id),
             desde: dAnt,
-            aoMudarTipo: (t) => setState(() {
-              tirou[id] = t;
+            aoMudar: () => setState(() => _aporteMudou(id)),
+            aoAdicionar: () => setState(() => _addMov(id, tirou: false)),
+            aoTirar: (m) => setState(() {
+              _ms(id).remove(m);
+              m.dispose();
               _aporteMudou(id);
             }),
-            aoMudar: () => setState(() => _aporteMudou(id)),
             aoFechar: () => setState(() {
-              _setAp(id, 0);
+              _carregarMovs(id, const []);
               aporteAberto.remove(id);
               _aporteMudou(id);
             }),
-            aoPronto: () => setState(() => aporteAberto.remove(id)),
+            aoPronto: () => setState(() {
+              _ms(id).removeWhere((m) {
+                final vazio = (lerValor(m.v.text) ?? 0) <= 0;
+                if (vazio) m.dispose();
+                return vazio;
+              });
+              aporteAberto.remove(id);
+            }),
           ),
         if (res != null) _LinhaRend(rend: res.rend, pc: res.pc, ant: res.ant, dAnt: res.dAnt, aporte: res.aporte, saldo: res.saldo, data: data, periodo: periodo),
         if (aviso != null) aviso,
@@ -724,50 +789,65 @@ class _ComoPreencher extends StatelessWidget {
   }
 }
 
-/// Coloquei / Tirei + valor (sem precisar digitar sinal de menos).
-class _CampoAporte extends StatelessWidget {
-  final TextEditingController c;
-  final bool tirou;
+/// Uma movimentação em edição.
+class _MovEd {
+  bool tirou;
+  final TextEditingController v, n;
+  final String? inv;
+  final bool liquido;
+  _MovEd(this.tirou, {double? valor, String nome = '', this.inv, this.liquido = false})
+      : v = TextEditingController(text: valor == null || valor <= 0 ? '' : valorCampo(valor)),
+        n = TextEditingController(text: nome);
+  factory _MovEd.de(Mov m) => _MovEd(m.tirou, valor: m.valor, nome: m.nome, inv: m.inv, liquido: m.liquido);
+  double get comSinal => (lerValor(v.text) ?? 0) * (tirou ? -1 : 1);
+  void dispose() {
+    v.dispose();
+    n.dispose();
+  }
+}
+
+/// Lista de movimentações: cada uma com Coloquei/Tirei, valor e um nome
+/// opcional (sem precisar digitar sinal de menos).
+class _EditorMovs extends StatelessWidget {
+  final List<_MovEd> ms;
   final String? desde;
-  final ValueChanged<bool> aoMudarTipo;
-  final VoidCallback aoMudar, aoFechar, aoPronto;
-  const _CampoAporte({required this.c, required this.tirou, required this.desde, required this.aoMudarTipo, required this.aoMudar, required this.aoFechar, required this.aoPronto});
+  final VoidCallback aoMudar, aoAdicionar, aoFechar, aoPronto;
+  final ValueChanged<_MovEd> aoTirar;
+  const _EditorMovs({required this.ms, required this.desde, required this.aoMudar, required this.aoAdicionar, required this.aoTirar, required this.aoFechar, required this.aoPronto});
+
   @override
   Widget build(BuildContext context) {
-    Widget tipo(bool t, IconData ic, String txt) {
-      final on = tirou == t;
-      final cor = t ? S.neg : S.pos;
-      return Expanded(
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () => aoMudarTipo(t),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 160),
-            padding: const EdgeInsets.symmetric(vertical: 9),
-            decoration: BoxDecoration(
-              color: on ? cor.withValues(alpha: .12) : Colors.transparent,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: on ? cor : S.line, width: on ? 1.5 : 1),
-            ),
-            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Icon(ic, size: 17, color: on ? cor : S.muted),
-              const SizedBox(width: 6),
-              Text(txt, style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: on ? cor : S.ink2)),
-            ]),
-          ),
+    final liq = ms.fold<double>(0, (t, m) => t + m.comSinal);
+    Widget tipo(_MovEd m) {
+      final cor = m.tirou ? S.neg : S.pos;
+      return GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          m.tirou = !m.tirou;
+          HapticFeedback.selectionClick();
+          aoMudar();
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          width: 104,
+          padding: const EdgeInsets.symmetric(vertical: 9),
+          decoration: BoxDecoration(color: cor.withValues(alpha: .12), borderRadius: BorderRadius.circular(10), border: Border.all(color: cor, width: 1.4)),
+          child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            Icon(m.tirou ? Icons.remove_circle_outline_rounded : Icons.add_circle_outline_rounded, size: 16, color: cor),
+            const SizedBox(width: 5),
+            Text(m.tirou ? 'Tirei' : 'Coloquei', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: cor)),
+          ]),
         ),
       );
     }
 
     return Container(
       margin: const EdgeInsets.only(top: 2),
-      padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
+      padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
       decoration: BoxDecoration(color: S.surface2, borderRadius: BorderRadius.circular(14)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Row(children: [
-          Expanded(
-            child: Text(desde == null ? 'Mexeu no dinheiro hoje?' : 'Desde ${dataCurta(desde!)}, você:', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: S.ink2)),
-          ),
+          Expanded(child: Text('Desde ${dataCurta(desde!)}, você:', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: S.ink2))),
           InkWell(
             borderRadius: BorderRadius.circular(99),
             onTap: aoFechar,
@@ -777,44 +857,88 @@ class _CampoAporte extends StatelessWidget {
             ),
           ),
         ]),
-        const SizedBox(height: 8),
-        Row(children: [
-          tipo(false, Icons.add_circle_outline_rounded, 'Coloquei'),
-          const SizedBox(width: 8),
-          tipo(true, Icons.remove_circle_outline_rounded, 'Tirei'),
-        ]),
-        const SizedBox(height: 10),
-        Row(children: [
-          Expanded(
-            child: TextField(
-              controller: c,
-              autofocus: c.text.isEmpty,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              textInputAction: TextInputAction.done,
-              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))],
-              scrollPadding: const EdgeInsets.only(bottom: 160),
-              decoration: InputDecoration(labelText: tirou ? 'Quanto tirou' : 'Quanto colocou', prefixText: 'R\$ ', hintText: '0,00', isDense: true),
-              onChanged: (_) => aoMudar(),
-              onSubmitted: (_) => aoPronto(),
-            ),
+        for (final m in ms)
+          Container(
+            margin: const EdgeInsets.only(top: 8),
+            padding: const EdgeInsets.fromLTRB(8, 8, 4, 8),
+            decoration: BoxDecoration(color: S.c('card'), borderRadius: BorderRadius.circular(12), border: Border.all(color: S.line)),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              Row(children: [
+                tipo(m),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextField(
+                    controller: m.v,
+                    autofocus: m.v.text.isEmpty && m == ms.last,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))],
+                    scrollPadding: const EdgeInsets.only(bottom: 160),
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                    decoration: const InputDecoration(prefixText: 'R\$ ', hintText: '0,00', isDense: true),
+                    onChanged: (_) => aoMudar(),
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Tirar esta movimentação',
+                  visualDensity: VisualDensity.compact,
+                  onPressed: () => aoTirar(m),
+                  icon: Icon(Icons.close_rounded, size: 20, color: S.muted),
+                ),
+              ]),
+              const SizedBox(height: 6),
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: TextField(
+                  controller: m.n,
+                  textCapitalization: TextCapitalization.sentences,
+                  style: const TextStyle(fontSize: 13.5),
+                  decoration: InputDecoration(
+                    isDense: true,
+                    hintText: m.liquido ? 'Líquido do dia (lançamento antigo)' : (m.inv != null ? 'Do Extrato' : 'Nome (opcional), ex.: resgate para o IPVA'),
+                    prefixIcon: Icon(m.inv != null ? Icons.link_rounded : Icons.edit_note_rounded, size: 18, color: S.muted),
+                    prefixIconConstraints: const BoxConstraints(minWidth: 32),
+                  ),
+                ),
+              ),
+            ]),
           ),
-          const SizedBox(width: 8),
-          FilledButton.tonal(onPressed: aoPronto, child: const Text('Pronto')),
+        const SizedBox(height: 4),
+        Row(children: [
+          TextButton.icon(
+            style: TextButton.styleFrom(foregroundColor: S.accent, padding: const EdgeInsets.symmetric(horizontal: 4), visualDensity: VisualDensity.compact),
+            onPressed: aoAdicionar,
+            icon: const Icon(Icons.add_rounded, size: 18),
+            label: const Text('Outra movimentação', style: TextStyle(fontWeight: FontWeight.w700)),
+          ),
+          const Spacer(),
+          if (ms.length > 1)
+            Text.rich(
+              TextSpan(children: [
+                const TextSpan(text: 'Líquido '),
+                TextSpan(text: brl(liq, sinal: true), style: TextStyle(fontWeight: FontWeight.w800, color: liq < 0 ? S.neg : S.pos)),
+              ]),
+              style: TextStyle(fontSize: 13, color: S.ink2),
+            ),
         ]),
+        const SizedBox(height: 4),
+        FilledButton.tonal(onPressed: aoPronto, child: const Text('Pronto')),
       ]),
     );
   }
 }
 
-/// "Colocou R$ 600,00 desde 13/11 · Alterar" (o campo fica fechado).
+/// Resumo das movimentações quando o editor está fechado:
+/// "Colocou R$ 600,00 desde 13/11" ou "2 movimentações · líquido + R$ 700,00".
 class _ResumoAporte extends StatelessWidget {
-  final double valor;
+  final List<Mov> ms;
   final String? desde;
   final VoidCallback aoAlterar;
-  const _ResumoAporte({required this.valor, required this.desde, required this.aoAlterar});
+  const _ResumoAporte({required this.ms, required this.desde, required this.aoAlterar});
   @override
   Widget build(BuildContext context) {
-    final cor = valor > 0 ? S.pos : S.neg;
+    final liq = liquidoMovs(ms);
+    final cor = liq < 0 ? S.neg : S.pos;
+    final um = ms.length == 1;
     return Material(
       color: S.surface2,
       borderRadius: BorderRadius.circular(12),
@@ -823,19 +947,35 @@ class _ResumoAporte extends StatelessWidget {
         onTap: aoAlterar,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(10, 9, 10, 9),
-          child: Row(children: [
-            Icon(valor > 0 ? Icons.add_circle_outline_rounded : Icons.remove_circle_outline_rounded, size: 18, color: cor),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Padding(padding: const EdgeInsets.only(top: 1), child: Icon(liq < 0 ? Icons.remove_circle_outline_rounded : Icons.add_circle_outline_rounded, size: 18, color: cor)),
             const SizedBox(width: 8),
             Expanded(
-              child: Text.rich(
-                TextSpan(children: [
-                  TextSpan(text: valor > 0 ? 'Colocou ' : 'Tirou '),
-                  TextSpan(text: brl(valor.abs()), style: TextStyle(fontWeight: FontWeight.w800, color: cor)),
-                  if (desde != null) TextSpan(text: ' desde ${dataCurta(desde!)}'),
-                ]),
-                style: TextStyle(fontSize: 13.5, color: S.ink2, height: 1.3),
-              ),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text.rich(
+                  TextSpan(children: um
+                      ? [
+                          TextSpan(text: ms.first.tirou ? 'Tirou ' : 'Colocou '),
+                          TextSpan(text: brl(ms.first.valor), style: TextStyle(fontWeight: FontWeight.w800, color: cor)),
+                          if (desde != null) TextSpan(text: ' desde ${dataCurta(desde!)}'),
+                        ]
+                      : [
+                          TextSpan(text: '${ms.length} movimentações · líquido '),
+                          TextSpan(text: brl(liq, sinal: true), style: TextStyle(fontWeight: FontWeight.w800, color: cor)),
+                        ]),
+                  style: TextStyle(fontSize: 13.5, color: S.ink2, height: 1.3),
+                ),
+                if (!um || ms.first.nome.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(
+                      [for (final m in ms) '${m.tirou ? '−' : '+'} ${brl(m.valor)}${m.nome.isNotEmpty ? ' ${m.nome}' : ''}'].join(' · '),
+                      style: TextStyle(fontSize: 12, color: S.muted, height: 1.35),
+                    ),
+                  ),
+              ]),
             ),
+            const SizedBox(width: 8),
             Text('Alterar', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: S.accent)),
           ]),
         ),

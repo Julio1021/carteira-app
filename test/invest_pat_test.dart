@@ -30,6 +30,27 @@ void main() {
     expect(r.porId('i1'), isNull);
   });
 
+  test('do Extrato entra como movimentação com nome e sai ao apagar', () async {
+    final r = base();
+    await r.salvar(docLanc('a1', '2026-10-10', 1300, 0, movs: const [Mov(true, 200, nome: 'IPVA')]));
+    final inv = <String, dynamic>{'kind': 'invest', 'id': 'i1', 'desc': 'Aplicação CDB', 'valor': 500, 'data': '2026-10-10', 'mov': 'aplic', 'ativo': 'a1'};
+    final m = Mudancas(r);
+    ligarAoPatrimonio(m, inv, 'a1');
+    m.poe(inv);
+    await m.gravar();
+    var l = Lancamento(r.porId('l_a1_2026-10-10')!);
+    expect(l.aporte, 300);
+    expect(l.saldo, 1800);
+    expect(l.movs.map((x) => x.nome), ['IPVA', 'Aplicação CDB']);
+    final m2 = Mudancas(r);
+    cascataApagar(m2, Map<String, dynamic>.from(r.porId('i1')!));
+    await m2.gravar();
+    l = Lancamento(r.porId('l_a1_2026-10-10')!);
+    expect(l.aporte, -200);
+    expect(l.saldo, 1300);
+    expect(l.movs.single.nome, 'IPVA');
+  });
+
   test('não duplica um aporte já lançado no Patrimônio', () async {
     final r = base();
     await r.salvar({'kind': 'lanc', 'id': 'l_a1_2026-10-11', 'ativo': 'a1', 'data': '2026-10-11', 'saldo': 1500, 'aporte': 500});

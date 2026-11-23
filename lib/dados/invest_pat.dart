@@ -51,7 +51,9 @@ Lancamento? aporteJaLancado(Repo repo, String ativoId, String data, double liqui
   var dist = 99;
   for (final l in repo.doTipo('lanc').map(Lancamento.new)) {
     if (l.ativo != ativoId || usados.contains(l.id) || l.d['auto'] == true) continue;
-    if ((l.aporte - liquido).abs() > .009 || l.aporte == 0) continue;
+    // bate o líquido do dia ou uma das movimentações lançadas à mão
+    final bate = (l.aporte != 0 && (l.aporte - liquido).abs() <= .009) || l.movs.any((x) => x.inv == null && !x.liquido && (x.comSinal - liquido).abs() <= .009);
+    if (!bate) continue;
     final dd = (DateTime.parse(data).difference(DateTime.parse(l.data)).inHours / 24).round().abs();
     if (dd <= 3 && dd < dist) {
       melhor = l;
@@ -78,7 +80,14 @@ void desligarDoPatrimonio(Mudancas m, Doc inv) {
         if (l['auto'] == true && aporte.abs() < .005 && !outros) {
           m.tirar(pat);
         } else {
-          m.poe({...l, 'aporte': aporte, 'saldo': saldo < 0 ? 0 : saldo});
+          // tira também a movimentação dele da lista do dia (se estiver nela)
+          final tinha = Lancamento(l).movsSalvas?.any((x) => x.inv == inv['id']) ?? false;
+          if (tinha) {
+            final sem = lancComMov(l, tirarInv: str(inv['id']));
+            m.poe({...sem, if (l['movs'] is! List) 'aporte': aporte, 'saldo': saldo < 0 ? 0 : saldo});
+          } else {
+            m.poe({...l, 'aporte': aporte, 'saldo': saldo < 0 ? 0 : saldo});
+          }
         }
       }
     }
@@ -96,6 +105,15 @@ String ligarAoPatrimonio(Mudancas m, Doc inv, String ativoId) {
   // 1) já existe esse aporte lançado no Patrimônio? só vincula
   final ja = aporteJaLancado(m.repo, ativoId, data, liq, exceto: i.id);
   if (ja != null) {
+    // marca a movimentação igual como vinda do Extrato (aparece assim no histórico)
+    final ms = ja.movsSalvas;
+    final k = ms?.indexWhere((x) => x.inv == null && (x.comSinal - liq).abs() <= .009) ?? -1;
+    if (ms != null && k >= 0) {
+      final x = ms[k];
+      ms[k] = Mov(x.tirou, x.valor, nome: x.nome.isEmpty ? i.desc : x.nome, inv: i.id);
+      final chave = ja.d['movsG'] is List ? 'movsG' : 'movs';
+      m.poe({...ja.d, chave: [for (final y in ms) y.doc]});
+    }
     inv['pat'] = ja.id;
     inv['patV'] = 0;
     inv['patNovo'] = false;
@@ -104,8 +122,10 @@ String ligarAoPatrimonio(Mudancas m, Doc inv, String ativoId) {
   // 2) soma no lançamento do dia ou cria um novo a partir do último saldo
   final id = 'l_${ativoId}_$data';
   final ex = m.ler(id);
+  final mov = Mov(liq < 0, liq.abs(), nome: i.desc, inv: i.id);
   if (ex != null) {
-    m.poe({...ex, 'saldo': _r2(numD(ex['saldo']) + liq), 'aporte': _r2(numD(ex['aporte']) + liq)});
+    final com = lancComMov(ex, por: mov);
+    m.poe({...com, 'saldo': _r2(numD(ex['saldo']) + liq), if (com['movs'] is! List) 'aporte': _r2(numD(ex['aporte']) + liq)});
     inv['patNovo'] = false;
   } else {
     final c = calcularCarteira(m.repo);
@@ -113,7 +133,7 @@ String ligarAoPatrimonio(Mudancas m, Doc inv, String ativoId) {
     final base = ant?.saldo ?? 0;
     final saldo = base + liq;
     if (saldo < -.005) return 'O resgate é maior que o saldo do ativo; não lancei no Patrimônio.';
-    m.poe({...docLanc(ativoId, data, saldo < 0 ? 0 : saldo, liq), 'auto': true});
+    m.poe({...docLanc(ativoId, data, saldo < 0 ? 0 : saldo, liq, movs: [mov]), 'auto': true});
     inv['patNovo'] = true;
   }
   inv['pat'] = id;

@@ -42,6 +42,84 @@ class Lancamento {
   String get data => str(d['data'], '1970-01-01');
   double get saldo => numD(d['saldo']);
   double get aporte => numD(d['aporte']);
+
+  /// Movimentações guardadas uma a uma (lançamentos novos). Num grupo, ficam
+  /// todas num dos filhos, em 'movsG'.
+  List<Mov>? get movsSalvas {
+    final m = d['movs'] ?? d['movsG'];
+    if (m is! List) return null;
+    return [for (final x in m.whereType<Map>()) Mov.de(x)];
+  }
+
+  /// Movimentações do dia: as guardadas uma a uma ou, nos lançamentos antigos,
+  /// uma só com o líquido do dia.
+  List<Mov> get movs => movsSalvas ?? (aporte.abs() >= .005 ? [Mov(aporte < 0, aporte.abs(), liquido: true)] : const []);
+}
+
+/// Uma movimentação de dinheiro num investimento: colocou ou tirou.
+class Mov {
+  final bool tirou;
+  final double valor; // sempre positivo
+  final String nome;
+  /// Id do investido do Extrato que gerou esta movimentação.
+  final String? inv;
+  /// Lançamento antigo: só se sabe o líquido do dia.
+  final bool liquido;
+  const Mov(this.tirou, this.valor, {this.nome = '', this.inv, this.liquido = false});
+  factory Mov.de(Map x) => Mov(x['t'] == 'r', numD(x['v']), nome: str(x['n']), inv: x['inv'] is String ? x['inv'] as String : null, liquido: x['liq'] == true);
+  double get comSinal => tirou ? -valor : valor;
+  Map<String, dynamic> get doc => {
+        't': tirou ? 'r' : 'c',
+        'v': (valor * 100).round() / 100,
+        if (nome.trim().isNotEmpty) 'n': nome.trim(),
+        if (inv != null) 'inv': inv,
+        if (liquido && nome.trim().isEmpty) 'liq': true,
+      };
+}
+
+/// Soma com sinal (colocou +, tirou −).
+double liquidoMovs(Iterable<Mov> ms) => ms.fold<double>(0, (t, m) => t + m.comSinal);
+
+/// Uma movimentação com a data e o ativo, para o histórico do investimento.
+typedef MovHist = ({String data, String ativo, Mov m, bool inicial});
+
+/// Histórico de movimentações de um investimento (de todos os filhos, se for
+/// um grupo), do mais novo para o mais antigo. O primeiro lançamento de cada
+/// ativo conta como o valor aplicado no começo.
+List<MovHist> historicoMovs(List<Lancamento> lancs, {bool grupo = false}) {
+  final ordem = [...lancs]..sort((a, b) => a.data.compareTo(b.data));
+  final out = <MovHist>[];
+  final comecou = <String>{};
+  final grupoPorDia = <String, double>{};
+  final grupoComLista = <String>{};
+  for (final l in ordem) {
+    if (!comecou.contains(l.ativo)) {
+      comecou.add(l.ativo);
+      if (l.saldo > 0) out.add((data: l.data, ativo: l.ativo, m: Mov(false, l.saldo, nome: 'Valor inicial'), inicial: true));
+      continue;
+    }
+    if (grupo) {
+      // grupo: a lista do dia fica num filho só; os lançamentos antigos têm o líquido repartido
+      if (l.d['movsG'] is List) {
+        grupoComLista.add(l.data);
+        for (final m in l.movsSalvas!) {
+          out.add((data: l.data, ativo: l.ativo, m: m, inicial: false));
+        }
+      } else {
+        grupoPorDia[l.data] = (grupoPorDia[l.data] ?? 0) + l.aporte;
+      }
+      continue;
+    }
+    for (final m in l.movs) {
+      out.add((data: l.data, ativo: l.ativo, m: m, inicial: false));
+    }
+  }
+  grupoPorDia.forEach((data, v) {
+    if (grupoComLista.contains(data) || v.abs() < .005) return;
+    out.add((data: data, ativo: '', m: Mov(v < 0, v.abs(), liquido: true), inicial: false));
+  });
+  out.sort((a, b) => b.data.compareTo(a.data));
+  return out;
 }
 
 /// Um dia com lançamentos: total da carteira, quanto entrou/saiu e o rendimento.
@@ -234,11 +312,22 @@ Lancamento? anteriorDe(Carteira c, String ativoId, String data) {
 
 double _r2(double v) => (v * 100).round() / 100;
 
-Doc docLanc(String ativo, String data, double saldo, double aporte, {bool viaTotal = false}) =>
-    {'kind': 'lanc', 'id': 'l_${ativo}_$data', 'ativo': ativo, 'data': data, 'saldo': _r2(saldo), 'aporte': _r2(aporte), if (viaTotal) 'viaTotal': true};
+/// Lançamento do dia. Com [movs], o aporte é sempre a soma delas (nunca
+/// fica um número diferente da lista).
+Doc docLanc(String ativo, String data, double saldo, double aporte, {bool viaTotal = false, List<Mov>? movs, String chaveMovs = 'movs'}) => {
+      'kind': 'lanc',
+      'id': 'l_${ativo}_$data',
+      'ativo': ativo,
+      'data': data,
+      'saldo': _r2(saldo),
+      'aporte': _r2(movs != null && chaveMovs == 'movs' ? liquidoMovs(movs) : aporte),
+      if (viaTotal) 'viaTotal': true,
+      if (movs != null && movs.isNotEmpty) chaveMovs: [for (final m in movs) m.doc],
+    };
 
 /// Distribui o total de um grupo entre as subcategorias, na proporção do último saldo de cada uma.
-List<Doc> docsGrupo(EstadoGrupo g, String data, double total, double aporte) {
+List<Doc> docsGrupo(EstadoGrupo g, String data, double total, double aporte, {List<Mov>? movs}) {
+  if (movs != null) aporte = liquidoMovs(movs);
   final base = g.anteriores.map((l) => l?.saldo ?? 0).toList();
   final p0 = base.fold<double>(0, (a, b) => a + b);
   final pesos = p0 > 0 ? base.map((v) => v / p0).toList() : List.generate(g.filhos.length, (k) => k == 0 ? 1.0 : 0.0);
@@ -250,7 +339,8 @@ List<Doc> docsGrupo(EstadoGrupo g, String data, double total, double aporte) {
   final out = <Doc>[];
   for (var k = 0; k < g.filhos.length; k++) {
     if (p0 > 0 && g.anteriores[k] == null && pesos[k] == 0) continue;
-    out.add(docLanc(g.filhos[k].id, data, saldos[k], aps[k], viaTotal: true));
+    // a lista de movimentações do grupo fica no filho maior
+    out.add(docLanc(g.filhos[k].id, data, saldos[k], aps[k], viaTotal: true, movs: k == big ? movs : null, chaveMovs: 'movsG'));
   }
   return out;
 }
@@ -338,5 +428,19 @@ List<({Lancamento l, Ativo a, double rend, double pc})> rendimentosSuspeitos(Car
     }
   }
   out.sort((x, y) => y.l.data.compareTo(x.l.data));
+  return out;
+}
+
+
+/// Põe ou tira uma movimentação ligada a um investido do Extrato num
+/// lançamento salvo, mantendo o aporte igual à soma da lista.
+Doc lancComMov(Doc l, {Mov? por, String? tirarInv}) {
+  final chave = l['movsG'] is List ? 'movsG' : 'movs';
+  final atual = Lancamento(l);
+  final ms = [...atual.movs.where((m) => tirarInv == null || m.inv != tirarInv), if (por != null) por];
+  final out = Map<String, dynamic>.from(l)..remove(chave);
+  if (ms.isNotEmpty) out[chave] = [for (final m in ms) m.doc];
+  // num grupo, só a parte deste filho muda (a lista é do grupo todo)
+  if (chave == 'movs') out['aporte'] = _r2(liquidoMovs(ms));
   return out;
 }

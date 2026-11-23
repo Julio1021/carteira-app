@@ -65,4 +65,47 @@ void main() {
       expect(pct(-.05, casas: 1), '−5,0%');
     });
   });
+
+  group('movimentações', () {
+    test('várias no mesmo dia: guarda cada uma e o aporte é a soma', () {
+      final d = docLanc('a', '2026-11-23', 2000, 0, movs: const [Mov(false, 1000, nome: 'Salário'), Mov(true, 300, nome: 'IPVA')]);
+      expect(d['aporte'], 700);
+      final l = Lancamento(d);
+      expect(l.movs.length, 2);
+      expect(l.movs.last.tirou, isTrue);
+      expect(l.movs.last.nome, 'IPVA');
+    });
+
+    test('histórico: valor inicial, movimentações e o líquido dos antigos', () {
+      final ls = [
+        Lancamento({'id': '1', 'ativo': 'a', 'data': '2026-10-01', 'saldo': 1000, 'aporte': 0}),
+        Lancamento({'id': '2', 'ativo': 'a', 'data': '2026-10-15', 'saldo': 1460, 'aporte': 450}),
+        Lancamento(docLanc('a', '2026-11-23', 2200, 0, movs: const [Mov(false, 1000), Mov(true, 300, nome: 'IPVA')])),
+      ];
+      final h = historicoMovs(ls);
+      expect(h.length, 4);
+      expect(h.last.inicial, isTrue);
+      expect(h.last.m.valor, 1000);
+      expect(h[2].m.liquido, isTrue);
+      final colocou = h.where((x) => !x.m.tirou).fold<double>(0, (t, x) => t + x.m.valor);
+      final tirou = h.where((x) => x.m.tirou).fold<double>(0, (t, x) => t + x.m.valor);
+      expect(colocou - tirou, 1000 + 450 + 700);
+    });
+
+    test('grupo: a lista fica num filho e o aporte é repartido', () {
+      final r = Repo.memoria([
+        {'kind': 'ativo', 'id': 'g', 'nome': 'Inter'},
+        {'kind': 'ativo', 'id': 'f1', 'nome': 'CDB 1', 'pai': 'g'},
+        {'kind': 'ativo', 'id': 'f2', 'nome': 'CDB 2', 'pai': 'g'},
+        {'kind': 'lanc', 'id': 'l_f1_2026-10-01', 'ativo': 'f1', 'data': '2026-10-01', 'saldo': 3000, 'aporte': 0},
+        {'kind': 'lanc', 'id': 'l_f2_2026-10-01', 'ativo': 'f2', 'data': '2026-10-01', 'saldo': 1000, 'aporte': 0},
+      ]);
+      final c = calcularCarteira(r);
+      final docs = docsGrupo(estadoGrupo(r, c, 'g', '2026-11-01'), '2026-11-01', 5000, 0, movs: const [Mov(false, 1200), Mov(true, 200)]);
+      expect(docs.fold<double>(0, (t, d) => t + (d['aporte'] as num)), 1000);
+      expect(docs.where((d) => d['movsG'] is List).length, 1);
+      final h = historicoMovs([for (final d in docs) Lancamento(d), Lancamento(r.porId('l_f1_2026-10-01')!), Lancamento(r.porId('l_f2_2026-10-01')!)], grupo: true);
+      expect(h.where((x) => !x.inicial).map((x) => x.m.comSinal), [1200, -200]);
+    });
+  });
 }

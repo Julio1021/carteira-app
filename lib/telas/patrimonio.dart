@@ -429,6 +429,79 @@ class _Ativos extends StatelessWidget {
 }
 
 /// Tela de um ativo: saldo, gráfico da evolução e histórico agrupado por mês.
+/// Histórico de movimentações de um investimento: quanto você já colocou e
+/// tirou, e cada operação com data e nome.
+class _Movimentacoes extends StatefulWidget {
+  final List<MovHist> hist;
+  final Map<String, String>? nomes;
+  const _Movimentacoes({required this.hist, this.nomes});
+  @override
+  State<_Movimentacoes> createState() => _MovimentacoesState();
+}
+
+class _MovimentacoesState extends State<_Movimentacoes> {
+  int mostrar = 6;
+  @override
+  Widget build(BuildContext context) {
+    final h = widget.hist;
+    if (h.isEmpty) return const SizedBox.shrink();
+    final colocou = h.where((x) => !x.m.tirou).fold<double>(0, (t, x) => t + x.m.valor);
+    final tirou = h.where((x) => x.m.tirou).fold<double>(0, (t, x) => t + x.m.valor);
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      TituloSecao('Movimentações · ${h.length}'),
+      Row(children: [
+        Expanded(child: _Total('Você já colocou', brl(colocou), G.pos)),
+        const SizedBox(width: 10),
+        Expanded(child: _Total('Você já tirou', brl(tirou), G.neg)),
+      ]),
+      const SizedBox(height: 10),
+      CaixaLista([
+        for (final x in h.take(mostrar))
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            child: Row(children: [
+              SizedBox(width: 48, child: Text(dataCurta(x.data), style: TextStyle(color: G.apagado, fontSize: 12.5, fontWeight: FontWeight.w600))),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(color: (x.m.tirou ? G.neg : G.pos).withValues(alpha: .12), borderRadius: BorderRadius.circular(99)),
+                child: Text(x.inicial ? 'Início' : (x.m.tirou ? 'Tirou' : 'Colocou'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: x.m.tirou ? G.negTexto : G.pos)),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  [
+                    if (x.inicial) 'Valor inicial' else if (x.m.liquido) 'Líquido do dia' else if (x.m.nome.isNotEmpty) x.m.nome,
+                    if (widget.nomes != null && x.ativo.isNotEmpty && x.inicial) widget.nomes![x.ativo] ?? '',
+                  ].where((t) => t.isNotEmpty).join(' · '),
+                  style: TextStyle(fontSize: 13, color: G.texto2, height: 1.35),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(brl(x.m.valor), style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: G.texto)),
+            ]),
+          ),
+      ]),
+      if (h.length > mostrar)
+        Center(child: TextButton(onPressed: () => setState(() => mostrar += 20), child: Text('Ver mais (${h.length - mostrar})'))),
+    ]);
+  }
+}
+
+class _Total extends StatelessWidget {
+  final String rotulo, valor;
+  final Color cor;
+  const _Total(this.rotulo, this.valor, this.cor);
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+        decoration: BoxDecoration(color: cor.withValues(alpha: .08), borderRadius: BorderRadius.circular(14)),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(rotulo, style: TextStyle(fontSize: 12.5, color: G.texto2)),
+          FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(valor, style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: G.texto))),
+        ]),
+      );
+}
+
 class TelaAtivo extends StatefulWidget {
   final String id;
   const TelaAtivo({super.key, required this.id});
@@ -499,6 +572,8 @@ class _TelaAtivoState extends State<TelaAtivo> {
               _resumo(serie),
               const SizedBox(height: 14),
               if (serie.length >= 2) ...[_grafico(serie), const SizedBox(height: 18)],
+              _Movimentacoes(hist: historicoMovs(lancs, grupo: filhos.isNotEmpty), nomes: filhos.isEmpty ? null : nomes),
+              const SizedBox(height: 18),
               ..._historico(context, repo, lancs.reversed.toList(), variacao, filhos.isEmpty ? null : nomes),
             ]),
     );
@@ -670,8 +745,12 @@ class _TelaAtivoState extends State<TelaAtivo> {
                     Text(brl(l.saldo), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
                     if (nomes != null || l.aporte != 0)
                       Text(
-                        [if (nomes != null) nomes[l.ativo] ?? '', if (l.aporte != 0) '${l.aporte > 0 ? 'aporte' : 'resgate'} ${brl(l.aporte.abs())}'].where((s) => s.isNotEmpty).join(' · '),
-                        maxLines: 1,
+                        [
+                          if (nomes != null) nomes[l.ativo] ?? '',
+                          if (l.aporte != 0)
+                            (l.movsSalvas?.length ?? 1) > 1 ? '${l.movsSalvas!.length} movimentações, líquido ${brl(l.aporte, sinal: true)}' : '${l.aporte > 0 ? 'colocou' : 'tirou'} ${brl(l.aporte.abs())}',
+                        ].where((s) => s.isNotEmpty).join(' · '),
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(color: l.aporte > 0 ? G.lavanda : G.apagado, fontSize: 12.5),
                       ),
@@ -705,8 +784,21 @@ class _TelaAtivoState extends State<TelaAtivo> {
         FaixaNumeros([
           ('Saldo', brl(l.saldo), null),
           ('Rendeu no dia', v == null ? '—' : brl(v, sinal: true), v == null ? null : (v >= 0 ? G.pos : G.neg)),
-          ('Aporte', l.aporte == 0 ? '—' : brl(l.aporte, sinal: true), null),
+          ('Colocou/tirou', l.aporte == 0 ? '—' : brl(l.aporte, sinal: true), null),
         ]),
+        if (l.movs.isNotEmpty) ...[
+          const Rotulo('Movimentações do dia'),
+          for (final m in l.movs)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Row(children: [
+                Icon(m.tirou ? Icons.remove_circle_outline_rounded : Icons.add_circle_outline_rounded, size: 18, color: m.tirou ? G.neg : G.pos),
+                const SizedBox(width: 8),
+                Expanded(child: Text(m.liquido ? 'Líquido do dia' : (m.nome.isEmpty ? (m.tirou ? 'Tirou' : 'Colocou') : m.nome), style: TextStyle(color: G.texto2))),
+                Text(brl(m.comSinal, sinal: true), style: const TextStyle(fontWeight: FontWeight.w700)),
+              ]),
+            ),
+        ],
         const SizedBox(height: 20),
         OutlinedButton.icon(
           onPressed: () async {
