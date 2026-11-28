@@ -52,13 +52,14 @@ class _TelaPatrimonioState extends State<TelaPatrimonio> {
       _ => _Carteira(c: c),
     };
     const nomes = ['Carteira', 'Desempenho', 'Movimentações'];
-    final baixo = MediaQuery.paddingOf(context).bottom + (largo ? 20 : 96);
     return Stack(children: [
       Column(children: [
         Padding(
           padding: largo ? const EdgeInsets.fromLTRB(28, 14, 28, 12) : const EdgeInsets.fromLTRB(12, 12, 12, 10),
           child: Centralizar(
             max: 760,
+            child: Row(children: [
+            Expanded(
             child: Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(color: S.c('tabs-bg'), borderRadius: BorderRadius.circular(99), border: Border.all(color: S.line)),
@@ -84,40 +85,35 @@ class _TelaPatrimonioState extends State<TelaPatrimonio> {
                   ),
               ]),
             ),
+            ),
+            // "Lançar" fixo no topo, ao lado das abas: sempre à mão, sem cobrir nada
+            if (!c.vazia) ...[
+              const SizedBox(width: 8),
+              Material(
+                color: S.accent,
+                shape: const StadiumBorder(),
+                child: InkWell(
+                  customBorder: const StadiumBorder(),
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    abrirLancarValores(context);
+                  },
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      Icon(Icons.add_rounded, color: Colors.white, size: 19),
+                      SizedBox(width: 4),
+                      Text('Lançar', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700)),
+                    ]),
+                  ),
+                ),
+              ),
+            ],
+            ]),
           ),
         ),
         Expanded(child: largo ? Centralizar(max: aba == 1 ? 1180 : 900, child: corpo) : corpo),
       ]),
-      // "Lançar valores" sempre no mesmo lugar, em todas as abas
-      if (!c.vazia)
-        Positioned(
-          left: 0,
-          right: 0,
-          bottom: baixo,
-          child: Center(
-            child: Material(
-              color: S.accent,
-              elevation: 6,
-              shadowColor: S.accent.withValues(alpha: .4),
-              shape: const StadiumBorder(),
-              child: InkWell(
-                customBorder: const StadiumBorder(),
-                onTap: () {
-                  HapticFeedback.selectionClick();
-                  abrirLancarValores(context);
-                },
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 22, vertical: 13),
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    Icon(Icons.add_rounded, color: Colors.white, size: 20),
-                    SizedBox(width: 8),
-                    Text('Lançar valores', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700)),
-                  ]),
-                ),
-              ),
-            ),
-          ),
-        ),
     ]);
   }
 }
@@ -281,7 +277,7 @@ class _CarteiraState extends State<_Carteira> {
         ]),
       ]);
     }
-    return ListView(padding: const EdgeInsets.fromLTRB(12, 0, 12, 180), children: [
+    return ListView(padding: const EdgeInsets.fromLTRB(12, 0, 12, 110), children: [
       hero,
       const SizedBox(height: 14),
       lista,
@@ -387,7 +383,7 @@ class _Desempenho extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (c.vazia) return AnaliseInvest(c: c);
-    return ListView(padding: const EdgeInsets.fromLTRB(12, 0, 12, 180), children: [
+    return ListView(padding: const EdgeInsets.fromLTRB(12, 0, 12, 110), children: [
       AnaliseInvest(c: c, embutido: true),
       const SizedBox(height: 24),
       _Relatorios(c: c, embutido: true),
@@ -415,7 +411,7 @@ class _MovsTodas extends StatelessWidget {
     }
     itens.sort((a, b) => b.h.data.compareTo(a.h.data));
     if (itens.isEmpty) {
-      return ListView(padding: const EdgeInsets.fromLTRB(12, 0, 12, 180), children: [
+      return ListView(padding: const EdgeInsets.fromLTRB(12, 0, 12, 110), children: [
         CartaoSite(padding: const EdgeInsets.all(18), child: Text('Quando você lançar valores, cada vez que colocar ou tirar dinheiro aparece aqui.', style: TextStyle(color: S.ink2, height: 1.45))),
       ]);
     }
@@ -435,7 +431,7 @@ class _MovsTodas extends StatelessWidget {
             ]),
           ),
         );
-    return ListView(padding: const EdgeInsets.fromLTRB(12, 0, 12, 180), children: [
+    return ListView(padding: const EdgeInsets.fromLTRB(12, 0, 12, 110), children: [
       Row(children: [
         total('Você já colocou', brl(colocou), S.pos),
         const SizedBox(width: 10),
