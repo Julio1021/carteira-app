@@ -39,9 +39,40 @@ String _nb(String t) => t.replaceAll(' ', '\u00A0');
 TextStyle _tit() => TextStyle(fontFamily: S.fonteNum, fontSize: 17, fontWeight: FontWeight.w700, color: S.ink, height: 1.3);
 TextStyle _sub() => TextStyle(fontSize: 13, color: S.muted, height: 1.4);
 
+/// Cores para linhas que aparecem junto com a da carteira (cor principal do
+/// tema): escolhidas pelo tom mais distante dela e entre si, para nenhuma
+/// linha se confundir com outra, em qualquer tema.
+List<Color> coresComparacao([int n = 3]) {
+  final esc = S.escuro;
+  final candidatas = esc
+      ? const [Color(0xFFFFA23A), Color(0xFF3FD68F), Color(0xFFFF6FB0), Color(0xFF39C6D6), Color(0xFFB98CFF), Color(0xFFFF6B6B)]
+      : const [Color(0xFFE07800), Color(0xFF0E8F55), Color(0xFFC2185B), Color(0xFF00838F), Color(0xFF7B3FC4), Color(0xFFD32F2F)];
+  double tom(Color c) => HSVColor.fromColor(c).hue;
+  double dist(double a, double b) {
+    final d = (a - b).abs() % 360;
+    return d > 180 ? 360 - d : d;
+  }
+
+  final usados = <double>[tom(S.accent)];
+  final out = <Color>[];
+  final livres = [...candidatas];
+  while (out.length < n && livres.isNotEmpty) {
+    livres.sort((x, y) {
+      double m(Color c) => usados.map((u) => dist(tom(c), u)).reduce((a, b) => a < b ? a : b);
+      return m(y).compareTo(m(x));
+    });
+    final c = livres.removeAt(0);
+    out.add(c);
+    usados.add(tom(c));
+  }
+  return out;
+}
+
 class AnaliseInvest extends StatefulWidget {
   final Carteira c;
-  const AnaliseInvest({super.key, required this.c});
+  /// Dentro de outra lista (aba Desempenho): sem rolagem própria.
+  final bool embutido;
+  const AnaliseInvest({super.key, required this.c, this.embutido = false});
   @override
   State<AnaliseInvest> createState() => _AnaliseInvestState();
 }
@@ -82,9 +113,7 @@ class _AnaliseInvestState extends State<AnaliseInvest> {
         final rendeu = noPer.fold<double>(0, (a, m) => a + m.ganho);
         final melhor = noPer.isEmpty ? null : noPer.reduce((a, b) => a.rent >= b.rent ? a : b);
         final p = cmp?.pctCdi;
-        return ListView(
-          padding: const EdgeInsets.fromLTRB(12, 4, 12, 130),
-          children: [
+        final filhos = <Widget>[
             _SeletorPer(valor: periodo, aoMudar: (v) => setState(() => periodo = v)),
             const SizedBox(height: 12),
             _Grade([
@@ -134,8 +163,9 @@ class _AnaliseInvestState extends State<AnaliseInvest> {
               _CardDiversificacao(fatias: porClasse ? cls : inst, porClasse: porClasse, onTrocar: (v) => setState(() => porClasse = v)),
             ],
             if (dest.isNotEmpty) ...[const SizedBox(height: 14), _CardDestaques(lista: dest)],
-          ],
-        );
+        ];
+        if (widget.embutido) return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: filhos);
+        return ListView(padding: const EdgeInsets.fromLTRB(12, 4, 12, 130), children: filhos);
       },
     );
   }
@@ -247,11 +277,14 @@ class _CardIndices extends StatelessWidget {
       );
     }
     List<double> pc(List<double> l) => [for (final v in l) v - 100];
+    // cada linha num tom bem diferente da carteira (e entre si)
+    final cs = coresComparacao(3);
     final series = <_Serie>[
+      _Serie('CDI', pc(m.curvaCdi), cs[0], total: m.cdi),
+      if (m.curvaPoup.isNotEmpty) _Serie('Poupança', pc(m.curvaPoup), cs[1], tracejada: true, total: m.poup),
+      if (m.curvaIpca.isNotEmpty) _Serie('Inflação (IPCA)', pc(m.curvaIpca), cs[2], tracejada: true, total: m.ipca),
+      // a carteira por último: desenhada por cima das outras
       _Serie('Sua carteira', pc(m.curvaCart), S.accent, principal: true, total: m.carteira),
-      _Serie('CDI', pc(m.curvaCdi), S.ink2, total: m.cdi),
-      if (m.curvaPoup.isNotEmpty) _Serie('Poupança', pc(m.curvaPoup), S.second, tracejada: true, total: m.poup),
-      if (m.curvaIpca.isNotEmpty) _Serie('Inflação (IPCA)', pc(m.curvaIpca), S.neg, tracejada: true, total: m.ipca),
     ];
     final p = m.pctCdi;
     final dif = m.cdi == null ? null : m.carteira - m.cdi!;
@@ -277,7 +310,7 @@ class _CardIndices extends StatelessWidget {
         const SizedBox(height: 14),
         _GraficoComparacao(meses: m.meses, series: series),
         const SizedBox(height: 12),
-        for (final s in series)
+        for (final s in [series.last, ...series.take(series.length - 1)])
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 5),
             child: Row(children: [

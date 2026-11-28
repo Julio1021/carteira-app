@@ -30,8 +30,10 @@ class TelaPatrimonio extends StatefulWidget {
 }
 
 class _TelaPatrimonioState extends State<TelaPatrimonio> {
-  // "Lançar valores" (1) abre numa tela própria, com a data e o Salvar fixos
-  late int sub = widget.subInicial == 1 ? 0 : widget.subInicial;
+  // 3 abas: Carteira (0), Desempenho (1), Movimentações (2). Os números
+  // antigos da URL/atalhos (0 visão geral, 1 lançar, 2 ativos, 3 relatórios,
+  // 4 análise, 5 movimentações) caem na aba certa.
+  late int aba = switch (widget.subInicial) { 3 || 4 => 1, 5 => 2, _ => 0 };
 
   @override
   void initState() {
@@ -39,51 +41,449 @@ class _TelaPatrimonioState extends State<TelaPatrimonio> {
     if (widget.subInicial == 1) WidgetsBinding.instance.addPostFrameCallback((_) => mounted ? abrirLancarValores(context) : null);
   }
 
-  void _ir(int i) => i == 1 ? abrirLancarValores(context) : setState(() => sub = i);
-  // abas visíveis: Visão geral, Análise e Ativos. Lançar (1) e Relatórios (3)
-  // abrem pelos botões da Visão geral, com "Voltar".
-
   @override
   Widget build(BuildContext context) {
     final repo = RepoScope.of(context);
     final c = calcularCarteira(repo);
-    final corpo = switch (sub) {
-      0 => _Resumo(c: c, ir: _ir),
-      2 => _Ativos(c: c),
-      4 => AnaliseInvest(c: c),
-      _ => _Relatorios(c: c),
-    };
     final largo = telaLarga(context);
-    const pilulas = [(0, 'Visão geral'), (1, 'Lançar valores'), (2, 'Ativos'), (3, 'Relatórios'), (4, 'Análise')];
-    return Column(children: [
-      Padding(
-        padding: largo ? const EdgeInsets.fromLTRB(28, 14, 28, 14) : const EdgeInsets.fromLTRB(12, 14, 12, 14),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(children: [
-            for (final (i, t) in pilulas)
-              Padding(
-                padding: const EdgeInsets.only(right: 6),
-                child: Material(
-                  color: sub == i ? S.ink : S.surface,
-                  shape: StadiumBorder(side: BorderSide(color: sub == i ? S.ink : S.line)),
-                  child: InkWell(
-                    customBorder: const StadiumBorder(),
-                    onTap: () {
-                      HapticFeedback.selectionClick();
-                      _ir(i);
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                      child: Text(t, style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: sub == i ? S.bg : S.ink2)),
+    final corpo = switch (aba) {
+      1 => _Desempenho(c: c),
+      2 => _MovsTodas(c: c),
+      _ => _Carteira(c: c),
+    };
+    const nomes = ['Carteira', 'Desempenho', 'Movimentações'];
+    final baixo = MediaQuery.paddingOf(context).bottom + (largo ? 20 : 96);
+    return Stack(children: [
+      Column(children: [
+        Padding(
+          padding: largo ? const EdgeInsets.fromLTRB(28, 14, 28, 12) : const EdgeInsets.fromLTRB(12, 12, 12, 10),
+          child: Centralizar(
+            max: 760,
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(color: S.c('tabs-bg'), borderRadius: BorderRadius.circular(99), border: Border.all(color: S.line)),
+              child: Row(children: [
+                for (var i = 0; i < nomes.length; i++)
+                  Expanded(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        setState(() => aba = i);
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        decoration: BoxDecoration(color: i == aba ? S.ink : Colors.transparent, borderRadius: BorderRadius.circular(99)),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(nomes[i], style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: i == aba ? S.bg : S.ink2)),
+                        ),
+                      ),
                     ),
                   ),
+              ]),
+            ),
+          ),
+        ),
+        Expanded(child: largo ? Centralizar(max: aba == 1 ? 1180 : 900, child: corpo) : corpo),
+      ]),
+      // "Lançar valores" sempre no mesmo lugar, em todas as abas
+      if (!c.vazia)
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: baixo,
+          child: Center(
+            child: Material(
+              color: S.accent,
+              elevation: 6,
+              shadowColor: S.accent.withValues(alpha: .4),
+              shape: const StadiumBorder(),
+              child: InkWell(
+                customBorder: const StadiumBorder(),
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  abrirLancarValores(context);
+                },
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 22, vertical: 13),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(Icons.add_rounded, color: Colors.white, size: 20),
+                    SizedBox(width: 8),
+                    Text('Lançar valores', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700)),
+                  ]),
+                ),
+              ),
+            ),
+          ),
+        ),
+    ]);
+  }
+}
+
+// =====================================================================
+// Carteira: total, divisão, lista única dos investimentos e evolução
+// =====================================================================
+
+class _Carteira extends StatefulWidget {
+  final Carteira c;
+  const _Carteira({required this.c});
+  @override
+  State<_Carteira> createState() => _CarteiraState();
+}
+
+class _CarteiraState extends State<_Carteira> {
+  bool porTipo = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = widget.c;
+    final repo = RepoScope.of(context);
+    if (c.vazia) return _Resumo(c: c, ir: (_) => abrirLancarValores(context));
+    final emConta = repo.contas.isEmpty ? 0.0 : saldoEmConta(repo);
+    final patrimonio = c.total + emConta;
+    final pctInv = patrimonio > 0 ? c.total / patrimonio : 1.0;
+    final posicoes = c.posicoes.where((p) => p.valor > 0.005).toList()..sort((a, b) => b.valor.compareTo(a.valor));
+    final zerados = c.posicoes.where((p) => p.valor <= 0.005).toList();
+    final ocultos = repo.doTipo('ativo').where((d) => d['oculto'] == true).map(Ativo.new).toList();
+    final amostra = _Resumo._amostrar(c.dias, 90);
+    final pal = G.coresSerie;
+    // por tipo (classe): soma dos investimentos de cada tipo
+    final tipos = <String, double>{};
+    for (final p in posicoes) {
+      tipos[p.a.classe] = (tipos[p.a.classe] ?? 0) + p.valor;
+    }
+    final tiposOrd = tipos.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+    final fatias = porTipo
+        ? [for (var i = 0; i < tiposOrd.length; i++) (tiposOrd[i].key, tiposOrd[i].value, pal[i % pal.length])]
+        : [for (final p in posicoes) (p.a.nome, p.valor, p.cor)];
+    final cAplic = coresComparacao(1).first;
+
+    Widget pilula(String t, bool on, VoidCallback f) => GestureDetector(
+          onTap: f,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(color: on ? S.ink : Colors.transparent, borderRadius: BorderRadius.circular(99), border: Border.all(color: on ? S.ink : S.line)),
+            child: Text(t, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: on ? S.bg : S.ink2)),
+          ),
+        );
+
+    final lista = CartaoSite(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Text('Seus investimentos', style: TextStyle(fontFamily: S.fonteNum, fontSize: 17, fontWeight: FontWeight.w700, color: S.ink)),
+        const SizedBox(height: 2),
+        Text.rich(
+          TextSpan(children: [
+            TextSpan(text: 'Você aplicou ${brl(c.investido)} e o dinheiro rendeu '),
+            TextSpan(text: '${brl(c.rendeu, sinal: true)}${c.investido > 0 ? ' (${pct(c.rendeu / c.investido, sinal: true)})' : ''}', style: TextStyle(fontWeight: FontWeight.w800, color: c.rendeu >= 0 ? S.pos : S.neg)),
+            const TextSpan(text: '.'),
+          ]),
+          style: TextStyle(fontSize: 13, color: S.ink2, height: 1.4),
+        ),
+        const SizedBox(height: 14),
+        // divisão do dinheiro numa barra só
+        ClipRRect(
+          borderRadius: BorderRadius.circular(99),
+          child: SizedBox(
+            height: 12,
+            child: Row(children: [
+              for (var i = 0; i < fatias.length; i++) ...[
+                if (i > 0) const SizedBox(width: 2),
+                Expanded(flex: (fatias[i].$2 / c.total * 1000).round().clamp(8, 1000).toInt(), child: Container(color: fatias[i].$3)),
+              ],
+            ]),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Row(children: [
+          pilula('Por investimento', !porTipo, () => setState(() => porTipo = false)),
+          const SizedBox(width: 6),
+          pilula('Por tipo', porTipo, () => setState(() => porTipo = true)),
+        ]),
+        if (porTipo) ...[
+          const SizedBox(height: 10),
+          for (final (nome, v, cor) in fatias)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(children: [
+                Container(width: 10, height: 10, decoration: BoxDecoration(color: cor, borderRadius: BorderRadius.circular(3))),
+                const SizedBox(width: 8),
+                Expanded(child: Text(nome, style: TextStyle(fontSize: 13.5, color: S.ink, fontWeight: FontWeight.w600))),
+                Text('${pct(v / c.total, casas: 1).replaceAll('+', '')} · ${brl(v)}', style: TextStyle(fontSize: 13, color: S.ink2, fontWeight: FontWeight.w600)),
+              ]),
+            ),
+        ],
+        const SizedBox(height: 8),
+        for (final p in posicoes) _LinhaInvest(p: p, total: c.total, serie: _serieDe(c, p)),
+        for (final p in zerados) _LinhaInvest(p: p, total: c.total, serie: const []),
+        InkWell(
+          onTap: () => abrirFolha(context, const FormAtivo()),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            child: Row(children: [
+              Icon(Icons.add_rounded, color: S.accent, size: 20),
+              const SizedBox(width: 8),
+              Text('Novo investimento', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: S.accent)),
+            ]),
+          ),
+        ),
+        if (ocultos.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Wrap(spacing: 6, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
+              Text('Ocultos:', style: TextStyle(fontSize: 12.5, color: S.muted)),
+              for (final a in ocultos)
+                ActionChip(
+                  label: Text('${a.nome} · mostrar'),
+                  labelStyle: TextStyle(fontSize: 12.5, color: S.ink2),
+                  onPressed: () => repo.salvar({...a.d, 'oculto': false}),
+                ),
+            ]),
+          ),
+      ]),
+    );
+
+    final evolucao = amostra.length < 2
+        ? null
+        : CartaoSite(
+            padding: const EdgeInsets.all(16),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              const CabecalhoSite('Evolução do patrimônio', sub: 'Quanto você tem comparado ao total que aplicou'),
+              GraficoLinha(
+                titulo: 'Evolução do patrimônio',
+                series: [amostra.map((d) => d.total).toList(), amostra.map((d) => d.investido).toList()],
+                cores: [S.accent, cAplic],
+                tracejada: const [false, true],
+                formatoY: curto,
+                rotulosX: [dataCurta(amostra.first.data), dataCurta(amostra[amostra.length ~/ 2].data), dataCurta(amostra.last.data)],
+                nomes: const ['Patrimônio', 'Aplicado'],
+                rotuloToque: (i) => dataBr(amostra[i.clamp(0, amostra.length - 1).toInt()].data),
+              ),
+              const SizedBox(height: 8),
+              Row(children: [
+                _Legenda(S.accent, 'Patrimônio'),
+                const SizedBox(width: 14),
+                _Legenda(cAplic, 'Valor aplicado (tracejado)'),
+              ]),
+            ]),
+          );
+
+    final hero = _HeroPat(c: c, emConta: emConta, patrimonio: patrimonio, pctInv: pctInv, irLancar: () => abrirLancarValores(context));
+    final finais = <Widget>[_Pendencias(c: c), CartaoObjetivos(c: c)];
+    if (telaLarga(context)) {
+      return ListView(padding: const EdgeInsets.fromLTRB(28, 4, 28, 110), children: [
+        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [hero, const SizedBox(height: 16), if (evolucao != null) evolucao, ...finais])),
+          const SizedBox(width: 20),
+          Expanded(child: lista),
+        ]),
+      ]);
+    }
+    return ListView(padding: const EdgeInsets.fromLTRB(12, 0, 12, 180), children: [
+      hero,
+      const SizedBox(height: 14),
+      lista,
+      if (evolucao != null) ...[const SizedBox(height: 14), evolucao],
+      const SizedBox(height: 14),
+      ...finais,
+    ]);
+  }
+
+  /// Saldo do investimento ao longo do tempo (soma dos filhos num grupo), para o mini gráfico.
+  static List<double> _serieDe(Carteira c, PosAtivo p) {
+    final ids = p.filhos == null ? [p.a.id] : [for (final f in p.filhos!) f.a.id];
+    final dias = _Resumo._amostrar(c.dias, 40);
+    final out = <double>[];
+    for (final d in dias) {
+      final v = ids.fold<double>(0, (t, i) => t + (d.porAtivo[i] ?? 0));
+      if (out.isEmpty && v == 0) continue;
+      out.add(v);
+    }
+    return out;
+  }
+}
+
+/// Uma linha da lista de investimentos: nome, parte da carteira, quanto
+/// rendeu, mini gráfico e o valor. Toque abre o investimento.
+class _LinhaInvest extends StatelessWidget {
+  final PosAtivo p;
+  final double total;
+  final List<double> serie;
+  const _LinhaInvest({required this.p, required this.total, required this.serie});
+  @override
+  Widget build(BuildContext context) {
+    final rendeu = p.valor - p.investido;
+    return InkWell(
+      onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => TelaAtivo(id: p.a.id))),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(border: Border(bottom: BorderSide(color: S.line))),
+        child: Row(children: [
+          Container(width: 10, height: 10, decoration: BoxDecoration(color: p.cor, borderRadius: BorderRadius.circular(3))),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(p.a.nome, style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700, color: S.ink, height: 1.3)),
+              const SizedBox(height: 2),
+              Text.rich(
+                TextSpan(children: [
+                  TextSpan(text: total > 0 && p.valor > 0 ? '${pct(p.valor / total, casas: 1).replaceAll('+', '')} da carteira' : 'Sem saldo'),
+                  if (p.investido > 0) ...[
+                    const TextSpan(text: ' · '),
+                    TextSpan(text: '${brl(rendeu, sinal: true)} (${pct(p.rent, sinal: true)})', style: TextStyle(color: rendeu >= 0 ? S.pos : S.neg, fontWeight: FontWeight.w700)),
+                  ],
+                ]),
+                style: TextStyle(fontSize: 12.5, color: S.muted, height: 1.35),
+              ),
+            ]),
+          ),
+          if (serie.length >= 3) ...[
+            const SizedBox(width: 8),
+            SizedBox(width: 48, height: 22, child: CustomPaint(painter: _Spark(serie, p.cor))),
+          ],
+          const SizedBox(width: 10),
+          Text(brl(p.valor), style: TextStyle(fontFamily: S.fonteNum, fontSize: 14.5, fontWeight: FontWeight.w700, color: S.ink)),
+        ]),
+      ),
+    );
+  }
+}
+
+class _Spark extends CustomPainter {
+  final List<double> v;
+  final Color cor;
+  _Spark(this.v, this.cor);
+  @override
+  void paint(Canvas canvas, Size s) {
+    final mn = v.reduce((a, b) => a < b ? a : b), mx = v.reduce((a, b) => a > b ? a : b);
+    final amp = (mx - mn).abs() < 1e-9 ? 1.0 : mx - mn;
+    final path = Path();
+    for (var i = 0; i < v.length; i++) {
+      final x = s.width * i / (v.length - 1);
+      final y = s.height - 2 - (s.height - 4) * (v[i] - mn) / amp;
+      i == 0 ? path.moveTo(x, y) : path.lineTo(x, y);
+    }
+    canvas.drawPath(path, Paint()
+      ..color = cor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round);
+  }
+
+  @override
+  bool shouldRepaint(_Spark o) => o.v != v || o.cor != cor;
+}
+
+// =====================================================================
+// Desempenho: análise (períodos, índices, renda passiva) + relatório do ano
+// =====================================================================
+
+class _Desempenho extends StatelessWidget {
+  final Carteira c;
+  const _Desempenho({required this.c});
+  @override
+  Widget build(BuildContext context) {
+    if (c.vazia) return AnaliseInvest(c: c);
+    return ListView(padding: const EdgeInsets.fromLTRB(12, 0, 12, 180), children: [
+      AnaliseInvest(c: c, embutido: true),
+      const SizedBox(height: 24),
+      _Relatorios(c: c, embutido: true),
+    ]);
+  }
+}
+
+// =====================================================================
+// Movimentações: tudo que você colocou e tirou, de todos os investimentos
+// =====================================================================
+
+class _MovsTodas extends StatelessWidget {
+  final Carteira c;
+  const _MovsTodas({required this.c});
+  @override
+  Widget build(BuildContext context) {
+    final repo = RepoScope.of(context);
+    final todos = repo.doTipo('lanc').map(Lancamento.new).toList();
+    final itens = <({MovHist h, PosAtivo p})>[];
+    for (final p in c.posicoes) {
+      final ids = p.filhos == null ? {p.a.id} : {for (final f in p.filhos!) f.a.id};
+      for (final h in historicoMovs(todos.where((l) => ids.contains(l.ativo)).toList(), grupo: p.filhos != null)) {
+        itens.add((h: h, p: p));
+      }
+    }
+    itens.sort((a, b) => b.h.data.compareTo(a.h.data));
+    if (itens.isEmpty) {
+      return ListView(padding: const EdgeInsets.fromLTRB(12, 0, 12, 180), children: [
+        CartaoSite(padding: const EdgeInsets.all(18), child: Text('Quando você lançar valores, cada vez que colocar ou tirar dinheiro aparece aqui.', style: TextStyle(color: S.ink2, height: 1.45))),
+      ]);
+    }
+    final colocou = itens.where((x) => !x.h.m.tirou).fold<double>(0, (t, x) => t + x.h.m.valor);
+    final tirou = itens.where((x) => x.h.m.tirou).fold<double>(0, (t, x) => t + x.h.m.valor);
+    final porMes = <String, List<({MovHist h, PosAtivo p})>>{};
+    for (final x in itens) {
+      (porMes[x.h.data.substring(0, 7)] ??= []).add(x);
+    }
+    Widget total(String r, String v, Color cor) => Expanded(
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+            decoration: BoxDecoration(color: cor.withValues(alpha: .09), borderRadius: BorderRadius.circular(14)),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(r, style: TextStyle(fontSize: 12.5, color: S.ink2)),
+              FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(v, style: TextStyle(fontFamily: S.fonteNum, fontSize: 18, fontWeight: FontWeight.w800, color: S.ink))),
+            ]),
+          ),
+        );
+    return ListView(padding: const EdgeInsets.fromLTRB(12, 0, 12, 180), children: [
+      Row(children: [
+        total('Você já colocou', brl(colocou), S.pos),
+        const SizedBox(width: 10),
+        total('Você já tirou', brl(tirou), S.neg),
+      ]),
+      const SizedBox(height: 6),
+      Text('Inclui o valor inicial de cada investimento.', style: TextStyle(fontSize: 12, color: S.muted)),
+      for (final e in porMes.entries) ...[
+        const SizedBox(height: 14),
+        Builder(builder: (_) {
+          final liq = e.value.fold<double>(0, (t, x) => t + x.h.m.comSinal);
+          return Row(children: [
+            Expanded(child: Text(mesLongo(e.key), style: TextStyle(fontFamily: S.fonteNum, fontSize: 16, fontWeight: FontWeight.w700, color: S.ink))),
+            Text('líquido ', style: TextStyle(fontSize: 12.5, color: S.muted)),
+            Text(brl(liq, sinal: true), style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800, color: liq >= 0 ? S.pos : S.neg)),
+          ]);
+        }),
+        const SizedBox(height: 8),
+        CartaoSite(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+          child: Column(children: [
+            for (var k = 0; k < e.value.length; k++)
+              InkWell(
+                onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => TelaAtivo(id: e.value[k].p.a.id))),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 11),
+                  decoration: BoxDecoration(border: k == 0 ? null : Border(top: BorderSide(color: S.line))),
+                  child: Row(children: [
+                    SizedBox(width: 46, child: Text(dataCurta(e.value[k].h.data), style: TextStyle(fontSize: 12.5, color: S.muted, fontWeight: FontWeight.w600))),
+                    Container(width: 8, height: 8, margin: const EdgeInsets.only(right: 8), decoration: BoxDecoration(color: e.value[k].p.cor, borderRadius: BorderRadius.circular(2))),
+                    Expanded(
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text(e.value[k].p.a.nome, style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: S.ink, height: 1.3)),
+                        Builder(builder: (_) {
+                          final m = e.value[k].h.m;
+                          final t = e.value[k].h.inicial ? 'Valor inicial' : (m.liquido ? 'Líquido do dia' : (m.nome.isNotEmpty ? m.nome : (m.tirou ? 'Tirou' : 'Colocou')));
+                          return Text(t, style: TextStyle(fontSize: 12.5, color: S.ink2, height: 1.3));
+                        }),
+                      ]),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(brl(e.value[k].h.m.comSinal, sinal: true), style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: e.value[k].h.m.tirou ? S.neg : S.pos)),
+                  ]),
                 ),
               ),
           ]),
         ),
-      ),
-      Expanded(child: largo && sub != 0 ? Centralizar(max: sub == 4 ? 1180 : 900, child: corpo) : corpo),
+      ],
     ]);
   }
 }
@@ -663,7 +1063,7 @@ class _TelaAtivoState extends State<TelaAtivo> {
                   GraficoLinha(
                     titulo: 'Evolução do saldo',
                     series: [amostra.map((d) => d.total).toList(), amostra.map((d) => d.investido).toList()],
-                    cores: [G.pos, G.neutroSerie],
+                    cores: [S.accent, coresComparacao(1).first],
                     tracejada: const [false, true],
                     formatoY: curto,
                     rotulosX: [dataCurta(amostra.first.data), dataCurta(amostra[amostra.length ~/ 2].data), dataCurta(amostra.last.data)],
@@ -671,7 +1071,7 @@ class _TelaAtivoState extends State<TelaAtivo> {
                     rotuloToque: (i) => dataBr(amostra[i.clamp(0, amostra.length - 1).toInt()].data),
                   ),
                   const SizedBox(height: 8),
-                  Row(children: [Legenda(G.pos, 'Saldo'), const SizedBox(width: 14), Legenda(G.neutroSerie, 'Quanto você aplicou')]),
+                  Row(children: [Legenda(S.accent, 'Saldo'), const SizedBox(width: 14), Legenda(coresComparacao(1).first, 'Quanto você aplicou')]),
                 ])
               : ms.isEmpty
                   ? Padding(
@@ -912,7 +1312,10 @@ class _FormAtivoState extends State<FormAtivo> {
 
 class _Relatorios extends StatefulWidget {
   final Carteira c;
-  const _Relatorios({required this.c});
+  /// Dentro da aba Desempenho: sem rolagem própria e sem a posição atual
+  /// (a lista dos investimentos já está na Carteira).
+  final bool embutido;
+  const _Relatorios({required this.c, this.embutido = false});
   @override
   State<_Relatorios> createState() => _RelatoriosState();
 }
@@ -923,6 +1326,7 @@ class _RelatoriosState extends State<_Relatorios> {
   final metaC = TextEditingController(text: '1.000.000,00');
   String taxa = 'mod';
   int anos = 10;
+  bool tabela = false;
 
   @override
   void initState() {
@@ -969,9 +1373,9 @@ class _RelatoriosState extends State<_Relatorios> {
             ]),
           ),
         );
-    return ListView(padding: const EdgeInsets.fromLTRB(12, 0, 12, 150), children: [
+    final filhos = <Widget>[
       if (!c.vazia) ...[
-        if (posicoes.isNotEmpty) ...[
+        if (posicoes.isNotEmpty && !widget.embutido) ...[
           PosicaoAtualSite(c: c, posicoes: posicoes, abrir: (p) => Navigator.of(context).push(MaterialPageRoute(builder: (_) => TelaAtivo(id: p.a.id)))),
           const SizedBox(height: 22),
         ],
@@ -1011,7 +1415,19 @@ class _RelatoriosState extends State<_Relatorios> {
           GradeRentMeses(meses: meses.reversed.toList(), sub: 'Em $ano, descontando aportes e resgates'),
           const SizedBox(height: 12),
         ],
-        // tabela: um mês por linha (antes era um cartão de 4 linhas por mês)
+        // tabela: um mês por linha; fica fechada até você abrir
+        if (!tabela)
+          CartaoSite(
+            onTap: () => setState(() => tabela = true),
+            padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
+            child: Row(children: [
+              Icon(Icons.table_rows_outlined, size: 20, color: S.accent),
+              const SizedBox(width: 10),
+              Expanded(child: Text('Tabela mês a mês de $ano', style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700, color: S.ink))),
+              Icon(Icons.expand_more_rounded, color: S.muted),
+            ]),
+          )
+        else
         Cartao(
           padding: const EdgeInsets.fromLTRB(14, 14, 14, 6),
           child: Builder(builder: (context) {
@@ -1081,7 +1497,7 @@ class _RelatoriosState extends State<_Relatorios> {
           GraficoLinha(
             titulo: 'Projeção',
             series: [amostra.map((p) => p.saldo).toList(), amostra.map((p) => p.investido).toList()],
-            cores: [G.pos, G.neutroSerie],
+            cores: [S.accent, coresComparacao(1).first],
             tracejada: const [false, true],
             formatoY: curto,
             rotulosX: ['hoje', '${anos ~/ 2} anos', '$anos anos'],
@@ -1106,7 +1522,9 @@ class _RelatoriosState extends State<_Relatorios> {
           TextButton(onPressed: () => setState(() {}), child: const Text('Recalcular')),
         ]),
       ),
-    ]);
+    ];
+    if (widget.embutido) return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: filhos);
+    return ListView(padding: const EdgeInsets.fromLTRB(12, 0, 12, 150), children: filhos);
   }
 }
 
