@@ -51,7 +51,7 @@ class _TelaPatrimonioState extends State<TelaPatrimonio> {
       2 => _MovsTodas(c: c),
       _ => _Carteira(c: c),
     };
-    const nomes = ['Carteira', 'Desempenho', 'Movimentações'];
+    const nomes = ['Carteira', 'Desempenho', 'Histórico'];
     return Stack(children: [
       Column(children: [
         Padding(
@@ -74,11 +74,11 @@ class _TelaPatrimonioState extends State<TelaPatrimonio> {
                       },
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 180),
-                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
                         decoration: BoxDecoration(color: i == aba ? S.ink : Colors.transparent, borderRadius: BorderRadius.circular(99)),
                         child: FittedBox(
                           fit: BoxFit.scaleDown,
-                          child: Text(nomes[i], style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: i == aba ? S.bg : S.ink2)),
+                          child: Text(nomes[i], style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: i == aba ? S.bg : S.ink2)),
                         ),
                       ),
                     ),
@@ -99,10 +99,10 @@ class _TelaPatrimonioState extends State<TelaPatrimonio> {
                     abrirLancarValores(context);
                   },
                   child: const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    padding: EdgeInsets.fromLTRB(10, 12, 14, 12),
                     child: Row(mainAxisSize: MainAxisSize.min, children: [
                       Icon(Icons.add_rounded, color: Colors.white, size: 19),
-                      SizedBox(width: 4),
+                      SizedBox(width: 2),
                       Text('Lançar', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700)),
                     ]),
                   ),
@@ -392,7 +392,7 @@ class _Desempenho extends StatelessWidget {
 }
 
 // =====================================================================
-// Movimentações: tudo que você colocou e tirou, de todos os investimentos
+// Histórico: tudo que você colocou e tirou, de todos os investimentos
 // =====================================================================
 
 class _MovsTodas extends StatelessWidget {
